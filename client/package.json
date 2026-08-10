@@ -16,7 +16,7 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.4.2",
     "@capacitor/haptics": "^8.0.2",
-    "@capacitor/ios": "^8.4.2",
+    "@capacitor/ios": "^8.5.0",
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/status-bar": "^8.0.3",
     "livekit-client": "^2.20.2",

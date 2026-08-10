@@ -74,7 +74,7 @@ jobs:
         run: |
           docker compose -f infra/docker-compose.scale.yml ps > scale-compose-ps.txt
           docker compose -f infra/docker-compose.scale.yml logs --no-color > scale-compose.log
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: scale-capacity-report-${{ inputs.connections || '5000' }}
@@ -118,7 +118,7 @@ jobs:
       - run: node tests/load/provision.mjs
       - run: ulimit -n 65535 && node tests/load/realtime-load.mjs
       - run: node tests/load/capacity-report.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: one-hour-soak-report

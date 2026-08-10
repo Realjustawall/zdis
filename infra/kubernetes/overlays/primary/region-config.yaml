@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: youtbelimo-config
+data:
+  DEPLOYMENT_REGION: primary
+  DEPLOYMENT_ROLE: primary
+  ALLOW_WRITES: "true"

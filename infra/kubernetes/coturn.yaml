@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coturn-config
+data:
+  turnserver.conf: |
+    listening-port=3478
+    tls-listening-port=5349
+    fingerprint
+    use-auth-secret
+    min-port=49160
+    max-port=49200
+    no-cli
+    no-multicast-peers
+    no-loopback-peers
+    stale-nonce=600
+    total-quota=10000
+    log-file=stdout
+    simple-log
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: coturn
+  labels:
+    app.kubernetes.io/name: coturn
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: coturn
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: coturn
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      nodeSelector:
+        youtbelimo.io/media-edge: "true"
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: coturn
+          image: coturn/coturn:4.6.3
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /config/turnserver.conf /tmp/turnserver.conf
+              printf 'realm=%s\nstatic-auth-secret=%s\nexternal-ip=%s\ncert=/tls/tls.crt\npkey=/tls/tls.key\n' \
+                "$TURN_REALM" "$TURN_SHARED_SECRET" "$NODE_IP" >> /tmp/turnserver.conf
+              chmod 600 /tmp/turnserver.conf
+              exec turnserver -c /tmp/turnserver.conf
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: TURN_REALM
+              valueFrom:
+                secretKeyRef:
+                  name: youtbelimo-secrets
+                  key: TURN_REALM
+            - name: TURN_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: youtbelimo-secrets
+                  key: TURN_SHARED_SECRET
+          ports:
+            - { name: turn-tcp, containerPort: 3478, hostPort: 3478, protocol: TCP }
+            - { name: turn-udp, containerPort: 3478, hostPort: 3478, protocol: UDP }
+            - { name: turns-tcp, containerPort: 5349, hostPort: 5349, protocol: TCP }
+            - { name: turns-udp, containerPort: 5349, hostPort: 5349, protocol: UDP }
+          readinessProbe:
+            tcpSocket:
+              port: turn-tcp
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 200m
+              memory: 128Mi
+            limits:
+              cpu: "2"
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: coturn-config
+        - name: tls
+          secret:
+            secretName: turn-tls

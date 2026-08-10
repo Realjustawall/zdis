@@ -1,0 +1,24 @@
+# PITR is always restored into a NEW cluster. Set targetTime to the incident
+# boundary in RFC3339 with an explicit timezone, then apply this manifest.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-pitr-restore
+spec:
+  instances: 3
+  storage:
+    size: 100Gi
+  walStorage:
+    size: 20Gi
+  bootstrap:
+    recovery:
+      source: origin
+      recoveryTarget:
+        targetTime: "2026-01-01T00:00:00Z"
+  externalClusters:
+    - name: origin
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: postgres-object-store
+          serverName: postgres

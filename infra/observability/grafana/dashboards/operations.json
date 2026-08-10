@@ -1,0 +1,79 @@
+{
+  "title": "youtBeLimo Operations",
+  "uid": "youtbelimo-ops",
+  "schemaVersion": 41,
+  "refresh": "15s",
+  "time": { "from": "now-6h", "to": "now" },
+  "tags": ["chat", "sre"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Availability (24h)",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "targets": [{ "expr": "avg_over_time(probe_success{job=\"synthetic-readiness\",instance=~\".*gateway.*\"}[24h]) * 100", "legendFormat": "availability" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Live sockets",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "targets": [{ "expr": "sum(youtbelimo_socket_connections)", "legendFormat": "sockets" }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Voice participants",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
+      "targets": [{ "expr": "sum(youtbelimo_voice_participants)", "legendFormat": "participants" }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "5xx ratio",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+      "targets": [{ "expr": "sum(rate(youtbelimo_http_request_duration_seconds_count{status=~\"5..\"}[5m])) / clamp_min(sum(rate(youtbelimo_http_request_duration_seconds_count[5m])), 0.001)", "legendFormat": "errors" }],
+      "fieldConfig": { "defaults": { "unit": "percentunit" } }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Request rate by status",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "targets": [{ "expr": "sum by (status) (rate(youtbelimo_http_request_duration_seconds_count[5m]))", "legendFormat": "{{status}}" }]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "API latency quantiles",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(youtbelimo_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(youtbelimo_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(youtbelimo_http_request_duration_seconds_bucket[5m])))", "legendFormat": "p99" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Messages and uploads",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "sum(rate(youtbelimo_messages_created_total[5m]))", "legendFormat": "messages/s" },
+        { "expr": "sum(rate(youtbelimo_uploads_stored_total[5m]))", "legendFormat": "uploads/s" }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "PostgreSQL and Redis health",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "targets": [
+        { "expr": "pg_up", "legendFormat": "postgres" },
+        { "expr": "redis_up", "legendFormat": "redis" }
+      ]
+    }
+  ]
+}

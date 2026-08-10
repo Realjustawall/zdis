@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">sahsha</string>
+    <string name="title_activity_main">sahsha</string>
+    <string name="package_name">com.youtbelimo.chat</string>
+    <string name="custom_url_scheme">com.youtbelimo.chat</string>
+</resources>

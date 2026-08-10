@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+server/data/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+infra/secrets/*
+!infra/secrets/README.md
+.tmp/
+test-results/
+playwright-report/

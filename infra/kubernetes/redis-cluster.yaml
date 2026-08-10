@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster-headless
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app.kubernetes.io/name: redis-cluster
+  ports:
+    - name: client
+      port: 6379
+    - name: bus
+      port: 16379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+spec:
+  serviceName: redis-cluster-headless
+  replicas: 6
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis-cluster
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis-cluster
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis-cluster
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              exec redis-server \
+                --appendonly yes \
+                --appendfsync everysec \
+                --cluster-enabled yes \
+                --cluster-config-file /data/nodes.conf \
+                --cluster-node-timeout 5000 \
+                --cluster-announce-hostname "${HOSTNAME}.redis-cluster-headless.youtbelimo.svc.cluster.local" \
+                --cluster-announce-port 6379 \
+                --cluster-announce-bus-port 16379
+          ports:
+            - name: client
+              containerPort: 6379
+            - name: bus
+              containerPort: 16379
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 10Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: redis-cluster-bootstrap
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: bootstrap
+          image: redis:7.4-alpine
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              nodes=""
+              for i in 0 1 2 3 4 5; do
+                host="redis-cluster-${i}.redis-cluster-headless.youtbelimo.svc.cluster.local"
+                until redis-cli -h "$host" ping | grep -q PONG; do sleep 2; done
+                nodes="$nodes $host:6379"
+              done
+              if redis-cli -h redis-cluster-0.redis-cluster-headless cluster info 2>/dev/null | grep -q 'cluster_state:ok'; then
+                exit 0
+              fi
+              redis-cli --cluster create $nodes --cluster-replicas 1 --cluster-yes
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: redis-cluster
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis-cluster

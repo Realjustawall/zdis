@@ -1,0 +1,1 @@
+ALTER TABLE scheduled_messages ADD COLUMN encrypted INTEGER NOT NULL DEFAULT 0;

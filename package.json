@@ -1,0 +1,36 @@
+{
+  "name": "youtbelimo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "youtBeLimo - secure chat platform for YouTubers",
+  "type": "module",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server",
+    "seed": "npm run seed --workspace server",
+    "test": "node tests/run-all.mjs",
+    "test:api": "node tests/api.test.mjs",
+    "test:realtime": "node tests/realtime.test.mjs",
+    "test:network": "node tests/network.test.mjs",
+    "test:e2e:server": "node tests/start-e2e.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "test:load": "node tests/load/realtime-load.mjs",
+    "test:load:smoke": "node tests/load/smoke.mjs",
+    "test:failover": "node tests/load/kubernetes-failover.mjs",
+    "enterprise:check": "npm run enterprise:check --workspace server"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

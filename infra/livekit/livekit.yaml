@@ -1,0 +1,19 @@
+port: 7880
+bind_addresses:
+  - 0.0.0.0
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  # NODE_IP is supplied by the container environment. Do not auto-discover it
+  # with STUN: a host VPN or policy-routed egress can produce an address that
+  # is not reachable for inbound WebRTC traffic.
+  use_external_ip: false
+redis:
+  address: redis:6379
+room:
+  auto_create: false
+  empty_timeout: 300
+  departure_timeout: 20
+logging:
+  level: info

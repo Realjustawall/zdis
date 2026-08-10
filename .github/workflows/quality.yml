@@ -1,0 +1,225 @@
+name: Quality
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 1 * * 0'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  infrastructure-validation:
+    name: Kubernetes, Compose and Terraform validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.33.3
+      - uses: hashicorp/setup-terraform@v3
+      - name: Parse every repository YAML document
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          import { parseAllDocuments } from 'yaml';
+          const roots = ['infra', '.github/workflows'];
+          for (const root of roots) {
+            const walk = (dir) => {
+              for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const file = path.join(dir, entry.name);
+                if (entry.isDirectory()) walk(file);
+                else if (/\.ya?ml$/i.test(file)) {
+                  for (const document of parseAllDocuments(fs.readFileSync(file, 'utf8'))) {
+                    if (document.errors.length) throw document.errors[0];
+                  }
+                }
+              }
+            };
+            walk(root);
+          }
+          NODE
+      - name: Render both regional Kubernetes overlays
+        run: |
+          kubectl kustomize infra/kubernetes/overlays/primary > /tmp/primary.yaml
+          kubectl kustomize infra/kubernetes/overlays/secondary > /tmp/secondary.yaml
+      - name: Validate Compose models
+        env:
+          APP_SECRET: validation-app-secret-with-at-least-thirty-two-characters
+          POSTGRES_PASSWORD: validation-postgres-password
+          SCALE_ADMIN_PASSWORD: Validation-Admin-Password-2026!
+          SEED_ADMIN_PASSWORD: Validation-Admin-Password-2026!
+          MINIO_ROOT_USER: validation
+          MINIO_ROOT_PASSWORD: Validation-Minio-Password-2026!
+          LIVEKIT_API_KEY: validation-key
+          LIVEKIT_API_SECRET: validation-secret
+          TURN_SHARED_SECRET: validation-turn-secret
+          GRAFANA_ADMIN_PASSWORD: Validation-Grafana-Password-2026!
+        run: |
+          docker compose -f infra/docker-compose.scale.yml config --quiet
+          docker compose -f infra/docker-compose.enterprise.yml config --quiet
+      - name: Validate and format-check Route53 module
+        working-directory: infra/multiregion/route53
+        run: |
+          terraform fmt -check
+          terraform init -backend=false
+          terraform validate
+
+  supply-chain-security:
+    name: Dependency, secret and image scanning
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Generate CycloneDX SBOM
+        run: npm sbom --sbom-format cyclonedx > sbom.cdx.json
+      - name: Scan repository, IaC and secrets
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+      - name: Build production image
+        run: docker build -t youtbelimo:${{ github.sha }} .
+      - name: Scan production image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: youtbelimo:${{ github.sha }}
+          scanners: vuln,secret,misconfig
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+          retention-days: 30
+
+  postgres-redis-integration:
+    name: PostgreSQL + Redis integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: youtbelimo
+          POSTGRES_PASSWORD: integration-password
+          POSTGRES_DB: youtbelimo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U youtbelimo -d youtbelimo_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      clamav:
+        image: clamav/clamav:1.4
+        ports:
+          - 3310:3310
+        options: >-
+          --health-cmd "clamdscan --ping 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 30
+          --health-start-period 90s
+      localstack:
+        image: localstack/localstack:4.6
+        env:
+          SERVICES: s3
+        ports:
+          - 4566:4566
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/_localstack/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://youtbelimo:integration-password@127.0.0.1:5432/youtbelimo_test
+      REDIS_URL: redis://127.0.0.1:6379
+      REQUIRE_POSTGRES: 'true'
+      REQUIRE_REDIS: 'true'
+      CLAMAV_HOST: 127.0.0.1
+      CLAMAV_PORT: 3310
+      CLAMAV_REQUIRED: 'true'
+      STORAGE_DRIVER: s3
+      S3_REGION: us-east-1
+      S3_ENDPOINT: http://127.0.0.1:4566
+      S3_PUBLIC_ENDPOINT: http://127.0.0.1:4566
+      S3_BUCKET: youtbelimo-ci
+      S3_ACCESS_KEY_ID: test
+      S3_SECRET_ACCESS_KEY: test
+      S3_FORCE_PATH_STYLE: 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install PostgreSQL backup tools
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Create private S3 test bucket
+        run: aws --endpoint-url http://127.0.0.1:4566 s3 mb s3://youtbelimo-ci
+      - run: npm run build
+      - run: npm test
+
+  browser-e2e:
+    name: Playwright browser E2E
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

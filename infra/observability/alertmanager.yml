@@ -1,0 +1,16 @@
+route:
+  receiver: operations
+  group_by: [alertname, cluster, service]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+receivers:
+  # Alert states are retained and visible in Alertmanager/Grafana. Replace this
+  # receiver in production with email, PagerDuty, Opsgenie or a webhook.
+  - name: operations
+
+inhibit_rules:
+  - source_matchers: [severity="critical"]
+    target_matchers: [severity="warning"]
+    equal: [alertname, instance]

@@ -1,0 +1,101 @@
+name: youtbelimo-scale
+
+x-app: &app
+  build:
+    context: ..
+    dockerfile: Dockerfile
+  environment: &app-env
+    NODE_ENV: production
+    HOST: 0.0.0.0
+    PORT: 4000
+    TRUST_PROXY: "true"
+    SECURE_COOKIES: "false"
+    CLIENT_ORIGIN: http://127.0.0.1:8080
+    APP_SECRET: "${APP_SECRET:?set APP_SECRET}"
+    SEED_ADMIN_EMAIL: scale-admin@example.com
+    SEED_ADMIN_USERNAME: scaleadmin
+    SEED_ADMIN_PASSWORD: "${SCALE_ADMIN_PASSWORD:?set SCALE_ADMIN_PASSWORD}"
+    DATABASE_URL: "postgres://youtbelimo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/youtbelimo"
+    REQUIRE_POSTGRES: "true"
+    REDIS_URL: redis://redis:6379
+    REQUIRE_REDIS: "true"
+    STORAGE_DRIVER: local
+    DATA_DIR: /tmp/youtbelimo
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/ready"]
+    interval: 5s
+    timeout: 3s
+    retries: 30
+  restart: unless-stopped
+  ulimits:
+    nofile:
+      soft: 65535
+      hard: 65535
+
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/scale.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      app-3:
+        condition: service_healthy
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+
+  app-1:
+    <<: *app
+  app-2:
+    <<: *app
+  app-3:
+    <<: *app
+
+  worker:
+    <<: *app
+    command: ["npm", "run", "worker", "--workspace", "server"]
+    environment:
+      <<: *app-env
+      WORKER_METRICS_PORT: 9464
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: youtbelimo
+      POSTGRES_USER: youtbelimo
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
+    command:
+      - postgres
+      - -c
+      - max_connections=300
+      - -c
+      - shared_buffers=512MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youtbelimo -d youtbelimo"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "no", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 30

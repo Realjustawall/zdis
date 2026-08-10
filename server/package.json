@@ -29,7 +29,7 @@
     "@opentelemetry/sdk-node": "^0.221.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@socket.io/redis-emitter": "^5.1.0",
-    "bullmq": "^5.81.2",
+    "bullmq": "^6.0.9",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

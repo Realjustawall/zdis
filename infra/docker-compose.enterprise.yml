@@ -1,0 +1,378 @@
+name: youtbelimo-enterprise
+
+x-app-environment: &app-environment
+  NODE_ENV: production
+  NODE_OPTIONS: "${NODE_OPTIONS:---max-old-space-size=384}"
+  UV_THREADPOOL_SIZE: "${UV_THREADPOOL_SIZE:-4}"
+  MALLOC_ARENA_MAX: "2"
+  HOST: 0.0.0.0
+  PORT: 4000
+  TRUST_PROXY: "true"
+  SECURE_COOKIES: "${SECURE_COOKIES:-false}"
+  CLIENT_ORIGIN: "${PUBLIC_ORIGIN:-http://localhost:8080}"
+  APP_SECRET: "${APP_SECRET:?set APP_SECRET}"
+  SEED_ADMIN_EMAIL: "${SEED_ADMIN_EMAIL:-office@intesho.com}"
+  SEED_ADMIN_USERNAME: "${SEED_ADMIN_USERNAME:-admin}"
+  SEED_ADMIN_PASSWORD: "${SEED_ADMIN_PASSWORD:?set SEED_ADMIN_PASSWORD}"
+  DATABASE_URL: "postgres://youtbelimo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@pgbouncer:5432/youtbelimo"
+  REQUIRE_POSTGRES: "true"
+  REDIS_URL: "redis://redis:6379"
+  REQUIRE_REDIS: "true"
+  POSTGRES_POOL_MAX: "${POSTGRES_POOL_MAX:-8}"
+  JOB_CONCURRENCY: "${JOB_CONCURRENCY:-4}"
+  MEDIA_CONCURRENCY: "${MEDIA_CONCURRENCY:-2}"
+  STORAGE_DRIVER: s3
+  S3_REGION: us-east-1
+  S3_ENDPOINT: http://minio:9000
+  S3_PUBLIC_ENDPOINT: "${S3_PUBLIC_ENDPOINT:-http://localhost:9000}"
+  S3_BUCKET: youtbelimo
+  S3_ACCESS_KEY_ID: "${MINIO_ROOT_USER:?set MINIO_ROOT_USER}"
+  S3_SECRET_ACCESS_KEY: "${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}"
+  S3_FORCE_PATH_STYLE: "true"
+  MEDIA_ORIGINS: "${MEDIA_ORIGINS:-${S3_PUBLIC_ENDPOINT:-http://localhost:9000}}"
+  CLAMAV_HOST: clamav
+  CLAMAV_PORT: 3310
+  CLAMAV_REQUIRED: "true"
+  LIVEKIT_URL: "${PUBLIC_LIVEKIT_URL:-ws://localhost:7880}"
+  LIVEKIT_API_URL: http://livekit:7880
+  LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY}"
+  LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET}"
+  LIVEKIT_EGRESS_ENABLED: "true"
+  TURN_URL: "${PUBLIC_TURN_URL:-turn:localhost:3478}"
+  TURN_SHARED_SECRET: "${TURN_SHARED_SECRET:?set TURN_SHARED_SECRET}"
+  TURN_CREDENTIAL_TTL_SECONDS: "3600"
+  OTEL_SERVICE_NAME: youtbelimo-api
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  METRICS_TOKEN_FILE: /run/secrets/metrics_token
+  SMTP_HOST: "${SMTP_HOST:-}"
+  SMTP_PORT: "${SMTP_PORT:-587}"
+  SMTP_USER: "${SMTP_USER:-}"
+  SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+  SMTP_FROM: "${SMTP_FROM:-}"
+  VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
+  VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-}"
+  VAPID_SUBJECT: "${VAPID_SUBJECT:-mailto:admin@example.com}"
+  BACKUP_RETENTION_DAYS: "${BACKUP_RETENTION_DAYS:-30}"
+  OPENSEARCH_URL: http://opensearch:9200
+  OPENSEARCH_INDEX: youtbelimo-messages-v1
+  OPENSEARCH_REQUIRED: "true"
+
+services:
+  gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+    restart: unless-stopped
+
+  app-1: &app
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment: *app-environment
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+    stop_grace_period: 30s
+    secrets:
+      - metrics_token
+
+  app-2:
+    <<: *app
+
+  worker:
+    <<: *app
+    command: ["npm", "run", "worker", "--workspace", "server"]
+    environment:
+      <<: *app-environment
+      OTEL_SERVICE_NAME: youtbelimo-worker
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9464/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: youtbelimo
+      POSTGRES_USER: youtbelimo
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U youtbelimo -d youtbelimo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  pgbouncer:
+    build:
+      context: ./pgbouncer
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U youtbelimo -d youtbelimo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:3.7.0
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "${OPENSEARCH_JAVA_OPTS:--Xms512m -Xmx512m}"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:?set MINIO_ROOT_USER}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}"
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: "${MINIO_ROOT_USER:?set MINIO_ROOT_USER}"
+      MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}"
+    entrypoint:
+      - /bin/sh
+      - -ec
+      - |
+        mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing local/youtbelimo
+        mc anonymous set none local/youtbelimo
+        mc ilm rule add --expire-days "${BACKUP_RETENTION_DAYS:-30}" --prefix backups/ local/youtbelimo
+
+  clamav:
+    image: clamav/clamav:1.4
+    volumes:
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ["CMD-SHELL", "printf 'PING\\n' | nc 127.0.0.1 3310 | grep PONG"]
+      start_period: 90s
+      interval: 15s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  livekit:
+    image: livekit/livekit-server:v1.12.0
+    command: --config /etc/livekit.yaml
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET}"
+      NODE_IP: "${LIVEKIT_NODE_IP:?set LIVEKIT_NODE_IP}"
+    volumes:
+      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "${LIVEKIT_HTTP_PORT:-7880}:7880"
+      - "7881:7881"
+      - "50000-50100:50000-50100/udp"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  livekit-egress:
+    image: livekit/egress:v1.12.0
+    environment:
+      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY}"
+      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET}"
+      EGRESS_CONFIG_FILE: /etc/egress.yaml
+    volumes:
+      - ./livekit/egress.yaml:/etc/egress.yaml:ro
+    cap_add:
+      - SYS_ADMIN
+    depends_on:
+      livekit:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:4.6.3
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        cp /config/turnserver.conf /tmp/turnserver.conf
+        printf 'realm=%s\nstatic-auth-secret=%s\n' "$$TURN_REALM" "$$TURN_SHARED_SECRET" >> /tmp/turnserver.conf
+        if [ -n "$$TURN_EXTERNAL_IP" ]; then printf 'external-ip=%s\n' "$$TURN_EXTERNAL_IP" >> /tmp/turnserver.conf; fi
+        chmod 600 /tmp/turnserver.conf
+        exec turnserver -c /tmp/turnserver.conf
+    environment:
+      TURN_REALM: "${TURN_REALM:-localhost}"
+      TURN_SHARED_SECRET: "${TURN_SHARED_SECRET:?set TURN_SHARED_SECRET}"
+      TURN_EXTERNAL_IP: "${TURN_EXTERNAL_IP:-}"
+    volumes:
+      - ./coturn/turnserver.conf:/config/turnserver.conf:ro
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.130.1
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./observability/otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - tempo
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=30d"]
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    secrets:
+      - metrics_token
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    volumes:
+      - ./observability/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.17.1
+    environment:
+      DATA_SOURCE_NAME: "postgresql://youtbelimo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/youtbelimo?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.75.0
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.27.0
+    volumes:
+      - ./observability/blackbox.yml:/config/blackbox.yml:ro
+    command: ["--config.file=/config/blackbox.yml"]
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.8.1
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  clamav-db:
+  prometheus-data:
+  tempo-data:
+  grafana-data:
+  alertmanager-data:
+  opensearch-data:
+
+secrets:
+  metrics_token:
+    file: ./secrets/metrics-token.txt

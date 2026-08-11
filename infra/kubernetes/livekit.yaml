@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: livekit-config
+data:
+  livekit.yaml: |
+    port: 7880
+    bind_addresses:
+      - 0.0.0.0
+    rtc:
+      tcp_port: 7881
+      port_range_start: 50000
+      port_range_end: 50100
+      use_external_ip: true
+    redis:
+      cluster_addresses:
+        - redis-cluster-0.redis-cluster-headless:6379
+        - redis-cluster-1.redis-cluster-headless:6379
+        - redis-cluster-2.redis-cluster-headless:6379
+    room:
+      auto_create: false
+      empty_timeout: 300
+      departure_timeout: 20
+    logging:
+      level: info
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit
+  labels: &livekit-labels
+    app.kubernetes.io/name: livekit
+    app.kubernetes.io/component: sfu
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels: *livekit-labels
+  template:
+    metadata:
+      labels: *livekit-labels
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      terminationGracePeriodSeconds: 120
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels: *livekit-labels
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: livekit
+          image: livekit/livekit-server:v1.12.0
+          args: ["--config", "/etc/livekit/livekit.yaml"]
+          env:
+            - name: LIVEKIT_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: youtbelimo-secrets
+                  key: LIVEKIT_KEYS
+          ports:
+            - name: api
+              containerPort: 7880
+            - name: rtc-tcp
+              containerPort: 7881
+              hostPort: 7881
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/livekit
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: api
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+      volumes:
+        - name: config
+          configMap:
+            name: livekit-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit-api
+spec:
+  selector:
+    app.kubernetes.io/name: livekit
+    app.kubernetes.io/component: sfu
+  ports:
+    - name: api
+      port: 7880
+      targetPort: api
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: livekit
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [media.example.com]
+      secretName: media-tls
+  rules:
+    - host: media.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: livekit-api
+                port:
+                  name: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: livekit
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: livekit
+      app.kubernetes.io/component: sfu

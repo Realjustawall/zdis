@@ -1,0 +1,30 @@
+{
+  "id": "/",
+  "name": "sahsha",
+  "short_name": "sahsha",
+  "description": "پیام‌رسان امن و خصوصی برای تیم‌ها و سازندگان محتوا",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#0d0f14",
+  "theme_color": "#5865f2",
+  "categories": ["social", "productivity", "business"],
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "گفتگوها", "short_name": "گفتگوها", "url": "/?view=messages", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] },
+    { "name": "اعلان‌ها", "short_name": "اعلان‌ها", "url": "/?view=notifications", "icons": [{ "src": "/icons/icon.svg", "sizes": "any" }] }
+  ],
+  "share_target": {
+    "action": "/?share=1",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": { "title": "title", "text": "text", "url": "url" }
+  }
+}

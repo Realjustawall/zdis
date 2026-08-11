@@ -1,0 +1,130 @@
+name: Scale and failover
+
+on:
+  workflow_dispatch:
+    inputs:
+      connections:
+        description: Concurrent WebSocket connections (5000-20000)
+        type: choice
+        options: ['5000', '10000', '20000']
+        default: '5000'
+      hold_seconds:
+        description: Hold duration in seconds
+        type: number
+        default: 180
+      run_node_chaos:
+        description: Stop and restart one API node during the hold
+        type: boolean
+        default: true
+  schedule:
+    - cron: '17 2 * * 6'
+
+permissions:
+  contents: read
+
+jobs:
+  websocket-capacity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      APP_SECRET: scale-ci-app-secret-with-at-least-thirty-two-characters
+      POSTGRES_PASSWORD: scale-ci-postgres-password
+      SCALE_ADMIN_PASSWORD: Scale-Admin-CI-Password-2026!
+      LOAD_EMAIL: scale-load@example.com
+      LOAD_PASSWORD: Scale-Load-CI-Password-2026!
+      LOAD_BASE_URL: http://127.0.0.1:8080
+      LOAD_CONNECTIONS: ${{ inputs.connections || '5000' }}
+      LOAD_HOLD_SECONDS: ${{ inputs.hold_seconds || '180' }}
+      LOAD_RAMP_PER_SECOND: '500'
+      LOAD_RECONNECT: 'true'
+      LOAD_MIN_SUCCESS_RATE: '0.99'
+      LOAD_MAX_DISCONNECT_RATE: '0.40'
+      LOAD_REPORT_FILE: scale-report.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Raise client file descriptor ceiling
+        run: ulimit -n 65535
+      - name: Start three-node application cluster
+        run: docker compose -f infra/docker-compose.scale.yml up -d --build --wait
+      - name: Provision dedicated load user
+        run: node tests/load/provision.mjs
+      - name: Run capacity and API-node failover test
+        shell: bash
+        run: |
+          set -euo pipefail
+          ulimit -n 65535
+          node tests/load/realtime-load.mjs &
+          load_pid=$!
+          ramp_seconds=$(( (LOAD_CONNECTIONS + LOAD_RAMP_PER_SECOND - 1) / LOAD_RAMP_PER_SECOND ))
+          sleep $((ramp_seconds + 20))
+          if [[ "${{ inputs.run_node_chaos || 'true' }}" == "true" ]]; then
+            docker compose -f infra/docker-compose.scale.yml stop app-1
+            sleep 20
+            docker compose -f infra/docker-compose.scale.yml start app-1
+          fi
+          wait "$load_pid"
+          node tests/load/capacity-report.mjs
+      - name: Capture cluster diagnostics
+        if: always()
+        run: |
+          docker compose -f infra/docker-compose.scale.yml ps > scale-compose-ps.txt
+          docker compose -f infra/docker-compose.scale.yml logs --no-color > scale-compose.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scale-capacity-report-${{ inputs.connections || '5000' }}
+          path: |
+            scale-report.json
+            capacity-report.md
+            scale-compose-ps.txt
+            scale-compose.log
+          retention-days: 30
+      - name: Tear down cluster
+        if: always()
+        run: docker compose -f infra/docker-compose.scale.yml down -v --remove-orphans
+
+  one-hour-soak:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.connections == '5000' }}
+    needs: websocket-capacity
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      APP_SECRET: soak-ci-app-secret-with-at-least-thirty-two-characters
+      POSTGRES_PASSWORD: soak-ci-postgres-password
+      SCALE_ADMIN_PASSWORD: Soak-Admin-CI-Password-2026!
+      LOAD_EMAIL: scale-load@example.com
+      LOAD_PASSWORD: Soak-Load-CI-Password-2026!
+      LOAD_BASE_URL: http://127.0.0.1:8080
+      LOAD_CONNECTIONS: '5000'
+      LOAD_HOLD_SECONDS: '3600'
+      LOAD_RAMP_PER_SECOND: '500'
+      LOAD_RECONNECT: 'true'
+      LOAD_MIN_SUCCESS_RATE: '0.99'
+      LOAD_MAX_DISCONNECT_RATE: '0.02'
+      LOAD_REPORT_FILE: soak-report.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: docker compose -f infra/docker-compose.scale.yml up -d --build --wait
+      - run: node tests/load/provision.mjs
+      - run: ulimit -n 65535 && node tests/load/realtime-load.mjs
+      - run: node tests/load/capacity-report.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: one-hour-soak-report
+          path: |
+            soak-report.json
+            capacity-report.md
+          retention-days: 30
+      - if: always()
+        run: docker compose -f infra/docker-compose.scale.yml down -v --remove-orphans

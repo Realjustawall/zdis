@@ -1,0 +1,117 @@
+# Requires CloudNativePG >=1.28, cert-manager and the Barman Cloud CNPG-I
+# plugin. Apply only after replacing bucket, endpoint and secret references.
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: postgres-object-store
+spec:
+  retentionPolicy: 30d
+  configuration:
+    destinationPath: s3://REPLACE_BACKUP_BUCKET/postgres/
+    endpointURL: https://REPLACE_S3_ENDPOINT
+    s3Credentials:
+      accessKeyId:
+        name: postgres-backup-credentials
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: postgres-backup-credentials
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+      maxParallel: 8
+    data:
+      compression: gzip
+---
+# One primary, two synchronous-capable replicas, automated failover,
+# anti-affinity, continuous WAL archiving and backups from a standby.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  failoverDelay: 30
+  switchoverDelay: 3600
+  minSyncReplicas: 1
+  maxSyncReplicas: 1
+  bootstrap:
+    initdb:
+      database: youtbelimo
+      owner: app
+      secret:
+        name: postgres-app
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: postgres-object-store
+  backup:
+    target: prefer-standby
+  storage:
+    size: 100Gi
+  walStorage:
+    size: 20Gi
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "4"
+      memory: 8Gi
+  affinity:
+    topologyKey: topology.kubernetes.io/zone
+  monitoring:
+    enablePodMonitor: true
+  postgresql:
+    parameters:
+      max_connections: "300"
+      shared_buffers: 1GB
+      wal_compression: "on"
+      archive_timeout: 5min
+      log_checkpoints: "on"
+---
+# PgBouncer is the normal application endpoint:
+# postgres-pooler-rw.youtbelimo.svc:5432
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: postgres-pooler-rw
+spec:
+  cluster:
+    name: postgres
+  instances: 3
+  type: rw
+  pgbouncer:
+    poolMode: transaction
+    parameters:
+      max_client_conn: "5000"
+      default_pool_size: "50"
+      reserve_pool_size: "10"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-daily-object-backup
+spec:
+  schedule: "0 0 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: postgres
+  method: plugin
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io
+  immediate: true
+---
+# Independent CSI snapshot: fast RTO even when object recovery is slower.
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: postgres-daily-snapshot
+spec:
+  schedule: "0 30 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: postgres
+  method: volumeSnapshot
+  immediate: true

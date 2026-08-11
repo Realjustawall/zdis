@@ -1,0 +1,176 @@
+ZDis Source-Available Non-Commercial License
+Version 1.0
+
+Copyright (c) 2026 Realjustawall
+All rights reserved except as expressly granted by this License.
+
+IMPORTANT: THIS IS A SOURCE-AVAILABLE LICENSE, NOT AN OPEN-SOURCE LICENSE.
+Commercial use requires a separate commercial license from the copyright holder.
+
+1. Definitions
+
+"Software" means the ZDis software, source code, object code, documentation,
+configuration files, and other materials distributed with this License.
+
+"Non-Commercial Use" means use that is not primarily intended for or directed
+toward commercial advantage, business operations, revenue generation, monetary
+compensation, or any other commercial benefit.
+
+"Commercial Use" includes, without limitation:
+
+(a) using the Software, in whole or in part, in connection with a business,
+    company, commercial organization, paid service, or revenue-generating
+    activity;
+
+(b) using the Software internally by or for a for-profit organization;
+
+(c) hosting, operating, providing, or making the Software or a derivative work
+    available as a paid service, SaaS offering, managed service, hosted service,
+    subscription, or other commercial product;
+
+(d) selling, licensing, sublicensing, renting, leasing, or otherwise charging
+    for access to the Software or a derivative work;
+
+(e) including the Software or a derivative work in a commercial product,
+    platform, service, appliance, or offering;
+
+(f) using the Software to provide paid consulting, integration, support,
+    development, deployment, or other services where the Software is a material
+    part of the service being provided; or
+
+(g) any other use whose purpose or effect is to obtain direct or indirect
+    commercial advantage or monetary compensation.
+
+2. Non-Commercial License Grant
+
+Subject to the terms of this License, the copyright holder grants you a
+non-exclusive, worldwide, non-transferable, royalty-free license to use, copy,
+study, modify, and create derivative works of the Software solely for
+Non-Commercial Use.
+
+You may redistribute the Software or derivative works for Non-Commercial Use
+provided that:
+
+(a) this License and all copyright notices are preserved;
+
+(b) you clearly state that your distribution is modified if you made material
+    changes;
+
+(c) you do not represent your distribution as an official release unless
+    authorized by the copyright holder; and
+
+(d) you do not impose terms that purport to grant Commercial Use rights to the
+    Software.
+
+3. Commercial Use Requires a Separate License
+
+No Commercial Use rights are granted under this License.
+
+Before making any Commercial Use of the Software, you must obtain a separate
+written commercial license from the copyright holder.
+
+Commercial licensing inquiries should be directed to the copyright holder
+through the repository owner's published contact channels.
+
+A commercial license may include separate pricing, usage limits, support terms,
+deployment rights, redistribution rights, branding rights, warranty terms, or
+other conditions agreed in writing.
+
+4. No Trademark or Branding License
+
+This License does not grant permission to use the names, logos, trademarks,
+service marks, branding, or trade dress of ZDis, Realjustawall, or any related
+project except as reasonably necessary to describe the origin of the Software.
+
+5. Third-Party Components
+
+The Software may include or depend on third-party components distributed under
+their own licenses. Those components remain governed by their respective
+licenses. Nothing in this License is intended to restrict rights granted by a
+third-party license or to replace that license.
+
+6. Attribution and Notices
+
+You must preserve all copyright, attribution, license, and legal notices
+contained in the Software.
+
+If you distribute a modified version, you must not remove or obscure notices
+identifying the original copyright holder.
+
+7. Restrictions
+
+Except as expressly allowed by this License or a separate written commercial
+license, you may not:
+
+(a) use the Software for Commercial Use;
+
+(b) grant, sell, or represent that you possess Commercial Use rights;
+
+(c) remove or alter this License or applicable copyright notices;
+
+(d) use the Software in a way that infringes third-party rights or violates
+    applicable law; or
+
+(e) use the copyright holder's name or branding to imply sponsorship,
+    endorsement, or affiliation without prior written permission.
+
+8. Contributions
+
+Unless a separate written contribution agreement applies, any contribution you
+intentionally submit to the copyright holder for inclusion in the Software is
+licensed to the copyright holder on terms sufficient to use, modify, reproduce,
+distribute, sublicense, and commercially license that contribution as part of
+the Software.
+
+You represent that you have the right to submit such contribution.
+
+9. Termination
+
+Your rights under this License terminate automatically if you materially breach
+its terms and fail to cure the breach within 30 days after becoming aware of it.
+
+Rights terminated for intentional or repeated Commercial Use without a required
+commercial license may be reinstated only with the copyright holder's written
+permission.
+
+Upon termination, you must stop exercising rights granted by this License.
+Sections intended by their nature to survive termination, including warranty
+disclaimers and limitations of liability, will survive.
+
+10. Disclaimer of Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+NON-INFRINGEMENT.
+
+YOU ARE SOLELY RESPONSIBLE FOR DETERMINING WHETHER THE SOFTWARE IS SUITABLE FOR
+YOUR USE AND FOR OPERATING IT SAFELY AND LAWFULLY.
+
+11. Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, CONSEQUENTIAL, OR OTHER DAMAGES, OR FOR ANY
+LOSS OF DATA, PROFITS, REVENUE, BUSINESS, GOODWILL, OR SERVICE INTERRUPTION,
+ARISING FROM OR RELATED TO THE SOFTWARE OR THIS LICENSE, HOWEVER CAUSED AND
+UNDER ANY THEORY OF LIABILITY.
+
+12. Separate Agreements
+
+A separate written agreement signed or otherwise expressly accepted by the
+copyright holder may grant additional rights or replace some or all terms of
+this License for the parties to that agreement.
+
+13. Severability
+
+If any provision of this License is held unenforceable, the remaining
+provisions will remain in effect to the maximum extent permitted by law.
+
+14. Entire License
+
+This License states the permissions granted for Non-Commercial Use of the
+Software unless a separate written agreement applies.
+
+By using, copying, modifying, or distributing the Software, you agree to the
+terms of this License.

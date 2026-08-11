@@ -1,0 +1,88 @@
+groups:
+  - name: youtbelimo-sla
+    rules:
+      - alert: ServiceProbeFailed
+        expr: probe_success == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Synthetic probe failed for {{ $labels.instance }}"
+
+      - alert: ApiInstanceDown
+        expr: up{job="youtbelimo"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API instance {{ $labels.instance }} is down"
+
+      - alert: ElevatedHttpErrorRate
+        expr: |
+          (
+            sum(rate(youtbelimo_http_request_duration_seconds_count{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(youtbelimo_http_request_duration_seconds_count[5m])), 0.001)
+          ) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          slo: availability
+        annotations:
+          summary: "More than 1% of API requests return 5xx"
+
+      - alert: ApiP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(youtbelimo_http_request_duration_seconds_bucket[5m]))
+          ) > 0.75
+        for: 10m
+        labels:
+          severity: warning
+          slo: latency
+        annotations:
+          summary: "API p95 latency is above 750 ms"
+
+      - alert: PostgreSQLUnavailable
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL exporter cannot reach the database"
+
+      - alert: RedisUnavailable
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis exporter cannot reach Redis"
+
+      - alert: RedisMemoryPressure
+        expr: redis_memory_used_bytes / clamp_min(redis_memory_max_bytes, 1) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis is using more than 85% of configured memory"
+
+      - alert: BackupTooOld
+        expr: |
+          (time() - max(youtbelimo_backup_last_success_timestamp_seconds) > 93600)
+          or absent(youtbelimo_backup_last_success_timestamp_seconds)
+        for: 15m
+        labels:
+          severity: critical
+          slo: recovery
+        annotations:
+          summary: "No successful application backup in the last 26 hours"
+
+      - alert: BackgroundJobFailures
+        expr: sum(increase(youtbelimo_background_jobs_total{status="failed"}[15m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "One or more background jobs failed"

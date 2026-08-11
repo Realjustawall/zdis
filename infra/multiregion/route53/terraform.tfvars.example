@@ -1,0 +1,16 @@
+zone_id              = "Z0123456789EXAMPLE"
+global_chat_name      = "chat.example.com"
+primary_origin_name   = "primary.chat.example.com"
+secondary_origin_name = "secondary.chat.example.com"
+media_name            = "media.example.com"
+
+media_regions = {
+  eu-central-1 = {
+    aws_region = "eu-central-1"
+    dns_name   = "eu-media.example.com"
+  }
+  me-central-1 = {
+    aws_region = "me-central-1"
+    dns_name   = "me-media.example.com"
+  }
+}

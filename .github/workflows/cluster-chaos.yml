@@ -1,0 +1,53 @@
+name: Kubernetes failover drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Component whose pod will be deleted
+        type: choice
+        options: [api, redis, postgres]
+        required: true
+      base_url:
+        description: Ready-probe base URL of the isolated test cluster
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  failover:
+    environment: chaos-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install isolated test-cluster kubeconfig
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.CHAOS_TEST_KUBECONFIG }}
+        run: |
+          mkdir -p "$HOME/.kube"
+          printf '%s' "$KUBECONFIG_CONTENT" > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+      - name: Prove selected context and namespace
+        run: |
+          kubectl config current-context
+          kubectl --namespace youtbelimo get deployments
+      - name: Execute bounded failover drill
+        env:
+          CHAOS_CONFIRM: 'yes'
+          CHAOS_TARGET: ${{ inputs.target }}
+          CHAOS_BASE_URL: ${{ inputs.base_url }}
+          CHAOS_NAMESPACE: youtbelimo
+          CHAOS_MAX_RECOVERY_SECONDS: '180'
+        run: node tests/load/kubernetes-failover.mjs | tee failover-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: failover-${{ inputs.target }}
+          path: failover-report.json
+          retention-days: 90

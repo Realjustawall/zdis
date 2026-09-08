@@ -16,7 +16,7 @@ instructions are in [docs/ENTERPRISE.md](docs/ENTERPRISE.md).
 For a complete one-command Ubuntu installation see
 [docs/UBUNTU_INSTALL.md](docs/UBUNTU_INSTALL.md).
 
-ZDIS is a private chat platform for creators, YouTubers and their teams — text
+ZDIS is a private chat platform for creators , developers and also companies that contain
 channels, direct messages, voice/video calls and file sharing, with every
 account provisioned by an administrator.
 

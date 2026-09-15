@@ -388,7 +388,7 @@ Three platform roles, set by an administrator:
 | Role         | Can do                                                                                                                                                                                                      |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **admin**    | Everything below, plus the admin panel: create/edit/disable/delete accounts, reset passwords and 2FA, force sign-outs, delete any group, change server settings, read the audit log. Moderates every group. |
-| **youtuber** | Creates their own groups and becomes owner. Adds people from the member directory straight into their group, issues invite codes, promotes moderators, manages channels. This is the intended primary role. |
+| **staff** | Creates their own groups and becomes owner. Adds people from the member directory straight into their group, issues invite codes, promotes moderators, manages channels. This is the intended primary role. |
 | **member**   | Joins groups they are added to or invited to, DMs anyone, takes part in voice. Cannot create groups by default (an admin can switch this on).                                                               |
 
 Every account can see every other account in the **member directory** and start

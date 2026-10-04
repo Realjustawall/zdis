@@ -31,7 +31,7 @@ Object.assign(process.env, {
 
 await import('../server/src/index.js');
 for (let attempt = 0; attempt < 100; attempt++) {
-  if (await fetch(process.env.PUBLIC_URL + '/api/health/ready').then(r => r.ok).catch(() => false)) break;
+  if (await fetch(process.env.PUBLIC_URL + '/api/ready').then(r => r.ok).catch(() => false)) break;
   await new Promise(resolve => setTimeout(resolve, 100));
 }
 

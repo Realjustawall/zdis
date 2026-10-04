@@ -24,7 +24,8 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchLabels: *labels
+    matchLabels:
+      app.kubernetes.io/name: livekit-egress
   template:
     metadata:
       labels: *labels
@@ -83,7 +84,8 @@ metadata:
 spec:
   minAvailable: 1
   selector:
-    matchLabels: *labels
+    matchLabels:
+      app.kubernetes.io/name: livekit-egress
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler

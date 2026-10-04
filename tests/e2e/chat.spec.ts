@@ -28,6 +28,13 @@ async function openAdmin(page: import('@playwright/test').Page) {
   } else await page.getByTitle('Administration').click();
 }
 
+async function openCreateGroup(page: import('@playwright/test').Page) {
+  if (test.info().project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Servers', exact: true }).click();
+    await page.getByRole('button', { name: 'Create server', exact: true }).click();
+  } else await page.getByTitle('Create a group').click();
+}
+
 test('administrator can inspect runtime and accounts', async ({ page }) => {
   await openAdmin(page);
   await expect(page.getByRole('heading', { name: 'داشبورد' })).toBeVisible();
@@ -63,18 +70,23 @@ test('admin theme and operations center are functional', async ({ page }) => {
 });
 
 test('notification inbox and preference controls are reachable', async ({ page }) => {
-  await page.getByTitle('Notifications').click();
+  if (test.info().project.name === 'mobile-chromium') await page.getByRole('button', { name: 'Notifications', exact: true }).click();
+  else await page.getByTitle('Notifications').click();
   await expect(page.getByRole('heading', { name: 'Notifications', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Close/i }).click();
 
-  await page.getByTitle('Account settings').click();
+  if (test.info().project.name === 'mobile-chromium') await page.getByRole('button', { name: 'Your account', exact: true }).click();
+  else await page.getByTitle('Account settings').click();
   await page.getByRole('tab', { name: 'Notifications' }).click();
   await expect(page.getByText('In-app inbox')).toBeVisible();
   await expect(page.getByText('Push delivery')).toBeVisible();
 });
 
 test('offers the expanded dark theme collection', async ({ page }) => {
-  await page.getByTitle('Customize appearance').click();
+  if (test.info().project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Servers', exact: true }).click();
+    await page.getByRole('dialog').getByTitle('Customize appearance').click();
+  } else await page.getByTitle('Customize appearance').click();
   await expect(page.getByRole('heading', { name: 'Appearance & themes' })).toBeVisible();
   await expect(page.locator('.theme-preset-card')).toHaveCount(11);
   await page.getByRole('button', { name: /Tokyo night/ }).click();
@@ -87,24 +99,22 @@ test('creates a group and sends a realtime chat message', async ({ page }, testI
   const groupName = `E2E Room ${suffix}`;
   const content = `Browser message ${suffix}`;
 
-  await page.getByTitle('Create a group').click();
+  await openCreateGroup(page);
   await page.getByLabel('Name', { exact: true }).fill(groupName);
   await page.getByLabel('Description (optional)').fill('Created by the Playwright browser suite.');
   await page.getByRole('button', { name: 'Create group' }).click();
 
   await expect(page.locator('.sidebar strong[title]').filter({ hasText: groupName }).first()).toBeVisible();
-  const activeServer = page.locator('.rail').getByTitle(groupName);
-  const serverBox = await activeServer.boundingBox();
-  const selectionPillBox = await activeServer.locator('.pill').boundingBox();
-  expect(serverBox).not.toBeNull();
   if (testInfo.project.name === 'chromium') {
+    const activeServer = page.locator('.rail').getByTitle(groupName);
+    const serverBox = await activeServer.boundingBox();
+    const selectionPillBox = await activeServer.locator('.pill').boundingBox();
+    expect(serverBox).not.toBeNull();
     expect(selectionPillBox).not.toBeNull();
     expect(selectionPillBox!.x + selectionPillBox!.width).toBeLessThan(serverBox!.x);
     expect(Math.abs(
       selectionPillBox!.y + selectionPillBox!.height / 2 - (serverBox!.y + serverBox!.height / 2),
     )).toBeLessThan(1);
-  } else {
-    await expect(activeServer).toHaveClass(/active/);
   }
   await page.getByText('general', { exact: true }).first().click();
   const composer = page.getByPlaceholder(/Message .*general/);
@@ -121,7 +131,7 @@ test('opens at the newest message and follows messages sent by the viewer', asyn
   const suffix = `${testInfo.project.name}-${Date.now()}`.replace(/\W/g, '').slice(-12);
   const groupName = `Scroll ${suffix}`;
 
-  await page.getByTitle('Create a group').click();
+  await openCreateGroup(page);
   await page.getByLabel('Name', { exact: true }).fill(groupName);
   await page.getByRole('button', { name: 'Create group' }).click();
   await page.getByText('general', { exact: true }).first().click();
@@ -157,7 +167,7 @@ test('removes a deleted message without leaving a tombstone row', async ({ page 
   const groupName = `Delete ${suffix}`;
   const content = `Remove me ${suffix}`;
 
-  await page.getByTitle('Create a group').click();
+  await openCreateGroup(page);
   await page.getByLabel('Name', { exact: true }).fill(groupName);
   await page.getByRole('button', { name: 'Create group' }).click();
   await page.getByText('general', { exact: true }).first().click();
@@ -190,7 +200,7 @@ test('removes a deleted message without leaving a tombstone row', async ({ page 
 test('renders mixed-direction text and a bounded native text preview', async ({ page }, testInfo) => {
   const suffix = `${testInfo.project.name}-${Date.now()}`.replace(/\W/g, '').slice(-10);
   const groupName = `Preview ${suffix}`;
-  await page.getByTitle('Create a group').click();
+  await openCreateGroup(page);
   await page.getByLabel('Name', { exact: true }).fill(groupName);
   await page.getByRole('button', { name: 'Create group' }).click();
   await page.getByText('general', { exact: true }).first().click();

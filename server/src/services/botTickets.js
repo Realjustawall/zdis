@@ -37,7 +37,7 @@ export async function createBotTicket(groupId,user,topic){
  try{await db.tx(async tx=>{
   if(db.dialect==='postgres')await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[ctx.group.owner_id]);
   duplicate=await tx.get("SELECT * FROM builtin_bot_tickets WHERE group_id=? AND user_id=? AND status!='closed'",[groupId,user.id]);if(duplicate)return;
-  await assertUserLimit(ctx.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE group_id=?',[groupId])).count));
+  await assertUserLimit(ctx.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE group_id=?',[groupId])).count),tx);
   await tx.run('INSERT INTO channels(id,group_id,category_id,name,topic,type,is_private,permissions_synced,created_at,updated_at) VALUES (?,?,?,?,?,?,1,0,?,?)',[channelId,groupId,settings.moderator.ticketCategoryId,'ticket-'+user.username.slice(0,20),topic,'text',now,now]);
   await tx.run('INSERT INTO channel_members(channel_id,user_id,added_at) VALUES (?,?,?)',[channelId,user.id,now]);
   await tx.run('INSERT INTO builtin_bot_tickets(id,group_id,channel_id,user_id,created_at) VALUES (?,?,?,?,?)',[id,groupId,channelId,user.id,now]);
@@ -66,7 +66,7 @@ export async function updateBotTicket(groupId,user,ticketId,action){
   if(!closed&&ticket.status==='closed'&&ticket.user_id&&await db.get("SELECT id FROM builtin_bot_tickets WHERE group_id=? AND user_id=? AND status!='closed' AND id!=?",[groupId,ticket.user_id,ticketId]))throw conflict('This member already has another open ticket.');
   await db.tx(async tx=>{
    await tx.run('UPDATE builtin_bot_tickets SET status=?,closed_at=? WHERE id=?',[closed?'closed':'open',closed?Date.now():null,ticketId]);
-   if(ticket.user_id)await setChannelOverride({groupId,channelId:ticket.channel_id,targetType:'member',targetId:ticket.user_id,allow:closed?['viewChannel','readMessageHistory']:['viewChannel','readMessageHistory','sendMessages'],deny:closed?['sendMessages']:[],updatedBy:user.id});
+   if(ticket.user_id)await setChannelOverride({groupId,channelId:ticket.channel_id,targetType:'member',targetId:ticket.user_id,allow:closed?['viewChannel','readMessageHistory']:['viewChannel','readMessageHistory','sendMessages'],deny:closed?['sendMessages']:[],updatedBy:user.id},tx);
   });
  }
  await audit({actorId:user.id,action:'bot.ticket_'+action,targetType:'channel',targetId:ticket.channel_id,meta:{groupId,ticketId}});

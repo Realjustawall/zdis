@@ -116,12 +116,12 @@ export async function setChannelOverride({
   allow,
   deny,
   updatedBy,
-}) {
+}, db = getDb()) {
   const normalizedAllow = normalizeServerPermissions(allow);
   const normalizedDeny = normalizeServerPermissions(deny).filter(
     (permission) => !normalizedAllow.includes(permission),
   );
-  await getDb().run(
+  await db.run(
     `INSERT INTO channel_permission_overrides
       (channel_id, group_id, target_type, target_id, allow_permissions, deny_permissions, updated_by, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -140,7 +140,7 @@ export async function setChannelOverride({
       Date.now(),
     ],
   );
-  await getDb().run(
+  await db.run(
     'UPDATE channels SET permissions_synced = 0, updated_at = ? WHERE id = ?',
     [Date.now(), channelId],
   );

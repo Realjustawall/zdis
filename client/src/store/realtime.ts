@@ -48,11 +48,11 @@ export const useRealtime = create<RealtimeState>((set, get) => ({
       reconnectionDelayMax: 6000,
     });
 
-    socket.on('connect', () => set({ connected: true }));
+    socket.on('connect', () => set({ connected: false }));
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on('ready', (payload: { voice: Record<string, VoiceParticipant[]> }) => {
-      set({ voice: payload.voice ?? {} });
+      set({ connected: true, voice: payload.voice ?? {} });
     });
     socket.on('voice:moved',async(payload:{fromChannelId:string;channelId:string})=>{
       const {useVoice}=await import('./voice');

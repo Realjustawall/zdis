@@ -104,6 +104,8 @@ export async function initRealtime(httpServer) {
     });
 
     socket.join(rooms.user(userId));
+    registerTypingHandlers(socket);
+    registerVoiceHandlers(socket, io);
     await joinUserRooms(socket, userId);
 
     const previous = socketsByUser.get(userId) ?? 0;
@@ -118,9 +120,6 @@ export async function initRealtime(httpServer) {
       userId,
       voice: await voiceSnapshot(userId),
     });
-
-    registerTypingHandlers(socket);
-    registerVoiceHandlers(socket, io);
 
     socket.on('presence:set', async (payload) => {
       const presence = ['online', 'idle', 'dnd', 'offline'].includes(payload?.presence)

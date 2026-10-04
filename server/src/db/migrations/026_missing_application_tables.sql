@@ -1,5 +1,4 @@
--- Restore tables missing from the supplied empty enterprise migration.
--- Explicit keys match the ON CONFLICT targets used by application services.
+-- Create referenced parent tables before dependents on both SQLite and PostgreSQL.
 
 CREATE TABLE IF NOT EXISTS voice_activities (
   channel_id TEXT NOT NULL,
@@ -12,10 +11,6 @@ CREATE TABLE IF NOT EXISTS voice_activities (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_voice_activities_channel_id ON voice_activities (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_voice_activities_created_at ON voice_activities (created_at);
-
 CREATE TABLE IF NOT EXISTS e2ee_identities (
   user_id TEXT NOT NULL,
   public_key TEXT,
@@ -25,10 +20,6 @@ CREATE TABLE IF NOT EXISTS e2ee_identities (
   PRIMARY KEY (user_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_e2ee_identities_user_id ON e2ee_identities (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_e2ee_identities_created_at ON e2ee_identities (created_at);
 
 CREATE TABLE IF NOT EXISTS group_expressions (
   id TEXT NOT NULL,
@@ -42,10 +33,6 @@ CREATE TABLE IF NOT EXISTS group_expressions (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
   FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_group_expressions_group_id ON group_expressions (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_group_expressions_created_at ON group_expressions (created_at);
 
 CREATE TABLE IF NOT EXISTS server_events (
   id TEXT NOT NULL,
@@ -65,12 +52,6 @@ CREATE TABLE IF NOT EXISTS server_events (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_server_events_group_id ON server_events (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_events_channel_id ON server_events (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_events_created_at ON server_events (created_at);
-
 CREATE TABLE IF NOT EXISTS event_rsvps (
   event_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
@@ -80,8 +61,6 @@ CREATE TABLE IF NOT EXISTS event_rsvps (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (event_id) REFERENCES server_events(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_event_rsvps_user_id ON event_rsvps (user_id);
 
 CREATE TABLE IF NOT EXISTS server_boosts (
   id TEXT NOT NULL,
@@ -94,10 +73,6 @@ CREATE TABLE IF NOT EXISTS server_boosts (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_server_boosts_user_id ON server_boosts (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_boosts_group_id ON server_boosts (group_id);
 
 CREATE TABLE IF NOT EXISTS subscription_tiers (
   id TEXT NOT NULL,
@@ -113,10 +88,6 @@ CREATE TABLE IF NOT EXISTS subscription_tiers (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_subscription_tiers_group_id ON subscription_tiers (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_subscription_tiers_created_at ON subscription_tiers (created_at);
-
 CREATE TABLE IF NOT EXISTS server_subscriptions (
   cancelled_at BIGINT,
   id TEXT NOT NULL,
@@ -131,10 +102,6 @@ CREATE TABLE IF NOT EXISTS server_subscriptions (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_server_subscriptions_user_id ON server_subscriptions (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_subscriptions_group_id ON server_subscriptions (group_id);
-
 CREATE TABLE IF NOT EXISTS server_timeouts (
   group_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
@@ -147,12 +114,6 @@ CREATE TABLE IF NOT EXISTS server_timeouts (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_server_timeouts_user_id ON server_timeouts (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_timeouts_group_id ON server_timeouts (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_timeouts_created_at ON server_timeouts (created_at);
-
 CREATE TABLE IF NOT EXISTS server_bans (
   group_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
@@ -163,12 +124,6 @@ CREATE TABLE IF NOT EXISTS server_bans (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_server_bans_user_id ON server_bans (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_bans_group_id ON server_bans (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_server_bans_created_at ON server_bans (created_at);
 
 CREATE TABLE IF NOT EXISTS automod_rules (
   id TEXT NOT NULL,
@@ -186,10 +141,6 @@ CREATE TABLE IF NOT EXISTS automod_rules (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_automod_rules_group_id ON automod_rules (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_automod_rules_created_at ON automod_rules (created_at);
-
 CREATE TABLE IF NOT EXISTS channel_follows (
   source_channel_id TEXT NOT NULL,
   target_channel_id TEXT NOT NULL,
@@ -197,8 +148,6 @@ CREATE TABLE IF NOT EXISTS channel_follows (
   created_at BIGINT,
   PRIMARY KEY (source_channel_id, target_channel_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_channel_follows_created_at ON channel_follows (created_at);
 
 CREATE TABLE IF NOT EXISTS oauth_apps (
   id TEXT NOT NULL,
@@ -216,8 +165,6 @@ CREATE TABLE IF NOT EXISTS oauth_apps (
   UNIQUE (client_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_oauth_apps_created_at ON oauth_apps (created_at);
-
 CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
   code_hash TEXT NOT NULL,
   app_id TEXT,
@@ -230,7 +177,18 @@ CREATE TABLE IF NOT EXISTS oauth_authorization_codes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_oauth_authorization_codes_user_id ON oauth_authorization_codes (user_id);
+CREATE TABLE IF NOT EXISTS bots (
+  id TEXT NOT NULL,
+  user_id TEXT,
+  owner_id TEXT,
+  name TEXT,
+  description TEXT,
+  created_at BIGINT,
+  active INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (id),
+  UNIQUE (user_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
 CREATE TABLE IF NOT EXISTS bot_installations (
   bot_id TEXT NOT NULL,
@@ -244,10 +202,6 @@ CREATE TABLE IF NOT EXISTS bot_installations (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
   FOREIGN KEY (bot_id) REFERENCES bots(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_bot_installations_group_id ON bot_installations (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_bot_installations_created_at ON bot_installations (created_at);
 
 CREATE TABLE IF NOT EXISTS slash_commands (
   id TEXT NOT NULL,
@@ -264,10 +218,6 @@ CREATE TABLE IF NOT EXISTS slash_commands (
   FOREIGN KEY (bot_id) REFERENCES bots(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_slash_commands_group_id ON slash_commands (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_slash_commands_created_at ON slash_commands (created_at);
-
 CREATE TABLE IF NOT EXISTS slash_command_permissions (
   command_id TEXT NOT NULL,
   group_id TEXT NOT NULL,
@@ -279,8 +229,6 @@ CREATE TABLE IF NOT EXISTS slash_command_permissions (
   PRIMARY KEY (command_id, group_id, target_type, target_id),
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_slash_command_permissions_group_id ON slash_command_permissions (group_id);
 
 CREATE TABLE IF NOT EXISTS incoming_webhooks (
   id TEXT NOT NULL,
@@ -297,10 +245,6 @@ CREATE TABLE IF NOT EXISTS incoming_webhooks (
   FOREIGN KEY (bot_id) REFERENCES bots(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_incoming_webhooks_channel_id ON incoming_webhooks (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_incoming_webhooks_created_at ON incoming_webhooks (created_at);
-
 CREATE TABLE IF NOT EXISTS automod_actions (
   id TEXT NOT NULL,
   group_id TEXT,
@@ -316,14 +260,6 @@ CREATE TABLE IF NOT EXISTS automod_actions (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_automod_actions_user_id ON automod_actions (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_automod_actions_group_id ON automod_actions (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_automod_actions_channel_id ON automod_actions (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_automod_actions_created_at ON automod_actions (created_at);
-
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id TEXT NOT NULL,
   user_id TEXT,
@@ -337,10 +273,6 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_push_subscriptions_created_at ON push_subscriptions (created_at);
-
 CREATE TABLE IF NOT EXISTS user_activities (
   user_id TEXT NOT NULL,
   type TEXT,
@@ -353,8 +285,6 @@ CREATE TABLE IF NOT EXISTS user_activities (
   PRIMARY KEY (user_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities (user_id);
 
 CREATE TABLE IF NOT EXISTS call_transcript_segments (
   id TEXT NOT NULL,
@@ -370,10 +300,6 @@ CREATE TABLE IF NOT EXISTS call_transcript_segments (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_call_transcript_segments_channel_id ON call_transcript_segments (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_call_transcript_segments_created_at ON call_transcript_segments (created_at);
-
 CREATE TABLE IF NOT EXISTS call_lobby (
   channel_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
@@ -386,10 +312,6 @@ CREATE TABLE IF NOT EXISTS call_lobby (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_call_lobby_user_id ON call_lobby (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_call_lobby_channel_id ON call_lobby (channel_id);
-
 CREATE TABLE IF NOT EXISTS call_consents (
   channel_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
@@ -400,10 +322,6 @@ CREATE TABLE IF NOT EXISTS call_consents (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_call_consents_user_id ON call_consents (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_call_consents_channel_id ON call_consents (channel_id);
 
 CREATE TABLE IF NOT EXISTS stage_members (
   channel_id TEXT NOT NULL,
@@ -416,10 +334,6 @@ CREATE TABLE IF NOT EXISTS stage_members (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_stage_members_user_id ON stage_members (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_stage_members_channel_id ON stage_members (channel_id);
 
 CREATE TABLE IF NOT EXISTS call_recordings (
   id TEXT NOT NULL,
@@ -434,8 +348,6 @@ CREATE TABLE IF NOT EXISTS call_recordings (
   PRIMARY KEY (id),
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_call_recordings_channel_id ON call_recordings (channel_id);
 
 CREATE TABLE IF NOT EXISTS call_quality_samples (
   id TEXT NOT NULL,
@@ -453,12 +365,6 @@ CREATE TABLE IF NOT EXISTS call_quality_samples (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_call_quality_samples_user_id ON call_quality_samples (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_call_quality_samples_channel_id ON call_quality_samples (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_call_quality_samples_created_at ON call_quality_samples (created_at);
-
 CREATE TABLE IF NOT EXISTS call_rooms (
   channel_id TEXT NOT NULL,
   host_id TEXT,
@@ -471,10 +377,6 @@ CREATE TABLE IF NOT EXISTS call_rooms (
   FOREIGN KEY (channel_id) REFERENCES channels(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_call_rooms_channel_id ON call_rooms (channel_id);
-
-CREATE INDEX IF NOT EXISTS idx_call_rooms_created_at ON call_rooms (created_at);
-
 CREATE TABLE IF NOT EXISTS e2ee_migration_backups (
   record_type TEXT NOT NULL,
   record_id TEXT NOT NULL,
@@ -482,8 +384,6 @@ CREATE TABLE IF NOT EXISTS e2ee_migration_backups (
   created_at BIGINT,
   PRIMARY KEY (record_type, record_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_e2ee_migration_backups_created_at ON e2ee_migration_backups (created_at);
 
 CREATE TABLE IF NOT EXISTS notification_dead_letters (
   resolved_by TEXT,
@@ -512,8 +412,6 @@ CREATE TABLE IF NOT EXISTS message_drafts (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_message_drafts_user_id ON message_drafts (user_id);
-
 CREATE TABLE IF NOT EXISTS scheduled_messages (
   attempts INTEGER NOT NULL DEFAULT 0,
   id TEXT NOT NULL,
@@ -537,10 +435,6 @@ CREATE TABLE IF NOT EXISTS scheduled_messages (
   FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_scheduled_messages_user_id ON scheduled_messages (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_scheduled_messages_created_at ON scheduled_messages (created_at);
-
 CREATE TABLE IF NOT EXISTS polls (
   id TEXT NOT NULL,
   message_id TEXT,
@@ -557,8 +451,6 @@ CREATE TABLE IF NOT EXISTS polls (
   FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_polls_created_at ON polls (created_at);
-
 CREATE TABLE IF NOT EXISTS poll_options (
   id TEXT NOT NULL,
   poll_id TEXT,
@@ -569,8 +461,6 @@ CREATE TABLE IF NOT EXISTS poll_options (
   PRIMARY KEY (id),
   FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_poll_options_created_at ON poll_options (created_at);
 
 CREATE TABLE IF NOT EXISTS poll_votes (
   poll_id TEXT NOT NULL,
@@ -583,10 +473,6 @@ CREATE TABLE IF NOT EXISTS poll_votes (
   FOREIGN KEY (option_id) REFERENCES poll_options(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_poll_votes_user_id ON poll_votes (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_poll_votes_created_at ON poll_votes (created_at);
-
 CREATE TABLE IF NOT EXISTS saved_messages (
   user_id TEXT NOT NULL,
   message_id TEXT NOT NULL,
@@ -596,10 +482,6 @@ CREATE TABLE IF NOT EXISTS saved_messages (
   FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_saved_messages_user_id ON saved_messages (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_saved_messages_created_at ON saved_messages (created_at);
-
 CREATE TABLE IF NOT EXISTS audit_log_redactions (
   audit_log_id TEXT NOT NULL,
   redacted_by TEXT,
@@ -607,8 +489,6 @@ CREATE TABLE IF NOT EXISTS audit_log_redactions (
   created_at BIGINT,
   PRIMARY KEY (audit_log_id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_audit_log_redactions_created_at ON audit_log_redactions (created_at);
 
 CREATE TABLE IF NOT EXISTS backup_runs (
   checksum TEXT,
@@ -637,8 +517,6 @@ CREATE TABLE IF NOT EXISTS category_permission_overrides (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_category_permission_overrides_group_id ON category_permission_overrides (group_id);
-
 CREATE TABLE IF NOT EXISTS e2ee_key_escrows (
   user_id TEXT NOT NULL,
   encrypted_private_key TEXT,
@@ -648,10 +526,6 @@ CREATE TABLE IF NOT EXISTS e2ee_key_escrows (
   PRIMARY KEY (user_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_e2ee_key_escrows_user_id ON e2ee_key_escrows (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_e2ee_key_escrows_created_at ON e2ee_key_escrows (created_at);
 
 CREATE TABLE IF NOT EXISTS external_identities (
   id TEXT NOT NULL,
@@ -668,10 +542,6 @@ CREATE TABLE IF NOT EXISTS external_identities (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_external_identities_user_id ON external_identities (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_external_identities_created_at ON external_identities (created_at);
-
 CREATE TABLE IF NOT EXISTS api_keys (
   id TEXT NOT NULL,
   user_id TEXT,
@@ -687,27 +557,6 @@ CREATE TABLE IF NOT EXISTS api_keys (
   UNIQUE (key_hash),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_api_keys_created_at ON api_keys (created_at);
-
-CREATE TABLE IF NOT EXISTS bots (
-  id TEXT NOT NULL,
-  user_id TEXT,
-  owner_id TEXT,
-  name TEXT,
-  description TEXT,
-  created_at BIGINT,
-  active INTEGER NOT NULL DEFAULT 1,
-  PRIMARY KEY (id),
-  UNIQUE (user_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_bots_user_id ON bots (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_bots_created_at ON bots (created_at);
 
 CREATE TABLE IF NOT EXISTS outgoing_webhooks (
   id TEXT NOT NULL,
@@ -729,10 +578,6 @@ CREATE TABLE IF NOT EXISTS outgoing_webhooks (
   FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_outgoing_webhooks_group_id ON outgoing_webhooks (group_id);
-
-CREATE INDEX IF NOT EXISTS idx_outgoing_webhooks_created_at ON outgoing_webhooks (created_at);
-
 CREATE TABLE IF NOT EXISTS webhook_deliveries (
   completed_at BIGINT,
   id TEXT NOT NULL,
@@ -752,8 +597,6 @@ CREATE TABLE IF NOT EXISTS webhook_deliveries (
   FOREIGN KEY (webhook_id) REFERENCES outgoing_webhooks(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_created_at ON webhook_deliveries (created_at);
-
 CREATE TABLE IF NOT EXISTS sync_events (
   id TEXT NOT NULL,
   target_type TEXT,
@@ -764,8 +607,6 @@ CREATE TABLE IF NOT EXISTS sync_events (
   created_at BIGINT,
   PRIMARY KEY (id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_sync_events_created_at ON sync_events (created_at);
 
 CREATE TABLE IF NOT EXISTS message_expressions (
   message_id TEXT NOT NULL,
@@ -792,8 +633,6 @@ CREATE TABLE IF NOT EXISTS message_reports (
   PRIMARY KEY (id),
   FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_message_reports_created_at ON message_reports (created_at);
 
 CREATE TABLE IF NOT EXISTS moderation_evidence (
   id TEXT NOT NULL,
@@ -822,8 +661,6 @@ CREATE TABLE IF NOT EXISTS user_reports (
   PRIMARY KEY (id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_reports_created_at ON user_reports (created_at);
-
 CREATE TABLE IF NOT EXISTS moderation_actions (
   id TEXT NOT NULL,
   target_user_id TEXT,
@@ -835,8 +672,6 @@ CREATE TABLE IF NOT EXISTS moderation_actions (
   revoked_at BIGINT,
   PRIMARY KEY (id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_moderation_actions_created_at ON moderation_actions (created_at);
 
 CREATE TABLE IF NOT EXISTS moderation_appeals (
   id TEXT NOT NULL,
@@ -852,10 +687,6 @@ CREATE TABLE IF NOT EXISTS moderation_appeals (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_moderation_appeals_user_id ON moderation_appeals (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_moderation_appeals_created_at ON moderation_appeals (created_at);
-
 CREATE TABLE IF NOT EXISTS notifications (
   id TEXT NOT NULL,
   user_id TEXT,
@@ -869,10 +700,6 @@ CREATE TABLE IF NOT EXISTS notifications (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications (created_at);
-
 CREATE TABLE IF NOT EXISTS notification_digest_items (
   id TEXT NOT NULL,
   user_id TEXT,
@@ -884,10 +711,6 @@ CREATE TABLE IF NOT EXISTS notification_digest_items (
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_notification_digest_items_user_id ON notification_digest_items (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_notification_digest_items_created_at ON notification_digest_items (created_at);
 
 CREATE TABLE IF NOT EXISTS notification_preferences (
   user_id TEXT NOT NULL,
@@ -907,8 +730,6 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_notification_preferences_user_id ON notification_preferences (user_id);
-
 CREATE TABLE IF NOT EXISTS notification_channel_preferences (
   user_id TEXT NOT NULL,
   target_type TEXT NOT NULL,
@@ -921,8 +742,6 @@ CREATE TABLE IF NOT EXISTS notification_channel_preferences (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_notification_channel_preferences_user_id ON notification_channel_preferences (user_id);
-
 CREATE TABLE IF NOT EXISTS recovery_codes (
   id TEXT NOT NULL,
   user_id TEXT,
@@ -933,10 +752,6 @@ CREATE TABLE IF NOT EXISTS recovery_codes (
   UNIQUE (user_id, code_hash),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_recovery_codes_user_id ON recovery_codes (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_recovery_codes_created_at ON recovery_codes (created_at);
 
 CREATE TABLE IF NOT EXISTS resumable_uploads (
   id TEXT NOT NULL,
@@ -960,10 +775,6 @@ CREATE TABLE IF NOT EXISTS resumable_uploads (
   FOREIGN KEY (attachment_id) REFERENCES attachments(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_resumable_uploads_user_id ON resumable_uploads (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_resumable_uploads_created_at ON resumable_uploads (created_at);
-
 CREATE TABLE IF NOT EXISTS resumable_parts (
   upload_id TEXT NOT NULL,
   part_number INTEGER NOT NULL DEFAULT 0,
@@ -974,8 +785,6 @@ CREATE TABLE IF NOT EXISTS resumable_parts (
   FOREIGN KEY (upload_id) REFERENCES resumable_uploads(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_resumable_parts_created_at ON resumable_parts (created_at);
-
 CREATE TABLE IF NOT EXISTS custom_roles (
   id TEXT NOT NULL,
   name TEXT,
@@ -985,8 +794,6 @@ CREATE TABLE IF NOT EXISTS custom_roles (
   updated_at BIGINT,
   PRIMARY KEY (id)
 );
-
-CREATE INDEX IF NOT EXISTS idx_custom_roles_created_at ON custom_roles (created_at);
 
 CREATE TABLE IF NOT EXISTS custom_role_capabilities (
   role_id TEXT NOT NULL,
@@ -1005,10 +812,6 @@ CREATE TABLE IF NOT EXISTS user_custom_roles (
   FOREIGN KEY (role_id) REFERENCES custom_roles(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_custom_roles_user_id ON user_custom_roles (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_user_custom_roles_created_at ON user_custom_roles (created_at);
-
 CREATE TABLE IF NOT EXISTS security_events (
   id TEXT NOT NULL,
   user_id TEXT,
@@ -1023,10 +826,6 @@ CREATE TABLE IF NOT EXISTS security_events (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_security_events_user_id ON security_events (user_id);
-
-CREATE INDEX IF NOT EXISTS idx_security_events_created_at ON security_events (created_at);
-
 CREATE TABLE IF NOT EXISTS storage_quotas (
   user_id TEXT NOT NULL,
   limit_bytes INTEGER NOT NULL DEFAULT 0,
@@ -1036,8 +835,6 @@ CREATE TABLE IF NOT EXISTS storage_quotas (
   PRIMARY KEY (user_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_storage_quotas_user_id ON storage_quotas (user_id);
 
 CREATE TABLE IF NOT EXISTS storage_reservations (
   id TEXT NOT NULL,
@@ -1049,6 +846,208 @@ CREATE TABLE IF NOT EXISTS storage_reservations (
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_voice_activities_channel_id ON voice_activities (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_voice_activities_created_at ON voice_activities (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_e2ee_identities_user_id ON e2ee_identities (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_e2ee_identities_created_at ON e2ee_identities (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_group_expressions_group_id ON group_expressions (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_group_expressions_created_at ON group_expressions (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_server_events_group_id ON server_events (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_events_channel_id ON server_events (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_events_created_at ON server_events (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_event_rsvps_user_id ON event_rsvps (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_boosts_user_id ON server_boosts (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_boosts_group_id ON server_boosts (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_subscription_tiers_group_id ON subscription_tiers (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_subscription_tiers_created_at ON subscription_tiers (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_server_subscriptions_user_id ON server_subscriptions (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_subscriptions_group_id ON server_subscriptions (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_timeouts_user_id ON server_timeouts (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_timeouts_group_id ON server_timeouts (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_timeouts_created_at ON server_timeouts (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_server_bans_user_id ON server_bans (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_bans_group_id ON server_bans (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_server_bans_created_at ON server_bans (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_automod_rules_group_id ON automod_rules (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_automod_rules_created_at ON automod_rules (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_channel_follows_created_at ON channel_follows (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_oauth_apps_created_at ON oauth_apps (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_oauth_authorization_codes_user_id ON oauth_authorization_codes (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_bot_installations_group_id ON bot_installations (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_bot_installations_created_at ON bot_installations (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_slash_commands_group_id ON slash_commands (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_slash_commands_created_at ON slash_commands (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_slash_command_permissions_group_id ON slash_command_permissions (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_incoming_webhooks_channel_id ON incoming_webhooks (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_incoming_webhooks_created_at ON incoming_webhooks (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_automod_actions_user_id ON automod_actions (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_automod_actions_group_id ON automod_actions (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_automod_actions_channel_id ON automod_actions (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_automod_actions_created_at ON automod_actions (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_created_at ON push_subscriptions (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON user_activities (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_transcript_segments_channel_id ON call_transcript_segments (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_transcript_segments_created_at ON call_transcript_segments (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_call_lobby_user_id ON call_lobby (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_lobby_channel_id ON call_lobby (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_consents_user_id ON call_consents (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_consents_channel_id ON call_consents (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_stage_members_user_id ON stage_members (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_stage_members_channel_id ON stage_members (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_recordings_channel_id ON call_recordings (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_quality_samples_user_id ON call_quality_samples (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_quality_samples_channel_id ON call_quality_samples (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_quality_samples_created_at ON call_quality_samples (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_call_rooms_channel_id ON call_rooms (channel_id);
+
+CREATE INDEX IF NOT EXISTS idx_call_rooms_created_at ON call_rooms (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_e2ee_migration_backups_created_at ON e2ee_migration_backups (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_message_drafts_user_id ON message_drafts (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_messages_user_id ON scheduled_messages (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_scheduled_messages_created_at ON scheduled_messages (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_polls_created_at ON polls (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_poll_options_created_at ON poll_options (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_poll_votes_user_id ON poll_votes (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_poll_votes_created_at ON poll_votes (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_saved_messages_user_id ON saved_messages (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_saved_messages_created_at ON saved_messages (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_redactions_created_at ON audit_log_redactions (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_category_permission_overrides_group_id ON category_permission_overrides (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_e2ee_key_escrows_user_id ON e2ee_key_escrows (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_e2ee_key_escrows_created_at ON e2ee_key_escrows (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_external_identities_user_id ON external_identities (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_external_identities_created_at ON external_identities (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_created_at ON api_keys (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_bots_user_id ON bots (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_bots_created_at ON bots (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_outgoing_webhooks_group_id ON outgoing_webhooks (group_id);
+
+CREATE INDEX IF NOT EXISTS idx_outgoing_webhooks_created_at ON outgoing_webhooks (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_created_at ON webhook_deliveries (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_sync_events_created_at ON sync_events (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_message_reports_created_at ON message_reports (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_user_reports_created_at ON user_reports (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_moderation_actions_created_at ON moderation_actions (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_moderation_appeals_user_id ON moderation_appeals (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_moderation_appeals_created_at ON moderation_appeals (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_notification_digest_items_user_id ON notification_digest_items (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notification_digest_items_created_at ON notification_digest_items (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_notification_preferences_user_id ON notification_preferences (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_notification_channel_preferences_user_id ON notification_channel_preferences (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_recovery_codes_user_id ON recovery_codes (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_recovery_codes_created_at ON recovery_codes (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_resumable_uploads_user_id ON resumable_uploads (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_resumable_uploads_created_at ON resumable_uploads (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_resumable_parts_created_at ON resumable_parts (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_custom_roles_created_at ON custom_roles (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_user_custom_roles_user_id ON user_custom_roles (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_user_custom_roles_created_at ON user_custom_roles (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_security_events_user_id ON security_events (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_security_events_created_at ON security_events (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_storage_quotas_user_id ON storage_quotas (user_id);
 
 CREATE INDEX IF NOT EXISTS idx_storage_reservations_user_id ON storage_reservations (user_id);
 

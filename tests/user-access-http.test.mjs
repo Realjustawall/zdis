@@ -32,7 +32,7 @@ try{
  await admin.ok('PUT',`/api/groups/${restrictedGroup.id}/channels/${privateChannel.id}/overrides`,{targetType:'role',targetId:role.id,allow:['viewChannel','readMessageHistory'],deny:[]});
  await admin.ok('PUT',`/api/groups/${restrictedGroup.id}/members/${user.id}/roles/${role.id}`,{granted:true});
  assert.ok((await member.ok('GET',`/api/groups/${restrictedGroup.id}`)).channels.some(c=>c.id===privateChannel.id));
- const marker='hidden_search_'+Date.now();await admin.ok('POST',`/api/channels/${privateChannel.id}/messages`,{content:marker},201);
+ const marker='hidden_search_'+Date.now().toString(36);await admin.ok('POST',`/api/channels/${privateChannel.id}/messages`,{content:marker},201);
  await admin.ok('PUT',`/api/groups/${restrictedGroup.id}/channels/${privateChannel.id}/overrides`,{targetType:'member',targetId:user.id,allow:[],deny:['viewChannel']});
  assert.equal((await member.ok('GET',`/api/groups/${restrictedGroup.id}`)).channels.some(c=>c.id===privateChannel.id),false);
  assert.equal((await member.request('GET',`/api/channels/${privateChannel.id}/messages`)).status,404);

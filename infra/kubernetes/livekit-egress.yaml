@@ -30,6 +30,11 @@ spec:
     metadata:
       labels: *labels
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
       terminationGracePeriodSeconds: 300
       topologySpreadConstraints:
         - maxSkew: 1
@@ -52,6 +57,7 @@ spec:
             - name: metrics
               containerPort: 9090
           securityContext:
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
             capabilities:
               add: ["SYS_ADMIN"]

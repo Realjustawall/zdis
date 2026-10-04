@@ -85,6 +85,7 @@ jobs:
           MINIO_ROOT_PASSWORD: Validation-Minio-Password-2026!
           LIVEKIT_API_KEY: validation-key
           LIVEKIT_API_SECRET: validation-secret
+          LIVEKIT_NODE_IP: 127.0.0.1
           TURN_SHARED_SECRET: validation-turn-secret
           GRAFANA_ADMIN_PASSWORD: Validation-Grafana-Password-2026!
         run: |

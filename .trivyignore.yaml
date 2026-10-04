@@ -1,4 +1,8 @@
 misconfigurations:
+  - id: KSV-0005
+    paths:
+      - infra/kubernetes/livekit-egress.yaml
+    statement: The upstream LiveKit Egress Chrome sandbox requires SYS_ADMIN for web and room composite recording; see https://docs.livekit.io/transport/self-hosting/egress/ . Run recording workers on isolated nodes.
   - id: KSV-0009
     paths:
       - infra/kubernetes/livekit.yaml
@@ -13,6 +17,10 @@ misconfigurations:
     paths:
       - infra/kubernetes/clamav.yaml
     statement: The upstream ClamAV 1.4 entrypoint modifies configuration and /var/lock and maintains its signature database; a read-only root requires a separately validated custom image.
+  - id: KSV-0014
+    paths:
+      - infra/kubernetes/livekit-egress.yaml
+    statement: Recording workers write Chrome profiles and media output to the upstream image filesystem; use an isolated non-root recording worker until all writable paths are verified for a read-only image.
   - id: KSV-0118
     paths:
       - infra/kubernetes/clamav.yaml

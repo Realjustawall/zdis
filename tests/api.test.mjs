@@ -81,12 +81,13 @@ await check('CSP permits only the Cloudflare analytics beacon', async () => {
 await check('CSP permits images from the public object-storage origin', async () => {
   const response = await fetch(`${BASE}/api/health`);
   const policy = response.headers.get('content-security-policy') ?? '';
+  const storageOrigin = new URL(process.env.S3_PUBLIC_ENDPOINT || 'https://media.test.example/files').origin;
   assert(
-    policy.includes(`img-src 'self' data: blob: ${new URL(process.env.S3_PUBLIC_ENDPOINT || 'https://media.test.example/files').origin}`),
+    policy.includes(`img-src 'self' data: blob: ${storageOrigin}`),
     'public S3 origin is missing from img-src',
   );
   assert(
-    policy.includes("media-src 'self' blob: https://media.test.example"),
+    policy.includes(`media-src 'self' blob: ${storageOrigin}`),
     'public S3 origin is missing from media-src',
   );
 });

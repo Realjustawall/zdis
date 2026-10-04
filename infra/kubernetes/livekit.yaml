@@ -28,7 +28,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: livekit
-  labels: &livekit-labels
+  labels: &a1
     app.kubernetes.io/name: livekit
     app.kubernetes.io/component: sfu
 spec:
@@ -39,10 +39,10 @@ spec:
       maxUnavailable: 1
       maxSurge: 1
   selector:
-    matchLabels: *livekit-labels
+    matchLabels: *a1
   template:
     metadata:
-      labels: *livekit-labels
+      labels: *a1
     spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
@@ -51,12 +51,14 @@ spec:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
-                matchLabels: *livekit-labels
+                matchLabels: *a1
               topologyKey: kubernetes.io/hostname
       containers:
         - name: livekit
           image: livekit/livekit-server:v1.12.0
-          args: ["--config", "/etc/livekit/livekit.yaml"]
+          args:
+            - --config
+            - /etc/livekit/livekit.yaml
           env:
             - name: LIVEKIT_KEYS
               valueFrom:
@@ -74,6 +76,8 @@ spec:
             - name: config
               mountPath: /etc/livekit
               readOnly: true
+            - name: runtime-tmp
+              mountPath: /tmp
           readinessProbe:
             httpGet:
               path: /
@@ -86,10 +90,27 @@ spec:
             limits:
               cpu: "4"
               memory: 4Gi
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: config
           configMap:
             name: livekit-config
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 64Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
 ---
 apiVersion: v1
 kind: Service
@@ -114,7 +135,8 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: [media.example.com]
+    - hosts:
+        - media.example.com
       secretName: media-tls
   rules:
     - host: media.example.com

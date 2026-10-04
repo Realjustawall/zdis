@@ -1,0 +1,19 @@
+misconfigurations:
+  - id: KSV-0009
+    paths:
+      - infra/kubernetes/livekit.yaml
+      - infra/kubernetes/coturn.yaml
+    statement: Dedicated media nodes need host networking for WebRTC UDP and TURN relay ranges; restrict node access with the deployment firewall.
+  - id: KSV-0024
+    paths:
+      - infra/kubernetes/livekit.yaml
+      - infra/kubernetes/coturn.yaml
+    statement: Explicit media host ports match the configured WebRTC and TURN listeners on dedicated media nodes.
+  - id: KSV-0014
+    paths:
+      - infra/kubernetes/clamav.yaml
+    statement: The upstream ClamAV 1.4 entrypoint modifies configuration and /var/lock and maintains its signature database; a read-only root requires a separately validated custom image.
+  - id: KSV-0118
+    paths:
+      - infra/kubernetes/clamav.yaml
+    statement: The upstream ClamAV entrypoint requires initial root ownership setup and then starts freshclam and clamd as clamav; this exception applies only to the isolated scanner pod.

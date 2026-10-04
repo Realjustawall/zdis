@@ -30,3 +30,14 @@ Object.assign(process.env, {
 });
 
 await import('../server/src/index.js');
+for (let attempt = 0; attempt < 100; attempt++) {
+  if (await fetch(process.env.PUBLIC_URL + '/api/health/ready').then(r => r.ok).catch(() => false)) break;
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+
+// Browser suites share this disposable administrator; production quotas remain unchanged.
+const { getDb } = await import('../server/src/db/index.js');
+const db = getDb();
+const admin = await db.get('SELECT id FROM users WHERE username=?', ['admin']);
+await db.run('INSERT INTO user_access_policies(user_id,policy,updated_by,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET policy=excluded.policy,updated_at=excluded.updated_at',
+  [admin.id, JSON.stringify({ maxOwnedGroups: 500, maxJoinedGroups: 500 }), admin.id, Date.now()]);

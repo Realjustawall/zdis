@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY client/package.json client/package.json
@@ -8,7 +8,7 @@ COPY client client
 COPY server server
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 RUN apk add --no-cache postgresql16-client ffmpeg tini
 WORKDIR /app
 ENV NODE_ENV=production

@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Install isolated test-cluster kubeconfig
         env:
           KUBECONFIG_CONTENT: ${{ secrets.CHAOS_TEST_KUBECONFIG }}

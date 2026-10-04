@@ -77,7 +77,7 @@ test('voice media renegotiates in both directions and displays screen over an ac
       await p.getByTitle(group.name, { exact: true }).click();
       await p.locator('.sidebar').getByText(channels.find((c: {type: string}) => c.type === 'voice').name, { exact: true }).click();
       await p.getByRole('button', { name: 'Join voice', exact: true }).click();
-      await expect(p.getByRole('button', { name: 'Leave', exact: true })).toBeVisible();
+      await expect(p.getByRole('button', { name: 'Disconnect', exact: true })).toBeVisible();
     }
     for (const p of pages) await expect.poll(() => inbound(p, 'audio'), { timeout: 15_000 }).toBeGreaterThan(1000);
     // Simultaneous offers exercise glare handling, rather than just first join.
@@ -95,7 +95,7 @@ test('voice media renegotiates in both directions and displays screen over an ac
     await a.getByTitle('Stop sharing', { exact: true }).click();
     await expect.poll(() => remoteVideo.evaluate(v => (v.srcObject as MediaStream)?.getVideoTracks()[0]?.id), { timeout: 15_000 }).not.toBe(screenId);
     await expect.poll(() => remoteVideo.evaluate(v => v.videoWidth)).toBeGreaterThan(0);
-    for (const p of pages) await p.getByRole('button', { name: 'Leave', exact: true }).click();
+    for (const p of pages) await p.getByRole('button', { name: 'Disconnect', exact: true }).click();
   } finally { for (const c of s.contexts) await c.close(); }
 });
 

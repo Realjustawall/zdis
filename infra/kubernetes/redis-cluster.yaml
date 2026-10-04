@@ -43,7 +43,7 @@ spec:
           command:
             - /bin/sh
             - -ec
-            - |
+            - >
               exec redis-server \
                 --appendonly yes \
                 --appendfsync everysec \
@@ -60,7 +60,9 @@ spec:
               containerPort: 16379
           readinessProbe:
             exec:
-              command: ["redis-cli", "ping"]
+              command:
+                - redis-cli
+                - ping
             periodSeconds: 5
           resources:
             requests:
@@ -72,11 +74,32 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            - name: runtime-tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 64Mi
   volumeClaimTemplates:
     - metadata:
         name: data
       spec:
-        accessModes: [ReadWriteOnce]
+        accessModes:
+          - ReadWriteOnce
         resources:
           requests:
             storage: 10Gi
@@ -96,17 +119,43 @@ spec:
           command:
             - /bin/sh
             - -ec
-            - |
+            - >
               nodes=""
+
               for i in 0 1 2 3 4 5; do
                 host="redis-cluster-${i}.redis-cluster-headless.zdis.svc.cluster.local"
                 until redis-cli -h "$host" ping | grep -q PONG; do sleep 2; done
                 nodes="$nodes $host:6379"
               done
-              if redis-cli -h redis-cluster-0.redis-cluster-headless cluster info 2>/dev/null | grep -q 'cluster_state:ok'; then
+
+              if redis-cli -h redis-cluster-0.redis-cluster-headless cluster
+              info 2>/dev/null | grep -q 'cluster_state:ok'; then
                 exit 0
               fi
-              redis-cli --cluster create $nodes --cluster-replicas 1 --cluster-yes
+
+              redis-cli --cluster create $nodes --cluster-replicas 1
+              --cluster-yes
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: runtime-tmp
+              mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 64Mi
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget

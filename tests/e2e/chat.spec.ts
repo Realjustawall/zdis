@@ -15,11 +15,21 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel('Email or username').fill(test.info().project.name === 'mobile-chromium' ? 'admin' : 'office@intesho.com');
   await page.getByLabel('Password').fill('cNL2*8o$1F;"');
   await page.getByRole('button', { name: 'Sign in' }).click();
+  if (test.info().project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Messages', exact: true }).click();
+  }
   await expect(page.getByText('Direct messages', { exact: true })).toBeVisible();
 });
 
+async function openAdmin(page: import('@playwright/test').Page) {
+  if (test.info().project.name === 'mobile-chromium') {
+    await page.getByRole('button', { name: 'Servers', exact: true }).click();
+    await page.getByRole('button', { name: 'Admin', exact: true }).click();
+  } else await page.getByTitle('Administration').click();
+}
+
 test('administrator can inspect runtime and accounts', async ({ page }) => {
-  await page.getByTitle('Administration').click();
+  await openAdmin(page);
   await expect(page.getByRole('heading', { name: 'داشبورد' })).toBeVisible();
   await expect(page.getByText('پایگاه‌داده', { exact: true })).toBeVisible();
 
@@ -30,7 +40,7 @@ test('administrator can inspect runtime and accounts', async ({ page }) => {
 
 test('administrator can create an account through the browser', async ({ page }, testInfo) => {
   const suffix = `${testInfo.project.name.replace(/\W/g, '')}${Date.now()}`.slice(-18).toLowerCase();
-  await page.getByTitle('Administration').click();
+  await openAdmin(page);
   await page.getByRole('button', { name: /کاربران/ }).click();
   await page.getByRole('button', { name: /ساخت حساب جدید/ }).click();
   await page.getByLabel('نام نمایشی').fill('E2E Member');
@@ -42,7 +52,7 @@ test('administrator can create an account through the browser', async ({ page },
 });
 
 test('admin theme and operations center are functional', async ({ page }) => {
-  await page.getByTitle('Administration').click();
+  await openAdmin(page);
   await page.getByLabel(/Change theme/).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
@@ -82,7 +92,7 @@ test('creates a group and sends a realtime chat message', async ({ page }, testI
   await page.getByLabel('Description (optional)').fill('Created by the Playwright browser suite.');
   await page.getByRole('button', { name: 'Create group' }).click();
 
-  await expect(page.getByRole('heading', { name: groupName, exact: true })).toBeVisible();
+  await expect(page.locator('.sidebar strong[title]').filter({ hasText: groupName }).first()).toBeVisible();
   const activeServer = page.locator('.rail').getByTitle(groupName);
   const serverBox = await activeServer.boundingBox();
   const selectionPillBox = await activeServer.locator('.pill').boundingBox();

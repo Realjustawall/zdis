@@ -66,10 +66,22 @@ spec:
                   name: zdis-secrets
                   key: TURN_SHARED_SECRET
           ports:
-            - { name: turn-tcp, containerPort: 3478, hostPort: 3478, protocol: TCP }
-            - { name: turn-udp, containerPort: 3478, hostPort: 3478, protocol: UDP }
-            - { name: turns-tcp, containerPort: 5349, hostPort: 5349, protocol: TCP }
-            - { name: turns-udp, containerPort: 5349, hostPort: 5349, protocol: UDP }
+            - name: turn-tcp
+              containerPort: 3478
+              hostPort: 3478
+              protocol: TCP
+            - name: turn-udp
+              containerPort: 3478
+              hostPort: 3478
+              protocol: UDP
+            - name: turns-tcp
+              containerPort: 5349
+              hostPort: 5349
+              protocol: TCP
+            - name: turns-udp
+              containerPort: 5349
+              hostPort: 5349
+              protocol: UDP
           readinessProbe:
             tcpSocket:
               port: turn-tcp
@@ -88,6 +100,15 @@ spec:
             - name: tls
               mountPath: /tls
               readOnly: true
+            - name: runtime-tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: config
           configMap:
@@ -95,3 +116,13 @@ spec:
         - name: tls
           secret:
             secretName: turn-tls
+        - name: runtime-tmp
+          emptyDir:
+            sizeLimit: 64Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault

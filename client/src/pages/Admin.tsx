@@ -1847,6 +1847,50 @@ function IntegrationsTab() {
   const [apps, setApps] = useState<OAuthAppItem[]>([]);
   const [incoming, setIncoming] = useState<IncomingWebhookItem[]>([]);
   const [secret, setSecret] = useState<string | null>(null);
+  const [botDialog, setBotDialog] = useState<'create' | BotItem | null>(null);
+  const [botName, setBotName] = useState('');
+  const [botGroups, setBotGroups] = useState<Group[]>([]);
+  const [botGroupId, setBotGroupId] = useState('');
+  const [botBusy, setBotBusy] = useState(false);
+  const [botError, setBotError] = useState('');
+
+  async function openBotInstall(bot: BotItem) {
+    setBotError('');
+    try {
+      const data = await api.get<{ groups: Group[] }>('/api/admin/groups');
+      setBotGroups(data.groups);
+      setBotGroupId(data.groups[0]?.id ?? '');
+      setBotDialog(bot);
+    } catch (error) {
+      toast.error(error instanceof ApiError ? error.message : 'دریافت گروه‌ها ناموفق بود.');
+    }
+  }
+
+  async function submitBot() {
+    if (!botDialog || botBusy) return;
+    setBotBusy(true);
+    setBotError('');
+    try {
+      if (botDialog === 'create') {
+        const data = await api.post<{ token: string }>('/api/integrations/bots', {
+          name: botName.trim(), description: 'ساخته‌شده از پنل مدیریت',
+        });
+        setSecret(data.token);
+        await load();
+        toast.success('ربات ساخته شد؛ برای افزودن به گروه، نصب را انتخاب کنید.');
+      } else {
+        await api.post(`/api/integrations/groups/${botGroupId}/bots/${botDialog.id}/install`, {
+          permissions: ['viewChannel', 'sendMessages'],
+        });
+        toast.success('ربات به گروه اضافه شد. دستورهای آن را از تنظیمات گروه مدیریت کنید.');
+      }
+      setBotDialog(null);
+    } catch (error) {
+      setBotError(error instanceof ApiError ? error.message : 'عملیات ربات ناموفق بود.');
+    } finally {
+      setBotBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     const [keyData, botData, webhookData, appData, incomingData] = await Promise.all([
@@ -1928,9 +1972,9 @@ function IntegrationsTab() {
             <button
               className="btn primary small"
               onClick={() => {
-                const name = window.prompt('نام ربات:', 'ربات عملیات');
-                if (!name) return;
-                void reveal(api.post('/api/integrations/bots', { name, description: 'ساخته‌شده از پنل مدیریت' }));
+                setBotName('');
+                setBotError('');
+                setBotDialog('create');
               }}
             >
               ربات جدید
@@ -1945,32 +1989,9 @@ function IntegrationsTab() {
                   <>
                     <button
                       className="btn small"
-                      onClick={async () => {
-                        const groupId = window.prompt('شناسه سرور برای نصب ربات:');
-                        if (!groupId) return;
-                        try {
-                          await api.post(`/api/integrations/groups/${groupId}/bots/${bot.id}/install`, {
-                            permissions: ['viewChannel', 'sendMessages'],
-                          });
-                          const name = window.prompt('نام دستور Slash (بدون /):', 'hello');
-                          const responseTemplate = name
-                            ? window.prompt('پاسخ دستور؛ {user} و {args} قابل استفاده‌اند:', 'Hello {user}! {args}')
-                            : null;
-                          if (name && responseTemplate) {
-                            await api.post(`/api/integrations/groups/${groupId}/commands`, {
-                              botId: bot.id,
-                              name,
-                              description: `${bot.name} command`,
-                              responseTemplate,
-                            });
-                          }
-                          toast.success('ربات نصب و دستور ثبت شد.');
-                        } catch (error) {
-                          toast.error(error instanceof ApiError ? error.message : 'نصب ربات ناموفق بود.');
-                        }
-                      }}
+                      onClick={() => void openBotInstall(bot)}
                     >
-                      نصب / دستور
+                      افزودن به گروه
                     </button>
                     <button
                       className="icon-danger"
@@ -2139,6 +2160,30 @@ function IntegrationsTab() {
           {!webhooks.length ? <p className="muted">Webhook فعالی وجود ندارد.</p> : null}
         </div>
       </section>
+      {botDialog ? (
+        <Modal
+          title={botDialog === 'create' ? 'ساخت ربات' : `افزودن ${botDialog.name} به گروه`}
+          onClose={() => { if (!botBusy) setBotDialog(null); }}
+          footer={<>
+            <button className="btn" disabled={botBusy} onClick={() => setBotDialog(null)}>انصراف</button>
+            <button className="btn primary" disabled={botBusy || (botDialog === 'create' ? botName.trim().length < 2 : !botGroupId)} onClick={() => void submitBot()}>
+              {botBusy ? 'در حال اجرا…' : botDialog === 'create' ? 'ساخت ربات' : 'افزودن ربات'}
+            </button>
+          </>}
+        >
+          {botError ? <Alert kind="error">{botError}</Alert> : null}
+          {botDialog === 'create' ? (
+            <label className="field"><span>نام ربات</span><input className="input" autoFocus minLength={2} maxLength={48} value={botName} disabled={botBusy} onChange={e => setBotName(e.target.value)} /></label>
+          ) : (
+            <>
+              <label className="field"><span>گروه مقصد</span><select className="select" value={botGroupId} disabled={botBusy} onChange={e => setBotGroupId(e.target.value)}>
+                {botGroups.map(group => <option key={group.id} value={group.id}>{group.name}</option>)}
+              </select></label>
+              {!botGroups.length ? <p className="muted">ابتدا یک گروه بسازید.</p> : <p className="muted">ربات با دسترسی مشاهدهٔ کانال و ارسال پیام نصب می‌شود. دسترسی‌ها و دستورها از تنظیمات گروه قابل مدیریت‌اند.</p>}
+            </>
+          )}
+        </Modal>
+      ) : null}
     </>
   );
 }

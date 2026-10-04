@@ -13636,6 +13636,7 @@ html[data-browser-engine='webkit'] .msg-actions {
 }
 .app .group-sidebar-head {
   position: relative;
+  z-index: 10;
   min-height: 74px;
   height: 74px;
   flex: none;
@@ -13707,6 +13708,8 @@ html[data-browser-engine='webkit'] .msg-actions {
   z-index: 90;
   inset-inline: 10px;
   top: calc(100% + 6px);
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
   display: grid;
   gap: 3px;
   padding: 6px;

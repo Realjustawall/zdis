@@ -432,6 +432,7 @@ integrationsRouter.post(
     });
     await invalidateGroup(groupId);
     await refreshUserRooms(bot.user_id);
+    emitToGroup(groupId, 'group:member-added', { groupId, userId: bot.user_id });
     emitToGroup(groupId, 'group:roles-updated', { groupId });
     return res.status(201).json({ installed: true });
   }),
@@ -472,6 +473,7 @@ integrationsRouter.delete(
     });
     await invalidateGroup(groupId);
     await refreshUserRooms(bot.user_id);
+    emitToGroup(groupId, 'group:member-removed', { groupId, userId: bot.user_id });
     emitToGroup(groupId, 'group:roles-updated', { groupId });
     return res.json({ installed: false });
   }),

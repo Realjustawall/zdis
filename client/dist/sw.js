@@ -1,20 +1,20 @@
 // The production build replaces these two declarations with a content-hashed
 // version and every file emitted by Vite. The defaults keep the dev server's
 // service worker valid too.
-const VERSION = 'zdis-pwa-ff24341abece6719';
+const VERSION = 'zdis-pwa-b702b5b1fe1ea3a9';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const EXTERNAL_IMAGE_CACHE = 'zdis-pwa-external-images-v1';
 const PRECACHE_ASSETS = [
   "/",
-  "/assets/Admin-DdU0tPFK.js",
-  "/assets/index-BGva9LEj.js",
-  "/assets/index-BHhYOYKV.js",
-  "/assets/index-BdSL2uAr.js",
-  "/assets/index-CZpqjiIq.css",
-  "/assets/index-CgeQ7C-l.js",
+  "/assets/Admin-BcwFnIaw.js",
+  "/assets/index-BFOdEdUa.js",
+  "/assets/index-CKcDPQ9v.js",
+  "/assets/index-CS_TEOtw.js",
+  "/assets/index-CZVfz_aG.css",
+  "/assets/index-DZRrYKAe.js",
   "/assets/livekit-client.esm-Bocf-wCg.js",
-  "/assets/web-DmgqO77t.js",
+  "/assets/web-BYT90YFt.js",
   "/bootstrap.js",
   "/favicon.svg",
   "/fonts/vazirmatn-arabic.woff2",

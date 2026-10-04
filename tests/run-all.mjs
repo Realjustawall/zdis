@@ -58,8 +58,13 @@ await run(testFiles[2]);
 await run(testFiles[3]);
 await run(testFiles[4]);
 await run(testFiles[5]);
-await run('tests/builtin-bots.test.mjs');
-await run('tests/user-access.test.mjs');
+// These unit fixtures create their own SQLite databases. Integration HTTP suites
+// below continue using the external PostgreSQL, Redis, S3 and antivirus services.
+const sqliteUnitEnv = { ...isolatedEnv, DATABASE_DRIVER: 'sqlite', DATABASE_URL: '',
+  REQUIRE_POSTGRES: 'false', REQUIRE_REDIS: 'false', REDIS_URL: '',
+  REDIS_CLUSTER_NODES: '', STORAGE_DRIVER: 'local' };
+await run('tests/builtin-bots.test.mjs', sqliteUnitEnv);
+await run('tests/user-access.test.mjs', sqliteUnitEnv);
 await run('tests/voice-games.test.mjs');
 await run('tests/voice-activities.test.mjs');
 

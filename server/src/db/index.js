@@ -140,7 +140,8 @@ async function runVersionedMigrations(handle) {
   if (!fs.existsSync(migrationDir)) return;
   const files = fs
     .readdirSync(migrationDir)
-    .filter((name) => /^\d+_[a-z0-9_-]+\.sql$/i.test(name))
+    .filter((name) => /^\d+_[a-z0-9_-]+(?:\.(postgres|sqlite))?\.sql$/i.test(name))
+    .filter((name) => !/\.(postgres|sqlite)\.sql$/i.test(name) || name.endsWith(`.${handle.dialect}.sql`))
     .sort();
 
   for (const file of files) {

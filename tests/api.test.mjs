@@ -34,7 +34,7 @@ class Client {
     if (!opts.allowFail && !res.ok) {
       throw new Error(`${this.name} ${method} ${path} -> ${res.status} ${JSON.stringify(json)}`);
     }
-    return { status: res.status, body: json };
+    return { status: res.status, body: json, headers: res.headers };
   }
   get(p, o) { return this.req('GET', p, undefined, o); }
   post(p, b, o) { return this.req('POST', p, b, o); }
@@ -82,7 +82,7 @@ await check('CSP permits images from the public object-storage origin', async ()
   const response = await fetch(`${BASE}/api/health`);
   const policy = response.headers.get('content-security-policy') ?? '';
   assert(
-    policy.includes("img-src 'self' data: blob: https://media.test.example"),
+    policy.includes(`img-src 'self' data: blob: ${new URL(process.env.S3_PUBLIC_ENDPOINT || 'https://media.test.example/files').origin}`),
     'public S3 origin is missing from img-src',
   );
   assert(
@@ -505,7 +505,7 @@ await check('server profile image can be assigned and removed', async () => {
     assigned.body.group.iconUrl === `/api/files/${attachment.id}`,
     'server icon URL was not assigned',
   );
-  const readable = await ed.get(`/api/files/${attachment.id}`);
+  const readable = await ed.get(`/api/files/${attachment.id}`, { allowFail: true });
   assert(readable.status === 200 || readable.status === 302, 'server members should read the icon');
   const removed = await creator.put(`/api/groups/${group.id}/icon`, { attachmentId: null });
   assert(removed.body.group.iconUrl === null, 'server icon was not removed');
@@ -540,8 +540,16 @@ await check('attachment is delivered only to authorised readers', async () => {
   await creator.post(`/api/channels/${textChannel.id}/messages`, {
     content: 'here is the thumbnail', attachmentIds: [attachment.id],
   });
-  const ok = await ed.get(`/api/files/${attachment.id}`);
+  const ok = await ed.get(`/api/files/${attachment.id}`, { allowFail: true });
   assert(ok.status === 200 || ok.status === 302, 'group member should read or receive a signed URL');
+  if (ok.status === 302) {
+    const url = new URL(ok.headers.get('location'));
+    assert(url.searchParams.has('X-Amz-Signature'), 'object storage must return a signed URL');
+    const downloaded = await fetch(url);
+    assert(downloaded.ok, 'signed object-storage download failed');
+    const bytes = new Uint8Array(await downloaded.arrayBuffer());
+    assert(bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71, 'object storage did not deliver the uploaded PNG');
+  }
   const anon = new Client('anon');
   const denied = await anon.get(`/api/files/${attachment.id}`, { allowFail: true });
   assert(denied.status === 401, `expected 401, got ${denied.status}`);

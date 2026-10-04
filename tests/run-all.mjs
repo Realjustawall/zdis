@@ -79,7 +79,7 @@ const serverEnv = {
   APP_SECRET: 'test-only-secret-that-is-longer-than-thirty-two-characters',
   AUDIT_SIGNING_KEY: 'test-only-audit-key-that-is-longer-than-thirty-two-characters',
   DLP_MODE: 'block',
-  S3_PUBLIC_ENDPOINT: 'https://media.test.example/files',
+  S3_PUBLIC_ENDPOINT: process.env.S3_PUBLIC_ENDPOINT || 'https://media.test.example/files',
   SEED_ADMIN_EMAIL: 'office@intesho.com',
   SEED_ADMIN_USERNAME: 'admin',
   SEED_ADMIN_PASSWORD: 'cNL2*8o$1F;"',

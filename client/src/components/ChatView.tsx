@@ -122,6 +122,8 @@ export function ChatView({
   const startTyping = useRealtime((state) => state.startTyping);
   const stopTyping = useRealtime((state) => state.stopTyping);
 
+  const [voiceChatOpen, setVoiceChatOpen] = useState(false);
+  useEffect(() => { setVoiceChatOpen(false); }, [voiceChannel?.id]);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [editing, setEditing] = useState<Message | null>(null);
   const [pollEditing, setPollEditing] = useState<Message | null>(null);
@@ -562,7 +564,7 @@ export function ChatView({
   }
 
   return (
-    <div className="main">
+    <div className={`main${voiceChannel ? " voice-main" : ""}${voiceChannel && voiceChatOpen ? " voice-chat-open" : ""}`}>
       <div className="main-head">
         <div className="title">
           <span className="glyph channel-glyph"><ChannelGlyph glyph={glyph} /></span>
@@ -652,7 +654,7 @@ export function ChatView({
         </div>
       ) : null}
 
-      {voiceChannel ? <VoiceStage channel={voiceChannel} members={members} /> : null}
+      {voiceChannel ? <VoiceStage channel={voiceChannel} members={members} chatOpen={voiceChatOpen} onToggleChat={() => setVoiceChatOpen(value => !value)} /> : null}
 
       <div className="message-scroll" ref={scrollRef} onScroll={onScroll}
         onWheel={(event) => { if (event.deltaY < 0) onScrollIntent(); }}

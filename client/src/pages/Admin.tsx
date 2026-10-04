@@ -7,6 +7,7 @@ import { useSession } from '../store/session';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { AdminPlatform } from './AdminPlatform';
 import { AdminAnalytics } from './AdminAnalytics';
+import { AdminAccess } from './AdminAccess';
 import { Icon, type IconName } from '../components/Icon';
 import type {
   AdminSettings,
@@ -133,7 +134,7 @@ export function Admin({ onExit }: { onExit: () => void }) {
         {tab === 'integrations' ? <IntegrationsTab /> : null}
         {tab === 'operations' ? <OperationsTab /> : null}
         {tab === 'platform' ? <AdminPlatform /> : null}
-        {tab === 'settings' ? <SettingsTab /> : null}
+        {tab === 'settings' ? <><AdminAccess /><SettingsTab /></> : null}
         {tab === 'audit' ? <AuditTab /> : null}
       </main>
     </div>
@@ -2000,7 +2001,7 @@ function IntegrationsTab() {
           <button
             className="btn primary small"
             onClick={() => {
-              const name = window.prompt('نام برنامه:', 'sahsha');
+              const name = window.prompt('نام برنامه:', 'ZDIS');
               const redirect = name ? window.prompt('Redirect URI:', 'https://example.com/oauth/callback') : null;
               if (!name || !redirect) return;
               void reveal(
@@ -2329,7 +2330,7 @@ function SettingsTab() {
     setErrors([]);
     setBusy(true);
     try {
-      const data = await api.patch<{ settings: AdminSettings }>('/api/admin/settings', settings);
+      const data = await api.patch<{ settings: AdminSettings }>('/api/admin/settings', Object.fromEntries(Object.entries(settings).filter(([key])=>!key.startsWith('default_'))));
       setSettings(data.settings);
       patchSettings(data.settings);
       toast.success('Settings saved.');

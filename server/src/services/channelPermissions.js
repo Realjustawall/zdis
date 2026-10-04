@@ -1,4 +1,5 @@
 import { getDb } from '../db/index.js';
+import { userAccess } from './userAccess.js';
 import { SERVER_PERMISSION_KEYS, normalizeServerPermissions } from './serverRoles.js';
 
 export const CHANNEL_PERMISSION_KEYS = SERVER_PERMISSION_KEYS;
@@ -157,6 +158,11 @@ export async function deleteChannelOverride(channelId, targetType, targetId) {
 }
 
 export async function channelPermission(channel, context, permission) {
+  // Moderation mutes are group scoped and cannot be bypassed by channel allows.
+  const muteKind = ['sendMessages','sendMessagesInThreads','sendVoiceMessages','createPublicThreads','createPrivateThreads'].includes(permission) ? 'text' : permission === 'speak' ? 'voice' : null;
+  if (muteKind && await getDb().get('SELECT 1 FROM builtin_bot_mutes WHERE group_id=? AND user_id=? AND kind=? AND expires_at>?', [context.group.id, context.userId, muteKind, Date.now()])) return false;
+  const accountFeature={attachFiles:'sendFiles',sendImages:'sendImages',sendVideos:'sendVideos',sendAudio:'sendAudio',connectVoice:'connectVoice',speak:'speak',video:'video',screenShare:'screenShare'}[permission];
+  if(accountFeature && !(await userAccess(context.userId)).effective[accountFeature])return false;
   if (context.permissionBypass) return true;
   if (
     permission !== 'viewChannel' &&
@@ -191,6 +197,7 @@ export async function channelPermission(channel, context, permission) {
     [
       'speak',
       'video',
+      'screenShare',
       'useVoiceActivity',
       'prioritySpeaker',
       'muteMembers',

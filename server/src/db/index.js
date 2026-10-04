@@ -18,11 +18,17 @@ let readDb = null;
  * back to the SQLite engine bundled inside Node, so the app always starts.
  */
 function postgresRequested() {
-  return Boolean(config.databaseUrl || process.env.PGHOST || process.env.PGUSER);
+  return config.databaseDriver === 'postgres' || (config.databaseDriver === 'auto' && Boolean(config.databaseUrl || process.env.PGHOST || process.env.PGUSER));
 }
 
 export async function initDb() {
   if (db) return db;
+  if (!['sqlite', 'postgres', 'auto'].includes(config.databaseDriver)) {
+    throw new Error('DATABASE_DRIVER must be sqlite, postgres or auto');
+  }
+  if (config.databaseDriver === 'sqlite' && config.requirePostgres) {
+    throw new Error('REQUIRE_POSTGRES conflicts with DATABASE_DRIVER=sqlite');
+  }
 
   if (postgresRequested()) {
     try {

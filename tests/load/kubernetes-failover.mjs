@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
-const namespace = process.env.CHAOS_NAMESPACE || 'youtbelimo';
+const namespace = process.env.CHAOS_NAMESPACE || 'ZDIS';
 const baseUrl = process.env.CHAOS_BASE_URL;
 const confirm = process.env.CHAOS_CONFIRM === 'yes';
 const target = process.env.CHAOS_TARGET || 'api';
@@ -30,7 +30,7 @@ async function healthy() {
 }
 
 let selector;
-if (target === 'api') selector = 'app.kubernetes.io/name=youtbelimo,app.kubernetes.io/component=api';
+if (target === 'api') selector = 'app.kubernetes.io/name=ZDIS,app.kubernetes.io/component=api';
 else if (target === 'redis') selector = 'app.kubernetes.io/name=redis-cluster';
 else if (target === 'postgres') selector = 'cnpg.io/instanceRole=primary';
 else throw new Error('CHAOS_TARGET must be api, redis or postgres.');

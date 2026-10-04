@@ -11,7 +11,7 @@ export const SERVER_ROOT = path.resolve(here, '..');
 dotenv.config({ path: path.join(ROOT, '.env') });
 
 const DATA_DIR = process.env.DATA_DIR
-  ? path.resolve(process.env.DATA_DIR)
+  ? path.resolve(ROOT, process.env.DATA_DIR)
   : path.join(SERVER_ROOT, 'data');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -91,25 +91,27 @@ const livekitRegions = (value) =>
   }).filter((region) => region.name && region.url);
 
 export const config = {
-  appName: process.env.APP_NAME || 'sahsha',
+  appName: 'ZDIS',
   env: process.env.NODE_ENV || 'development',
   isProd: (process.env.NODE_ENV || 'development') === 'production',
-  port: int(process.env.PORT, 4000),
+  port: int(process.env.PORT, process.platform === 'win32' ? 8080 : 4000),
   host: process.env.HOST || '0.0.0.0',
   publicUrl:
     process.env.PUBLIC_URL ||
-    `http://localhost:${int(process.env.PORT, 4000)}`,
+    `http://localhost:${int(process.env.PORT, process.platform === 'win32' ? 8080 : 4000)}`,
   deploymentRegion: process.env.DEPLOYMENT_REGION || 'local',
   deploymentRole: process.env.DEPLOYMENT_ROLE || 'primary',
 
   dataDir: DATA_DIR,
   uploadDir: process.env.UPLOAD_DIR
-    ? path.resolve(process.env.UPLOAD_DIR)
+    ? path.resolve(ROOT, process.env.UPLOAD_DIR)
     : path.join(DATA_DIR, 'uploads'),
   sqliteFile: process.env.SQLITE_FILE
-    ? path.resolve(process.env.SQLITE_FILE)
-    : path.join(DATA_DIR, 'youtbelimo.db'),
+    ? path.resolve(ROOT, process.env.SQLITE_FILE)
+    : path.join(DATA_DIR, 'ZDIS.db'),
 
+  databaseDriver: process.env.DATABASE_DRIVER || 'sqlite',
+  sqliteStatementCache: Math.max(0, Math.min(1024, int(process.env.SQLITE_STATEMENT_CACHE, 128))),
   databaseUrl: process.env.DATABASE_URL || '',
   readDatabaseUrl: process.env.READ_DATABASE_URL || '',
   redisUrl: process.env.REDIS_URL || '',
@@ -191,7 +193,7 @@ export const config = {
     password:
       process.env.OPENSEARCH_PASSWORD ||
       secretFromFile(process.env.OPENSEARCH_PASSWORD_FILE),
-    index: process.env.OPENSEARCH_INDEX || 'youtbelimo-messages-v1',
+    index: process.env.OPENSEARCH_INDEX || 'zdis-messages-v1',
     timeoutMs: int(process.env.OPENSEARCH_TIMEOUT_MS, 5_000),
     required: bool(process.env.OPENSEARCH_REQUIRED, false),
   },
@@ -272,7 +274,7 @@ export const config = {
     secretFromFile(process.env.METRICS_TOKEN_FILE) ||
     '',
   otelEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || '',
-  serviceName: process.env.OTEL_SERVICE_NAME || 'youtbelimo',
+  serviceName: process.env.OTEL_SERVICE_NAME || 'zdis',
 
   smtp: {
     host: process.env.SMTP_HOST || '',

@@ -148,7 +148,7 @@ export function Login() {
         legal: 'By continuing, you agree to the rules and policies of this private community.',
       };
 
-  const appName = settings?.app_name || 'sahsha';
+  const appName = settings?.app_name || 'ZDIS';
   const passwordScore = useMemo(
     () => PASSWORD_RULES.filter((rule) => rule.test(registration.password)).length,
     [registration.password],
@@ -258,7 +258,7 @@ export function Login() {
       <div className={`auth-shell${mode === 'register' ? ' register' : ''}`}>
         <aside className="auth-showcase" aria-hidden="true">
           <div className="auth-showcase-copy">
-            <span className="auth-eyebrow">SAHSHA COMMUNITY</span>
+            <span className="auth-eyebrow">ZDIS COMMUNITY</span>
             <h1>{copy.showcaseTitle}</h1>
             <p>{copy.showcaseBody}</p>
           </div>

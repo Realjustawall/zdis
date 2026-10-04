@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, Modal, Confirm, EmptyState } from './ui';
+import { Avatar, Modal, Confirm, EmptyState, BadgeList } from './ui';
 import { useChat } from '../store/chat';
 import { useRealtime } from '../store/realtime';
 import { useSession } from '../store/session';
@@ -21,6 +21,7 @@ import type { CSSProperties, DragEvent, ReactNode } from 'react';
 import { useI18n } from '../lib/i18n';
 import { Icon } from './Icon';
 import { storageGet, storageSet } from '../lib/storage';
+import { BotsSettings } from './BotsSettings';
 
 interface Props {
   group: Group;
@@ -62,11 +63,32 @@ export function GroupSidebar({
   const unread = useChat((state) => state.unreadChannels);
   const voiceRooms = useRealtime((state) => state.voice);
   const voiceChannelId = useVoice((state) => state.channelId);
+  const voiceMuted = useVoice((state) => state.muted);
+  const voiceDeafened = useVoice((state) => state.deafened);
+  const connectedChannel = channels.find(channel => channel.id === voiceChannelId);
   const removeGroup = useChat((state) => state.removeGroup);
   const directory = useChat((state) => state.directory);
   const loadDirectory = useChat((state) => state.loadDirectory);
   const { locale } = useI18n();
   const fa = locale === 'fa';
+
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false);
+  const quickMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!quickMenuOpen) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (!quickMenuRef.current?.contains(event.target as Node)) setQuickMenuOpen(false);
+    };
+    const closeEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setQuickMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    document.addEventListener('keydown', closeEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeOutside);
+      document.removeEventListener('keydown', closeEscape);
+    };
+  }, [quickMenuOpen]);
 
   const [menu, setMenu] = useState<
     null | 'channel' | 'category' | 'invite' | 'members' | 'roles' | 'settings' | 'delete' | 'leave'
@@ -164,56 +186,29 @@ export function GroupSidebar({
 
   return (
     <div className="sidebar">
-      <div className="sidebar-head">
-        <h2 title={group.name}>{group.name}</h2>
-        <div className="row" style={{ gap: 2 }}>
-          {permissions.createInvite ? (
-            <button className="head-btn" title={fa ? 'دعوت افراد' : 'Invite people'} onClick={() => setMenu('invite')}>
-              <Icon name="link" size={17} />
-            </button>
-          ) : null}
-          {permissions.manageMembers ? (
-            <button
-              className="head-btn"
-              title={fa ? 'افزودن عضو' : 'Add a member'}
-              onClick={() => {
-                void loadDirectory();
-                setMenu('members');
-              }}
-            >
-              <Icon name="add" size={18} />
-            </button>
-          ) : null}
-          {permissions.manageGroup ||
-          permissions.manageRoles ||
-          permissions.manageMembers ||
-            permissions.manageChannels ? (
-            <button className="head-btn" title={fa ? 'تنظیمات گروه' : 'Group settings'} onClick={() => setMenu('settings')}>
-              <Icon name="settings" size={18} />
-            </button>
-          ) : null}
-        </div>
+      <div className="sidebar-head group-sidebar-head" ref={quickMenuRef}>
+        <button className="group-menu-trigger" aria-expanded={quickMenuOpen} aria-controls="group-quick-menu" onClick={() => setQuickMenuOpen((open) => !open)}>
+          <span className="group-header-avatar" style={{ background: group.accentColor ?? undefined }}>
+            {group.iconUrl ? <img src={group.iconUrl} alt="" /> : group.name.slice(0, 2).toUpperCase()}
+          </span>
+          <span className="group-header-copy">
+            <strong title={group.name}>{group.name}</strong>
+            <small>{members.length} {fa ? 'عضو' : members.length === 1 ? 'member' : 'members'}</small>
+          </span>
+          <Icon name={quickMenuOpen ? 'close' : 'menu'} size={18} />
+        </button>
+        {quickMenuOpen ? (
+          <div className="group-quick-menu" id="group-quick-menu" onClick={() => setQuickMenuOpen(false)}>
+            {permissions.createChannels ? <button onClick={() => setMenu('channel')}><Icon name="add" size={17} />{fa ? 'ساخت کانال' : 'Create channel'}</button> : null}
+            {permissions.createInvite ? <button onClick={() => setMenu('invite')}><Icon name="link" size={17} />{fa ? 'دعوت افراد' : 'Invite people'}</button> : null}
+            {permissions.manageMembers ? <button onClick={() => { void loadDirectory(); setMenu('members'); }}><Icon name="users" size={17} />{fa ? 'افزودن عضو' : 'Add a member'}</button> : null}
+            {permissions.manageGroup || permissions.manageRoles || permissions.manageMembers || permissions.manageChannels ? <button onClick={() => setMenu('settings')}><Icon name="settings" size={17} />{fa ? 'تنظیمات گروه' : 'Server settings'}</button> : null}
+            {permissions.manageRoles ? <button onClick={() => setMenu('roles')}><Icon name="tag" size={17} />{fa ? 'نقش‌ها' : 'Roles'}</button> : null}
+            {permissions.manageChannels ? <button onClick={() => setMenu('category')}><Icon name="archive" size={17} />{fa ? 'ساخت دسته‌بندی' : 'Create category'}</button> : null}
+            {group.ownerId !== user.id && user.role !== 'admin' ? <button onClick={() => setMenu('leave')}><Icon name="logout" size={17} />{fa ? 'خروج از گروه' : 'Leave server'}</button> : null}
+          </div>
+        ) : null}
       </div>
-
-      {permissions.manageGroup || permissions.manageRoles || permissions.manageChannels ? (
-        <div className="sidebar-admin-actions">
-          {permissions.manageGroup ||
-          permissions.manageMembers ||
-          permissions.manageChannels ? (
-            <button onClick={() => setMenu('settings')}><Icon name="settings" size={15} /> <span>Server Settings</span></button>
-          ) : null}
-          {permissions.manageRoles ? (
-            <button onClick={() => setMenu('roles')}><Icon name="tag" size={15} /> <span>Roles</span></button>
-          ) : null}
-          {permissions.manageChannels ? (
-            <button onClick={() => setMenu('channel')}><Icon name="add" size={15} /> <span>Channel</span></button>
-          ) : null}
-          {permissions.manageChannels ? (
-            <button onClick={() => setMenu('category')}><Icon name="add" size={15} /> <span>Category</span></button>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="sidebar-body">
         {categories.map((category) => {
           const categoryChannels = channels
@@ -231,7 +226,7 @@ export function GroupSidebar({
                 </button>
                 {collapsed && categoryMentions > 0 ? <span className="category-mention-count">{categoryMentions > 99 ? '99+' : categoryMentions}</span> : null}
                 {collapsed && categoryUnread > 0 && categoryMentions === 0 ? <span className="category-unread-dot" /> : null}
-                {permissions.manageChannels ? (
+                {permissions.createChannels ? (
                   <button title={fa ? 'کانال جدید' : 'New channel'} onClick={() => setMenu('channel')}><Icon name="add" size={14} /></button>
                 ) : null}
               </div>
@@ -242,7 +237,7 @@ export function GroupSidebar({
 
         <div className="section-label">
           <span>{fa ? 'کانال‌های متنی' : 'Text channels'}</span>
-          {permissions.manageChannels ? (
+          {permissions.createChannels ? (
             <button title={fa ? 'کانال جدید' : 'New channel'} onClick={() => setMenu('channel')}>
               <Icon name="add" size={14} />
             </button>
@@ -276,7 +271,7 @@ export function GroupSidebar({
           );
         })}
 
-        {forumChannels.length || permissions.manageChannels ? (
+        {forumChannels.length > 0 ? (
           <div className="section-label">
             <span>{fa ? 'انجمن‌ها' : 'Forums'}</span>
           </div>
@@ -377,6 +372,7 @@ export function GroupSidebar({
               presence={member.presence}
             />
             <span className="label">{member.nickname ?? member.displayName}</span>
+            <BadgeList badges={member.badges.filter(b=>['bot','verified_bot','official'].includes(b.id))} compact />
             {member.memberRole === 'owner' ? (
               <span className="badge owner" style={{ fontSize: 9 }}>owner</span>
             ) : member.serverRoles[0] ? (
@@ -395,6 +391,10 @@ export function GroupSidebar({
         ) : null}
       </div>
 
+      {connectedChannel ? <div className="voice-connection-panel">
+        <div className="voice-connection-row"><button className="voice-connection-link" onClick={() => onSelectChannel(connectedChannel)}><strong><Icon name="speaker" size={16} /> {fa ? 'متصل به ویس' : 'Voice connected'}</strong><small>{connectedChannel.name} / {group.name}</small></button><button className="head-btn" onClick={() => useVoice.getState().leave()} title="Disconnect" aria-label="Disconnect from voice"><Icon name="phoneOff" size={20} /></button></div>
+        <div className="voice-connection-actions"><button onClick={() => useVoice.getState().toggleMute()} aria-label={voiceMuted ? 'Unmute microphone' : 'Mute microphone'} aria-pressed={voiceMuted}><Icon name={voiceMuted ? 'microphoneOff' : 'microphone'} size={18} /></button><button onClick={() => useVoice.getState().toggleDeafen()} aria-label={voiceDeafened ? 'Undeafen audio' : 'Deafen audio'} aria-pressed={voiceDeafened}><Icon name={voiceDeafened ? 'headphonesOff' : 'headphones'} size={18} /></button><button onClick={() => onSelectChannel(connectedChannel)}><Icon name="screen" size={18} /> {fa ? 'نمایش تماس' : 'Show call'}</button></div>
+      </div> : null}
       {footer}
 
       {menu === 'channel' ? (
@@ -1405,6 +1405,10 @@ const SERVER_PERMISSION_OPTIONS: {
   { key: 'changeNickname', label: 'Change Nickname', description: 'Change their own server nickname.', category: 'Membership' },
   { key: 'manageNicknames', label: 'Manage Nicknames', description: 'Change nicknames of members below this role.', category: 'Membership' },
   { key: 'manageMembers', label: 'Manage Members', description: 'Add existing platform accounts to this server.', category: 'Membership', dangerous: true },
+  { key: 'sendImages', label: 'Send Images', description: 'Send image attachments.', category: 'Text' },
+  { key: 'sendVideos', label: 'Send Videos', description: 'Send video attachments.', category: 'Text' },
+  { key: 'sendAudio', label: 'Send Audio', description: 'Send audio attachments.', category: 'Text' },
+  { key: 'screenShare', label: 'Share Screen', description: 'Publish screen video and audio.', category: 'Voice' },
   { key: 'kickMember', label: 'Kick Members', description: 'Remove members below this role from the server.', category: 'Membership', dangerous: true },
   { key: 'banMembers', label: 'Ban Members', description: 'Ban members below this role and manage the ban list.', category: 'Membership', dangerous: true },
   { key: 'moderateMembers', label: 'Timeout Members', description: 'Temporarily prevent members below this role from interacting.', category: 'Membership', dangerous: true },
@@ -1447,6 +1451,10 @@ const SERVER_PERMISSION_OPTIONS: {
 ];
 
 const PERMISSION_FA: Record<ServerPermission, { label: string; description: string }> = {
+  sendImages: {label:'ارسال عکس',description:'اجازهٔ ارسال پیوست تصویری.'},
+  sendVideos: {label:'ارسال فیلم',description:'اجازهٔ ارسال پیوست ویدیویی.'},
+  sendAudio: {label:'ارسال صوت',description:'اجازهٔ ارسال پیوست صوتی.'},
+  screenShare: {label:'اشتراک صفحه',description:'اجازهٔ انتشار تصویر و صدای صفحه.'},
   administrator: { label: 'مدیر کل', description: 'همه مجوزها را می‌دهد و تمام محدودیت‌های کانال را نادیده می‌گیرد.' },
   manageGroup: { label: 'مدیریت گروه', description: 'هویت، فهرست عمومی، مدیریت خودکار و تنظیمات کلی گروه را ویرایش می‌کند.' },
   viewAuditLog: { label: 'مشاهده گزارش فعالیت', description: 'عملیات مدیریتی و نظارتی را بررسی می‌کند.' },
@@ -1519,6 +1527,10 @@ const PERMISSION_API_META: Record<
   ServerPermission,
   { flag: string; scope: string; official: boolean }
 > = {
+  sendImages: {flag:'SEND_IMAGES',scope:'Text',official:false},
+  sendVideos: {flag:'SEND_VIDEOS',scope:'Text',official:false},
+  sendAudio: {flag:'SEND_AUDIO',scope:'Text',official:false},
+  screenShare: {flag:'SCREEN_SHARE',scope:'Voice',official:false},
   createInvite: { flag: 'CREATE_INSTANT_INVITE', scope: 'Text · Voice · Stage', official: true },
   kickMember: { flag: 'KICK_MEMBERS', scope: 'Server', official: true },
   banMembers: { flag: 'BAN_MEMBERS', scope: 'Server', official: true },
@@ -1571,7 +1583,7 @@ const PERMISSION_API_META: Record<
   useExternalApps: { flag: 'USE_EXTERNAL_APPS', scope: 'Text · Voice · Stage', official: true },
   pinMessage: { flag: 'PIN_MESSAGES', scope: 'Text', official: true },
   bypassSlowmode: { flag: 'BYPASS_SLOWMODE', scope: 'Text · Voice · Stage', official: true },
-  manageMembers: { flag: 'MANAGE_MEMBERS', scope: 'sahsha extension', official: false },
+  manageMembers: { flag: 'MANAGE_MEMBERS', scope: 'ZDIS extension', official: false },
 };
 
 const PERMISSION_CATEGORIES: PermissionCategory[] = ['General', 'Membership', 'Text', 'Voice', 'Events', 'Apps'];
@@ -2905,6 +2917,7 @@ function ServerExpressionsSection({
             <select className="select" value={type} onChange={(event) => setType(event.target.value as GroupExpression['type'])}>
               <option value="emoji">Emoji</option>
               <option value="sticker">Sticker</option>
+              <option value="gif">GIF</option>
               <option value="sound">Soundboard</option>
             </select>
           </label>
@@ -3494,6 +3507,7 @@ function GroupSettingsModal({
     | 'channels'
     | 'expressions'
     | 'apps'
+    | 'bots'
     | 'community'
     | 'safety'
     | 'insights';
@@ -3663,7 +3677,7 @@ function GroupSettingsModal({
             ['invites', 'link', fa ? `دعوت‌ها · ${invites.length}` : `Invites · ${invites.length}`],
             ['channels', 'hash', fa ? `کانال‌ها · ${channels.length}` : `Channels · ${channels.length}`],
           ] as [SettingsPage, Parameters<typeof Icon>[0]['name'], string][]).map(([id, icon, label]) => (
-            <button key={id} className={settingsPage === id ? 'active' : ''} onClick={() => setSettingsPage(id)}>
+            <button key={id} aria-label={label} title={label} className={settingsPage === id ? 'active' : ''} onClick={() => setSettingsPage(id)}>
               <Icon name={icon} size={17} /><span>{label}</span>
             </button>
           ))}
@@ -3671,11 +3685,12 @@ function GroupSettingsModal({
           {([
             ['expressions', 'smile', fa ? 'شکلک‌ها و صداها' : 'Expressions'],
             ['apps', 'link', fa ? 'برنامه‌ها و فرمان‌ها' : 'Apps & Commands'],
+            ['bots', 'code', fa ? 'ربات‌های سرور' : 'Server Bots'],
             ['community', 'compass', fa ? 'تنظیمات اجتماع' : 'Community'],
             ['safety', 'shield', fa ? 'ایمنی و مدیریت' : 'Safety & Moderation'],
             ['insights', 'chart', fa ? 'آمار گروه' : 'Server Insights'],
           ] as [SettingsPage, Parameters<typeof Icon>[0]['name'], string][]).map(([id, icon, label]) => (
-            <button key={id} className={settingsPage === id ? 'active' : ''} onClick={() => setSettingsPage(id)}>
+            <button key={id} aria-label={label} title={label} className={settingsPage === id ? 'active' : ''} onClick={() => setSettingsPage(id)}>
               <Icon name={icon} size={17} /><span>{label}</span>
             </button>
           ))}
@@ -3697,6 +3712,7 @@ function GroupSettingsModal({
               invites: fa ? 'دعوت‌ها و دسترسی' : 'Invites & Access',
               channels: fa ? 'کانال‌ها' : 'Channels',
               expressions: fa ? 'شکلک‌ها و صداها' : 'Expressions',
+              bots: fa ? 'ربات‌های سرور' : 'Server Bots',
               apps: fa ? 'برنامه‌ها و فرمان‌ها' : 'Apps & Commands',
               community: fa ? 'اجتماع' : 'Community',
               safety: fa ? 'ایمنی و مدیریت' : 'Safety & Moderation',
@@ -3937,6 +3953,7 @@ function GroupSettingsModal({
           permissions.effective.includes('createExpressions')
         }
       /> : null}
+      {settingsPage === 'bots' ? <BotsSettings groupId={group.id} channels={channels} members={members} roles={roles} categories={categories} canManage={permissions.manageGroup} /> : null}
 
       {settingsPage === 'insights' && (permissions.effective.includes('viewServerInsights') || permissions.administrator) ? (
         <ServerInsightsSection groupId={group.id} />

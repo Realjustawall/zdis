@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-const BASE = 'http://localhost:4000';
+const BASE = process.env.TEST_BASE_URL || 'http://localhost:8080';
 
 class Client {
   constructor(name) {
@@ -461,6 +461,6 @@ assert(typeof operations.body.features.dlp === 'string', 'admin feature matrix i
 const ready = await admin.get('/api/ready');
 assert(ready.body.ok, 'readiness probe failed');
 const metrics = await fetch(`${BASE}/api/metrics`);
-assert(metrics.ok && (await metrics.text()).includes('youtbelimo_http_request_duration_seconds'), 'metrics unavailable');
+assert(metrics.ok && (await metrics.text()).includes('zdis_http_request_duration_seconds'), 'metrics unavailable');
 
 console.log('  PASS  moderation, RBAC, chat, integrations, sync, notifications and readiness');

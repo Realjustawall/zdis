@@ -5,7 +5,7 @@ import { listUsers, getPublicUser, findUserById, toPublicUser } from '../service
 import { getDb } from '../db/index.js';
 import { requireAuth } from '../middleware/auth.js';
 import { listGroupsForUser } from '../services/groups.js';
-import { broadcastActivity, emitToUser } from '../realtime/index.js';
+import { broadcastActivity, emitToUser, getIo } from '../realtime/index.js';
 import { createUserReport } from '../services/moderation.js';
 import { audit } from '../services/audit.js';
 import { writeLimiter } from '../middleware/rateLimit.js';
@@ -97,6 +97,9 @@ usersRouter.post(
       );
     });
     emitToUser(id, 'network:updated', { type: 'friendship', action: 'removed' });
+    const { enforceVoiceAccess } = await import('../realtime/voice.js');
+    await enforceVoiceAccess(getIo(), req.user.id);
+    await enforceVoiceAccess(getIo(), id);
     return res.json({ ok: true });
   }),
 );

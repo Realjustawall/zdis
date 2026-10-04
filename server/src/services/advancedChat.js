@@ -139,7 +139,7 @@ function toScheduled(row) {
     content: row.content,
     replyToId: row.reply_to_id ?? null,
     attachmentIds: jsonArray(row.attachment_ids),
-    encrypted: Boolean(row.encrypted),
+    encrypted: Boolean(Number(row.encrypted)),
     sendAt: Number(row.send_at),
     expiresAt: row.expires_at ? Number(row.expires_at) : null,
     status: row.status,
@@ -172,7 +172,7 @@ export async function publishScheduledMessage(id) {
   const row = await db.get('SELECT * FROM scheduled_messages WHERE id = ?', [id]);
   try {
     const author = await db.get(
-      `SELECT id FROM users
+      `SELECT * FROM users
        WHERE id = ? AND is_active = 1 AND banned_at IS NULL
          AND (suspended_until IS NULL OR suspended_until <= ?)`,
       [row.user_id, Date.now()],
@@ -194,6 +194,20 @@ export async function publishScheduledMessage(id) {
       throw new Error('Author no longer has access to the destination.');
     }
 
+    if (row.target_type === 'channel') {
+      const channel = await db.get('SELECT * FROM channels WHERE id = ?', [row.target_id]);
+      const { groupContext } = await import('./permissions.js');
+      const { channelPermission } = await import('./channelPermissions.js');
+      const context = await groupContext(channel.group_id, author);
+      if (!await channelPermission(channel, context, 'viewChannel') ||
+          !await channelPermission(channel, context, 'sendMessages')) {
+        throw new Error('Author no longer has permission to send in this channel.');
+      }
+      const { inspectModeratorMessage } = await import('./builtinBots.js');
+      await inspectModeratorMessage({ kind: 'channel', channel, channelId: channel.id, context }, author,
+        row.content, jsonArray(row.attachment_ids).length);
+    }
+
     const message = await createMessage({
       channelId: row.target_type === 'channel' ? row.target_id : null,
       conversationId: row.target_type === 'conversation' ? row.target_id : null,
@@ -203,7 +217,8 @@ export async function publishScheduledMessage(id) {
       attachmentIds: jsonArray(row.attachment_ids),
       scopeUserIds: scopeRows.map((item) => item.user_id),
       expiresAt: row.expires_at,
-      type: row.encrypted ? 'encrypted' : 'user',
+      type: Number(row.encrypted) ? 'encrypted' : 'user',
+      clientId: 'scheduled:' + row.id,
     });
     await db.run(
       `UPDATE scheduled_messages

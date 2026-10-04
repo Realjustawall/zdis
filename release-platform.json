@@ -1,0 +1,7 @@
+{
+  "product": "ZDIS",
+  "platform": "ubuntu",
+  "databaseDefault": "sqlite",
+  "nodeMinimum": "24",
+  "validationReport": "docs/release-validation-2026-10-04.json"
+}

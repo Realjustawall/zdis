@@ -1,9 +1,10 @@
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
-const distDir = new URL('../dist/', import.meta.url);
-const serviceWorkerPath = new URL('../dist/sw.js', import.meta.url);
+const distDir = fileURLToPath(new URL('../dist/', import.meta.url));
+const serviceWorkerPath = fileURLToPath(new URL('../dist/sw.js', import.meta.url));
 
 async function listFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -18,18 +19,18 @@ async function listFiles(directory) {
   return files;
 }
 
-const emittedFiles = (await listFiles(distDir.pathname))
-  .filter((path) => path !== serviceWorkerPath.pathname && !path.endsWith('.map'))
+const emittedFiles = (await listFiles(distDir))
+  .filter((path) => path !== serviceWorkerPath && !path.endsWith('.map'))
   .sort();
 
-const assets = emittedFiles.map((path) => `/${relative(distDir.pathname, path).split(sep).join('/')}`);
+const assets = emittedFiles.map((path) => `/${relative(distDir, path).split(sep).join('/')}`);
 if (assets.includes('/index.html')) assets.unshift('/');
 
 let source = await readFile(serviceWorkerPath, 'utf8');
 const fingerprint = createHash('sha256');
 fingerprint.update(source);
 for (const path of emittedFiles) {
-  fingerprint.update(relative(distDir.pathname, path));
+  fingerprint.update(relative(distDir, path));
   fingerprint.update(await readFile(path));
 }
 const version = `zdis-pwa-${fingerprint.digest('hex').slice(0, 16)}`;

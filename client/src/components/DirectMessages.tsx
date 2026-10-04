@@ -7,6 +7,7 @@ import { useRealtime } from '../store/realtime';
 import { useSession } from '../store/session';
 import { toast } from '../store/toast';
 import { useVoice } from '../store/voice';
+import { useMediaPlayback } from '../lib/useMediaPlayback';
 import type { Conversation, Friendship, PublicUser } from '../types';
 import { Icon } from './Icon';
 import { Avatar, Confirm, Modal } from './ui';
@@ -456,6 +457,7 @@ export function DirectCallLayer({
   const channelId = useVoice((state) => state.channelId);
   const connecting = useVoice((state) => state.connecting);
   const localStream = useVoice((state) => state.localStream);
+  const screenStream = useVoice((state) => state.screenStream);
   const remoteStreams = useVoice((state) => state.remoteStreams);
   const muted = useVoice((state) => state.muted);
   const deafened = useVoice((state) => state.deafened);
@@ -489,6 +491,7 @@ export function DirectCallLayer({
         }
       }) as never),
       on('voice:ended', ((payload: { channelId: string }) => {
+        if (useVoice.getState().channelId === payload.channelId) useVoice.getState().leave();
         setIncoming((current) => current?.channelId === payload.channelId ? null : current);
         setIncomingDetails((current) => current?.id === payload.channelId.slice(3) ? null : current);
       }) as never),
@@ -502,6 +505,8 @@ export function DirectCallLayer({
               ? `${person?.displayName ?? 'کاربر'} تماس را رد کرد.`
               : `${person?.displayName ?? 'Someone'} declined the call.`,
           );
+          const conversation = conversations.find((item) => 'dm:' + item.id === payload.channelId);
+          if (conversation?.type === 'dm') useVoice.getState().leave();
         }
       }) as never),
     ];
@@ -616,7 +621,7 @@ export function DirectCallLayer({
           </div>
           <div className={`direct-call-grid${Object.keys(remoteStreams).length ? '' : ' waiting'}`}>
             <CallVideo
-              stream={localStream}
+              stream={screenSharing ? screenStream : localStream}
               user={me}
               muted
               label={fa ? 'شما' : 'You'}
@@ -672,16 +677,7 @@ function CallVideo({
   label: string;
 }) {
   const [node, setNode] = useState<HTMLVideoElement | null>(null);
-  const hasVideo = Boolean(stream?.getVideoTracks().some((track) => track.readyState === 'live'));
-
-  useEffect(() => {
-    if (!node) return;
-    node.srcObject = stream;
-    void node.play().catch(() => undefined);
-    return () => {
-      node.srcObject = null;
-    };
-  }, [node, stream]);
+  const hasVideo = useMediaPlayback(node, stream);
 
   return (
     <div className={`call-video${hasVideo ? ' has-video' : ''}`}>

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Login } from './pages/Login';
 import { Directory } from './pages/Directory';
@@ -13,7 +13,7 @@ import { NotificationsPanel } from './components/NotificationsPanel';
 import { ThemeSwitcher } from './components/ThemeSwitcher';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { PwaManager } from './components/PwaManager';
-import { Avatar, EmptyState, Modal, Alert } from './components/ui';
+import { Avatar, EmptyState, Modal, Alert, BadgeList } from './components/ui';
 import { useSession } from './store/session';
 import { useRealtime } from './store/realtime';
 import { useChat, type Target } from './store/chat';
@@ -21,7 +21,7 @@ import { useVoice } from './store/voice';
 import { useFriends } from './store/friends';
 import { useToasts, toast } from './store/toast';
 import { api, ApiError } from './lib/api';
-import type { Channel, Conversation, Group, Message, Notification, PublicUser } from './types';
+import type { Channel, Conversation, Group, Message, Notification, PublicUser, PublicSettings } from './types';
 import { useI18n } from './lib/i18n';
 import { Icon } from './components/Icon';
 import { DirectCallLayer, DirectMessageActions } from './components/DirectMessages';
@@ -49,7 +49,7 @@ export default function App() {
         <div className="app-loader-mark">
           <Icon name="message" size={34} />
         </div>
-        <strong>sahsha</strong>
+        <strong>ZDIS</strong>
         <div className="app-loader-track"><i /></div>
       </div>
     );
@@ -68,7 +68,7 @@ export default function App() {
   return (
     <>
       <PwaManager />
-      <Shell key={user.id} appName={settings?.app_name ?? 'sahsha'} />
+      <Shell key={user.id} appName={settings?.app_name ?? 'ZDIS'} />
       <ToastStack />
     </>
   );
@@ -127,7 +127,35 @@ function Shell({ appName }: { appName: string }) {
   const [discoverOpen, setDiscoverOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [mobileServersOpen, setMobileServersOpen] = useState(false);
+  const mobileSheetRef = useRef<HTMLElement>(null);
   const [themeStudioOpen, setThemeStudioOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileServersOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const focusables = () => Array.from(mobileSheetRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input, [tabindex="0"]') ?? []).filter((element) => element.getClientRects().length);
+    focusables()[0]?.focus();
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileServersOpen(false);
+      if (event.key === 'Tab') {
+        const elements = focusables();
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    const desktopQuery = window.matchMedia('(min-width: 781px)');
+    const onDesktop = () => { if (desktopQuery.matches) setMobileServersOpen(false); };
+    desktopQuery.addEventListener('change', onDesktop);
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('keydown', onEscape);
+      desktopQuery.removeEventListener('change', onDesktop);
+      previousFocus?.focus();
+    };
+  }, [mobileServersOpen]);
 
   const mustChangePassword = user.mustChangePassword;
 
@@ -221,7 +249,9 @@ function Shell({ appName }: { appName: string }) {
 
       on('settings:updated', ((payload: never) => {
         useSession.getState().patchSettings(payload);
+        void api.get<{settings:PublicSettings}>('/api/auth/me').then(data=>useSession.getState().patchSettings(data.settings)).catch(()=>{});
       }) as never),
+      on('access:updated', ((payload:{effective:Record<string,boolean|number>})=>{useSession.getState().patchSettings({accountAccess:payload.effective});}) as never),
       on('notification:created', ((payload: { notification: Notification }) => {
         toast.info(`${payload.notification.title}: ${payload.notification.body}`);
       }) as never),
@@ -458,7 +488,118 @@ function Shell({ appName }: { appName: string }) {
             <Icon name="shield" size={20} />
           </button>
         ) : null}
+
+        <div className="mobile-dock">
+          <button
+            className={`mobile-dock-item${view === 'home' && !notificationsOpen ? ' active' : ''}`}
+            onClick={() => { setView('home'); setShowSidebar(true); setNotificationsOpen(false); }}
+            aria-label={fa ? 'پیام‌ها' : 'Messages'}
+          >
+            <Icon name="message" size={21} />
+            <span>{fa ? 'پیام‌ها' : 'Messages'}</span>
+          </button>
+          <button
+            className={`mobile-dock-item${view === 'group' ? ' active' : ''}`}
+            onClick={() => setMobileServersOpen(true)}
+            aria-label={fa ? 'گروه‌ها' : 'Servers'}
+          >
+            <Icon name="users" size={21} />
+            <span>{fa ? 'گروه‌ها' : 'Servers'}</span>
+          </button>
+          <button
+            className="mobile-dock-item"
+            onClick={() => setDiscoverOpen(true)}
+            aria-label={fa ? 'کشف گروه‌ها' : 'Discover'}
+          >
+            <Icon name="compass" size={21} />
+            <span>{fa ? 'کشف' : 'Discover'}</span>
+          </button>
+          <button
+            className={`mobile-dock-item${notificationsOpen ? ' active' : ''}`}
+            onClick={() => setNotificationsOpen((open) => !open)}
+            aria-label={fa ? 'اعلان‌ها' : 'Notifications'}
+          >
+            <Icon name="bell" size={21} />
+            <span>{fa ? 'اعلان‌ها' : 'Alerts'}</span>
+          </button>
+          <button
+            className={`mobile-dock-item${selfOpen ? ' active' : ''}`}
+            onClick={() => setSelfOpen(true)}
+            aria-label={fa ? 'حساب کاربری' : 'Your account'}
+          >
+            <Avatar name={user.displayName} id={user.id} size={23} />
+            <span>{fa ? 'شما' : 'You'}</span>
+          </button>
+        </div>
       </nav>
+
+      {mobileServersOpen ? (
+        <div className="mobile-sheet-backdrop" onClick={() => setMobileServersOpen(false)}>
+          <section
+            className="mobile-server-sheet"
+            ref={mobileSheetRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-server-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mobile-sheet-grabber" />
+            <header className="mobile-sheet-header">
+              <div>
+                <h2 id="mobile-server-title">{fa ? 'گروه‌های شما' : 'Your servers'}</h2>
+                <p>{fa ? 'برای دیدن کانال‌ها یک گروه را انتخاب کنید.' : 'Choose a server to browse its channels.'}</p>
+              </div>
+              <button className="head-btn" onClick={() => setMobileServersOpen(false)} aria-label={fa ? 'بستن' : 'Close'}>
+                <Icon name="close" size={19} />
+              </button>
+            </header>
+            <div className="mobile-server-actions">
+              {canCreateGroup ? (
+                <button onClick={() => { setMobileServersOpen(false); setCreateOpen(true); }}>
+                  <Icon name="add" size={17} /> {fa ? 'ساخت گروه' : 'Create server'}
+                </button>
+              ) : null}
+              <button onClick={() => { setMobileServersOpen(false); setJoinOpen(true); }}>
+                <Icon name="link" size={17} /> {fa ? 'پیوستن با دعوت' : 'Join with invite'}
+              </button>
+            </div>
+            <div className="mobile-server-list">
+              {chat.groups.map((group) => {
+                const unread = groupUnread(group.id);
+                return (
+                  <button
+                    key={group.id}
+                    className={`mobile-server-option${activeGroupId === group.id ? ' active' : ''}`}
+                    onClick={() => { setMobileServersOpen(false); void openGroup(group.id); }}
+                  >
+                    <span className="mobile-server-avatar" style={{ background: group.accentColor ?? undefined }}>
+                      {group.iconUrl ? <img src={group.iconUrl} alt="" /> : group.name.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="mobile-server-name">{group.name}</span>
+                    {unread > 0 ? <span className="mobile-server-unread">{unread > 99 ? '99+' : unread}</span> : null}
+                    <Icon name="arrowLeft" size={16} className="mobile-server-chevron" />
+                  </button>
+                );
+              })}
+              {!chat.groups.length ? (
+                <div className="mobile-server-empty">
+                  <Icon name="users" size={25} />
+                  <span>{fa ? 'هنوز عضو گروهی نیستید.' : 'You have not joined a server yet.'}</span>
+                </div>
+              ) : null}
+            </div>
+            <div className="mobile-sheet-utilities">
+              <ThemeSwitcher compact onOpenStudio={() => { setMobileServersOpen(false); setThemeStudioOpen(true); }} />
+              <LanguageSwitcher compact />
+              {user.role === 'admin' || user.badges.some((badge) => badge.id === 'staff') ? (
+                <button className="mobile-utility-button" onClick={() => { setMobileServersOpen(false); setView('admin'); }}>
+                  <Icon name="shield" size={17} /> {fa ? 'مدیریت' : 'Admin'}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {/* ------------------------------------------------------ sidebar */}
       {view === 'group' && activeGroup ? (
@@ -610,6 +751,7 @@ function MemberRow({ member, offline }: { member: PublicUser & { memberRole?: st
       <span className="info">
         <span className="name" style={{ color: member.bannerColor ?? undefined }}>
           {member.displayName}
+          <BadgeList badges={member.badges.filter(b=>['bot','verified_bot','official'].includes(b.id))} compact />
         </span>
         <span className="sub">{member.customStatus ?? `@${member.username}`}</span>
       </span>

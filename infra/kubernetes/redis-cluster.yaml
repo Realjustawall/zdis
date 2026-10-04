@@ -50,7 +50,7 @@ spec:
                 --cluster-enabled yes \
                 --cluster-config-file /data/nodes.conf \
                 --cluster-node-timeout 5000 \
-                --cluster-announce-hostname "${HOSTNAME}.redis-cluster-headless.youtbelimo.svc.cluster.local" \
+                --cluster-announce-hostname "${HOSTNAME}.redis-cluster-headless.zdis.svc.cluster.local" \
                 --cluster-announce-port 6379 \
                 --cluster-announce-bus-port 16379
           ports:
@@ -99,7 +99,7 @@ spec:
             - |
               nodes=""
               for i in 0 1 2 3 4 5; do
-                host="redis-cluster-${i}.redis-cluster-headless.youtbelimo.svc.cluster.local"
+                host="redis-cluster-${i}.redis-cluster-headless.zdis.svc.cluster.local"
                 until redis-cli -h "$host" ping | grep -q PONG; do sleep 2; done
                 nodes="$nodes $host:6379"
               done

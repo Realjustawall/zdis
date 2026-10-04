@@ -1,8 +1,14 @@
 import crypto from 'node:crypto';
 import { config } from '../config.js';
 import { getDb } from '../db/index.js';
+import {badRequest} from '../lib/errors.js';
 
 const DEFINITIONS = {
+  'livekit.url': {type:'url',schemes:['ws:','wss:']},
+  'livekit.apiUrl': {type:'url',schemes:['http:','https:']},
+  'livekit.apiKey': {type:'string',secret:true},
+  'livekit.apiSecret': {type:'string',secret:true},
+  'livekit.maxParticipants': {type:'number'},
   'smtp.host': { type: 'string' },
   'smtp.port': { type: 'number' },
   'smtp.secure': { type: 'boolean' },
@@ -40,6 +46,7 @@ function decrypt(value) {
 function normalize(key, value) {
   const definition = DEFINITIONS[key];
   if (!definition) throw new Error(`Unsupported runtime configuration key: ${key}`);
+  if(definition.type==='url'){const text=String(value??'').trim();if(!text)return '';const url=new URL(text);if(!definition.schemes.includes(url.protocol))throw new Error(key+' has an invalid protocol.');return url.origin;}
   if (definition.type === 'boolean') return Boolean(value);
   if (definition.type === 'number') {
     const number = Number(value);
@@ -82,20 +89,25 @@ export async function loadRuntimeConfiguration() {
 
 export async function updateRuntimeConfiguration(patch, actorId) {
   const now = Date.now();
+  const values={};
   for (const [key, raw] of Object.entries(patch)) {
     if (!DEFINITIONS[key]) continue;
     // Empty secret means "keep the current secret", not erase it accidentally.
     if (DEFINITIONS[key].secret && !String(raw ?? '').trim()) continue;
-    const value = normalize(key, raw);
-    await getDb().run(
+    try{values[key]=normalize(key,raw);}catch{throw badRequest(key+' is invalid.');}
+  }
+  await getDb().tx(async tx=>{
+   for(const [key,value] of Object.entries(values)){
+    await tx.run(
       `INSERT INTO runtime_configuration (key, encrypted_value, updated_by, updated_at)
        VALUES (?, ?, ?, ?)
        ON CONFLICT (key) DO UPDATE SET encrypted_value = excluded.encrypted_value,
          updated_by = excluded.updated_by, updated_at = excluded.updated_at`,
       [key, encrypt(value), actorId, now],
     );
-    apply(key, value);
-  }
+   }
+  });
+  for(const [key,value] of Object.entries(values))apply(key,value);
   return runtimeConfigurationView();
 }
 

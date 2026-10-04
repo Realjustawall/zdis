@@ -6,7 +6,7 @@ import { resolveSession } from '../services/sessions.js';
 import { findUserById, touchLastSeen, toPublicUser } from '../services/users.js';
 import { listGroupsForUser } from '../services/groups.js';
 import { getDb } from '../db/index.js';
-import { registerVoiceHandlers, dropUserFromVoice, voiceSnapshot } from './voice.js';
+import { registerVoiceHandlers, dropUserFromVoice, voiceSnapshot, enforceVoiceAccess } from './voice.js';
 import { registerTypingHandlers } from './typing.js';
 import { activeSockets } from '../services/metrics.js';
 import { groupContext, canAccessChannel } from '../services/permissions.js';
@@ -205,6 +205,7 @@ export function emitToUsers(userIds, event, payload) {
 /** Forces every socket of a user to re-subscribe (membership changed). */
 export async function refreshUserRooms(userId) {
   if (!io) return;
+  await enforceVoiceAccess(io,userId);
   const sockets = await io.in(rooms.user(userId)).fetchSockets();
   for (const socket of sockets) {
     const desired = new Set([rooms.user(userId), socket.id]);

@@ -40,6 +40,7 @@ import {
   listBadgeIds,
   listBadges,
   setPrimaryBadges,
+  badgeCatalogue,createCustomBadge,deleteCustomBadge,
 } from '../services/badges.js';
 import { verifyLinkedAccount } from '../services/network.js';
 import { deleteRecoveryCodes } from '../services/recoveryCodes.js';
@@ -65,8 +66,25 @@ import { resetEnterpriseAuthClients } from '../services/enterpriseAuth.js';
 import { fishAudioStatus, listFishAudioModels } from '../services/fishAudio.js';
 
 export const adminRouter = express.Router();
+import {ACCESS_FEATURES,ACCESS_LIMITS,userAccess} from '../services/userAccess.js';
 
 adminRouter.use(requireAuth, requireAdmin, adminLimiter);
+
+adminRouter.get('/users/:id/access',asyncRoute(async(req,res)=>{
+ const id=parse(idSchema,req.params.id);if(!await findUserById(id))throw notFound('User not found.');
+ return res.json(await userAccess(id));
+}));
+adminRouter.put('/users/:id/access',asyncRoute(async(req,res)=>{
+ const id=parse(idSchema,req.params.id);if(!await findUserById(id))throw notFound('User not found.');
+ const shape={};for(const key of ACCESS_FEATURES)shape[key]=z.boolean().optional();
+ for(const key of ACCESS_LIMITS)shape[key]=z.number().int().min(0).max(10000).optional();
+ const policy=parse(z.object(shape).strict(),req.body);
+ await getDb().run('INSERT INTO user_access_policies(user_id,policy,updated_by,updated_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET policy=excluded.policy,updated_by=excluded.updated_by,updated_at=excluded.updated_at',[id,JSON.stringify(policy),req.user.id,Date.now()]);
+ await audit({actorId:req.user.id,action:'admin.user_access_updated',targetType:'user',targetId:id,meta:policy});
+ emitToUser(id,'access:updated',await userAccess(id));
+ const {enforceVoiceAccess}=await import('../realtime/voice.js');await enforceVoiceAccess(getIo(),id);
+ return res.json(await userAccess(id));
+}));
 
 // ------------------------------------------------------------------ summary
 
@@ -566,9 +584,12 @@ adminRouter.patch(
   }),
 );
 
-adminRouter.get('/badges', (_req, res) => {
-  return res.json({ badges: BADGE_CATALOGUE });
-});
+adminRouter.get('/badges', asyncRoute(async (_req, res) => res.json({badges:await badgeCatalogue()})));
+adminRouter.post('/badges',asyncRoute(async(req,res)=>{
+ const body=parse(z.object({label:z.string().trim().min(1).max(60),icon:z.enum(['star','shield','code','camera','broadcast','handshake','palette','scissors','check']),color:z.string().regex(/^#[0-9a-f]{6}$/i)}),req.body);
+ const badge=await createCustomBadge(body);await audit({actorId:req.user.id,action:'admin.badge_created',targetType:'badge',targetId:badge.id,meta:body});return res.status(201).json({badge});
+}));
+adminRouter.delete('/badges/:id',asyncRoute(async(req,res)=>{await deleteCustomBadge(req.params.id);await audit({actorId:req.user.id,action:'admin.badge_deleted',targetType:'badge',targetId:req.params.id});return res.json({ok:true});}));
 
 adminRouter.put(
   '/users/:id/badges',
@@ -576,7 +597,7 @@ adminRouter.put(
     const id = parse(idSchema, req.params.id);
     const { badgeIds } = parse(
       z.object({
-        badgeIds: z.array(z.enum(PRIMARY_BADGE_IDS)).max(PRIMARY_BADGE_IDS.length),
+        badgeIds: z.array(z.string().refine(id=>PRIMARY_BADGE_IDS.includes(id),'Unknown badge')).max(100),
       }),
       req.body,
     );
@@ -808,6 +829,11 @@ adminRouter.get(
 );
 
 const settingsSchema = z.object({
+  ...Object.fromEntries(ACCESS_FEATURES.map(key=>['default_'+key,z.boolean().optional()])),
+  default_max_owned_groups:z.number().int().min(0).max(10000).optional(),
+  default_max_joined_groups:z.number().int().min(0).max(10000).optional(),
+  default_max_created_channels:z.number().int().min(0).max(10000).optional(),
+  default_max_channels_per_group:z.number().int().min(3).max(10000).optional(),
   app_name: z.string().trim().min(1).max(48).optional(),
   app_logo_url: z.string().trim().max(500).optional(),
   registration_enabled: z.boolean().optional(),
@@ -850,6 +876,7 @@ adminRouter.patch(
     // Product policy can be disabled, while config.maxUploadBytes remains an
     // infrastructure safety boundary for memory-backed scanning.
     const settings = await updateSettings(body);
+    const {enforceVoiceAccess}=await import('../realtime/voice.js');await enforceVoiceAccess(getIo());
     getIo()?.emit('settings:updated', body);
 
     await audit({

@@ -1,11 +1,14 @@
 import { getDb } from '../db/index.js';
 import { logger } from '../lib/logger.js';
+import { forbidden, badRequest } from '../lib/errors.js';
 import { activeVoiceParticipants } from '../services/metrics.js';
 import { config } from '../config.js';
 import { getChannel } from '../services/groups.js';
 import { canAccessChannel, groupContext } from '../services/permissions.js';
 import { channelPermission } from '../services/channelPermissions.js';
 import { getSettings } from '../services/settings.js';
+import { registerVoiceActivities } from '../services/voiceActivities.js';
+import {RoomServiceClient,TrackSource} from 'livekit-server-sdk';
 
 /**
  * Voice/video is a full mesh: every participant holds a peer connection to
@@ -13,12 +16,13 @@ import { getSettings } from '../services/settings.js';
  * That keeps the server out of the media path entirely (no transcoding, no
  * bandwidth cost) at the price of a practical ceiling on room size.
  */
-const MAX_PARTICIPANTS = config.livekit.url ? config.livekit.maxParticipants : 8;
+const voiceCapacity = channelId => config.livekit.url&&!directConversationId(channelId) ? config.livekit.maxParticipants : 8;
 
 /** channelId -> Map<userId, { socketId, muted, deafened, video, screen, joinedAt }> */
 const voiceRooms = new Map();
 /** socketId -> channelId, so a disconnect can clean up without a lookup. */
 const socketChannel = new Map();
+export function voiceParticipantCount(channelId) { return voiceRooms.get(channelId)?.size || 0; }
 
 const voiceRoomKey = (channelId) => `voice:${channelId}`;
 const DIRECT_ROOM_PREFIX = 'dm:';
@@ -62,10 +66,13 @@ async function canJoinChannel(userId, channelId) {
   return voicePermission(userId, channelId, 'connectVoice');
 }
 
-async function voicePermission(userId, channelId, permission) {
+export async function voicePermission(userId, channelId, permission) {
+  const {userAccess}=await import('../services/userAccess.js');
+  const feature={connectVoice:'connectVoice',speak:'speak',video:'video',screenShare:'screenShare'}[permission];
+  if(feature && !(await userAccess(userId)).effective[feature])return false;
   const conversationId = directConversationId(channelId);
   if (conversationId) {
-    if (permission !== 'connectVoice' || !(await getSettings()).feature_voice_calls) return false;
+    if (!(await getSettings()).feature_voice_calls) return false;
     const membership = await getDb().get(
       `SELECT c.id, c.type
        FROM conversations c
@@ -122,6 +129,14 @@ export function registerVoiceHandlers(socket, io) {
       if (!(await canJoinChannel(userId, channelId))) {
         return ack?.({ ok: false, error: 'You cannot join that voice channel.' });
       }
+      if(!config.livekit.url){
+        const direct=Boolean(directConversationId(channelId));
+        const {userAccess}=await import('../services/userAccess.js');
+        const account=(await userAccess(userId)).effective;
+        const allowed=direct?account.speak&&account.video&&account.screenShare:
+          await voicePermission(userId,channelId,'speak')&&await voicePermission(userId,channelId,'video')&&await voicePermission(userId,channelId,'screenShare');
+        if(!allowed)return ack?.({ok:false,error:'Restricted media permissions require a configured LiveKit SFU; peer-to-peer voice cannot enforce publication restrictions.'});
+      }
 
       // One voice channel at a time, mirroring Discord's behaviour.
       leaveCurrent(socket, io);
@@ -130,8 +145,8 @@ export function registerVoiceHandlers(socket, io) {
       const room = voiceRooms.get(channelId);
       const startingDirectCall = Boolean(directConversationId(channelId) && room.size === 0);
 
-      if (room.size >= MAX_PARTICIPANTS && !room.has(userId)) {
-        return ack?.({ ok: false, error: `This voice channel is full (${MAX_PARTICIPANTS} max).` });
+      if (room.size >= voiceCapacity(channelId) && !room.has(userId)) {
+        return ack?.({ ok: false, error: `This voice channel is full (${voiceCapacity(channelId)} max).` });
       }
 
       const state = {
@@ -173,7 +188,7 @@ export function registerVoiceHandlers(socket, io) {
         });
       }
 
-      return ack?.({ ok: true, channelId, peers, max: MAX_PARTICIPANTS });
+      return ack?.({ ok: true, channelId, peers, max: voiceCapacity(channelId) });
     } catch (error) {
       logger.warn('voice:join failed', { error: error.message });
       return ack?.({ ok: false, error: 'Could not join the voice channel.' });
@@ -197,6 +212,8 @@ export function registerVoiceHandlers(socket, io) {
   const relay = (event) => (payload) => {
     const channelId = socketChannel.get(socket.id);
     if (!channelId) return;
+    // SFU channels must never accept mesh signalling, even from a modified client.
+    if(config.livekit.url)return;
     const room = voiceRooms.get(channelId);
     const target = room?.get(String(payload?.to ?? ''));
     // Only relay between two people already in the same room.
@@ -283,36 +300,7 @@ export function registerVoiceHandlers(socket, io) {
     });
   });
 
-  socket.on('voice:activity', async (payload) => {
-    const channelId = socketChannel.get(socket.id);
-    if (
-      !channelId ||
-      !(await voicePermission(userId, channelId, 'useEmbeddedActivities'))
-    ) return;
-    const action = payload?.action === 'end' ? 'end' : 'start';
-    if (action === 'end') {
-      await getDb().run('DELETE FROM voice_activities WHERE channel_id = ?', [channelId]);
-      io.to(voiceRoomKey(channelId)).emit('voice:activity', { channelId, activity: null });
-      return;
-    }
-    const activity = ['watch-together', 'chess', 'poker', 'whiteboard'].includes(payload?.activity)
-      ? payload.activity
-      : 'watch-together';
-    const now = Date.now();
-    await getDb().run(
-      `INSERT INTO voice_activities
-        (channel_id, activity, started_by, state, created_at, updated_at)
-       VALUES (?, ?, ?, '{}', ?, ?)
-       ON CONFLICT (channel_id)
-       DO UPDATE SET activity = excluded.activity, started_by = excluded.started_by,
-         state = '{}', created_at = excluded.created_at, updated_at = excluded.updated_at`,
-      [channelId, activity, userId, now, now],
-    );
-    io.to(voiceRoomKey(channelId)).emit('voice:activity', {
-      channelId,
-      activity: { name: activity, startedBy: userId, state: {}, createdAt: now, updatedAt: now },
-    });
-  });
+  registerVoiceActivities(socket, { getDb, channelForSocket: id => socketChannel.get(id), hasPermission: voicePermission, broadcast: (channelId, activity) => io.to(voiceRoomKey(channelId)).emit('voice:activity', { channelId, activity }) });
 }
 
 function publicState(state) {
@@ -362,6 +350,89 @@ function leaveCurrent(socket, io) {
 
 export function dropUserFromVoice(socket, io) {
   leaveCurrent(socket, io);
+}
+
+export async function voiceXpCandidates() {
+ const candidates=[];
+ for(const [channelId,participants] of voiceRooms){
+  if(directConversationId(channelId)||participants.size<2)continue;
+  const channel=await getChannel(channelId);if(!channel)continue;
+  for(const [userId,state] of participants){
+   if(!state.muted&&!state.deafened&&await voicePermission(userId,channelId,'speak'))candidates.push({groupId:channel.group_id,userId});
+  }
+ }
+ return candidates;
+}
+
+export async function moveVoiceParticipant(groupId,actor,userId,destinationId,io,selfMove=false){
+ if(selfMove&&actor.id!==userId)throw forbidden('You can only move yourself.');
+ const destination=await getChannel(destinationId);
+ if(!destination||destination.group_id!==groupId||!['voice','stage'].includes(destination.type)||!await canJoinChannel(userId,destinationId))throw forbidden('The member cannot join the destination.');
+ const ctx=await groupContext(groupId,actor);
+ if(!selfMove&&(!ctx.can('moveMembers')||!await ctx.outranksMember(userId)||!await channelPermission(destination,ctx,'moveMembers')))throw forbidden('Move Members permission and role hierarchy are required.');
+ if(!config.livekit.url&&(!await voicePermission(userId,destinationId,'speak')||!await voicePermission(userId,destinationId,'video')||!await voicePermission(userId,destinationId,'screenShare')))throw forbidden('Restricted media requires the server media service.');
+ if(voiceParticipantCount(destinationId)>=voiceCapacity(destinationId))throw badRequest('The destination is full.');
+ for(const [channelId,participants] of voiceRooms){
+  const state=participants.get(userId);if(!state)continue;
+  const source=await getChannel(channelId);if(source?.group_id!==groupId)continue;
+  if(!selfMove&&!await channelPermission(source,ctx,'moveMembers'))throw forbidden('You cannot move members from this channel.');
+  if(channelId===destinationId)return;
+  const socket=io?.sockets.sockets.get(state.socketId);if(!socket)throw badRequest('The member is no longer connected.');
+  if(config.livekit.url){
+   const room=await getDb().get('SELECT preferred_region FROM call_rooms WHERE channel_id=?',[channelId]);
+   const region=config.livekit.regions.find(r=>r.name===room?.preferred_region);
+   const service=new RoomServiceClient((region?.apiUrl||config.livekit.apiUrl||config.livekit.url).replace(/^ws/,'http'),config.livekit.apiKey,config.livekit.apiSecret);
+   await service.removeParticipant('channel-'+channelId,userId);
+  }
+  leaveCurrent(socket,io);socket.emit('voice:moved',{fromChannelId:channelId,channelId:destinationId});return;
+ }
+ throw badRequest('The member is not in a voice channel in this server.');
+}
+
+export async function enforceVoiceAccess(io,userId=null){
+ for(const [channelId,participants] of [...voiceRooms]){
+  for(const [id,state] of [...participants]){
+   if(userId&&id!==userId)continue;
+   const direct=Boolean(directConversationId(channelId));
+   const canJoin=await voicePermission(id,channelId,'connectVoice');
+   const {userAccess}=await import('../services/userAccess.js');
+   const account=(await userAccess(id)).effective;
+   const speak=direct?account.speak:await voicePermission(id,channelId,'speak');
+   const video=direct?account.video:await voicePermission(id,channelId,'video');
+   const screenShare=video&&(direct?account.screenShare:await voicePermission(id,channelId,'screenShare'));
+   if(!config.livekit.url){
+    if(!canJoin||!speak||!video||!screenShare){const socket=io?.sockets.sockets.get(state.socketId);if(socket){socket.emit('voice:closed',{channelId});leaveCurrent(socket,io);}}
+    continue;
+   }
+   const room=direct?null:await getDb().get('SELECT host_id,preferred_region FROM call_rooms WHERE channel_id=?',[channelId]);
+   const mediaRoom=direct?'direct-'+directConversationId(channelId):'channel-'+channelId;
+   const region=config.livekit.regions.find(r=>r.name===room?.preferred_region)||{apiUrl:config.livekit.apiUrl};
+   const client=new RoomServiceClient((region.apiUrl||region.url||config.livekit.url).replace(/^ws/,'http'),config.livekit.apiKey,config.livekit.apiSecret);
+   try{
+    if(!canJoin){await client.removeParticipant(mediaRoom,id);const socket=io?.sockets.sockets.get(state.socketId);if(socket){socket.emit('voice:closed',{channelId});leaveCurrent(socket,io);}continue;}
+    const channel=await getChannel(channelId);const stage=channel?.type==='stage'&&room?.host_id!==id?(await getDb().get('SELECT role FROM stage_members WHERE channel_id=? AND user_id=?',[channelId,id]))?.role==='speaker':true;
+    const sources=stage?[...(speak?[TrackSource.MICROPHONE]:[]),...(video?[TrackSource.CAMERA]:[]),...(screenShare?[TrackSource.SCREEN_SHARE,TrackSource.SCREEN_SHARE_AUDIO]:[])]:[];
+    const currentParticipant = await client.getParticipant(mediaRoom,id);
+    await client.updateParticipant(mediaRoom,id,undefined,{canPublish:sources.length>0,canPublishSources:sources,canSubscribe:currentParticipant.permission?.canSubscribe ?? true,canPublishData:true});
+   }catch(error){logger.warn('Voice access refresh failed',{channelId,userId:id,error:error.message});}
+  }
+ }
+}
+
+export async function removeUserFromGroupVoice(groupId,userId,io){
+ if(!io)return;
+ for(const [channelId,participants] of voiceRooms){
+  const participant=participants.get(userId);if(!participant)continue;
+  const channel=await getChannel(channelId);if(channel?.group_id!==groupId)continue;
+  const socket=io.sockets.sockets.get(participant.socketId);
+  if(config.livekit.url){
+   const room=await getDb().get('SELECT preferred_region FROM call_rooms WHERE channel_id=?',[channelId]);
+   const region=config.livekit.regions.find(r=>r.name===room?.preferred_region);
+   const client=new RoomServiceClient((region?.apiUrl||config.livekit.apiUrl||config.livekit.url).replace(/^ws/,'http'),config.livekit.apiKey,config.livekit.apiSecret);
+   await client.removeParticipant('channel-'+channelId,userId).catch(error=>logger.warn('Voice participant removal failed',{channelId,userId,error:error.message}));
+  }
+  if(socket){socket.emit('voice:closed',{channelId});leaveCurrent(socket,io);}
+ }
 }
 
 /** Called when a channel or group is deleted so nobody is stranded. */

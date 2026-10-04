@@ -53,7 +53,7 @@ export function BadgeList({ badges, compact = false }: { badges?: Badge[]; compa
       {badges.map((badge) => (
         <span
           key={badge.id}
-          className="badge"
+          className={`badge identity-badge identity-${badge.id}`}
           title={badge.label}
           style={{
             color: badge.color,
@@ -61,7 +61,7 @@ export function BadgeList({ badges, compact = false }: { badges?: Badge[]; compa
             fontSize: compact ? 8 : 10,
           }}
         >
-          {compact ? badge.label.slice(0, 1) : badge.label}
+          {badge.id==='bot'?'BOT':['verified_bot','official'].includes(badge.id)?<Icon name="check" size={compact?13:16} />:<><Icon name={(['shield','star','code','broadcast','camera','handshake','scissors','palette'].includes(badge.icon)?badge.icon:'star') as Parameters<typeof Icon>[0]['name']} size={compact?12:14}/>{compact?null:badge.label}</>}
         </span>
       ))}
     </span>

@@ -1,0 +1,28 @@
+{
+  "product": "ZDIS",
+  "date": "2026-10-04",
+  "windows": {
+    "node": "24.11.0",
+    "productionBuild": "passed",
+    "fullNpmTestSuite": "passed",
+    "sqliteRuntimeAndRestart": "passed",
+    "botServiceTests": 26
+  },
+  "ubuntu": {
+    "release": "24.04 LTS",
+    "environment": "Temporary WSL2 distribution, native Linux Node and dependencies",
+    "node": "24.11.0",
+    "productionBuild": "passed",
+    "fullNpmTestSuite": "passed"
+  },
+  "media": {
+    "server": "LiveKit 1.13.7 on Windows",
+    "passed": 5,
+    "skipped": 1,
+    "scope": "Actual SFU audio/video/screen delivery with generated inputs, channel and private-call publication restrictions, live revocation and DM block checks; desktop and mobile browser emulation",
+    "excluded": "Physical microphones/cameras, operating-system screen chooser, real mobile devices, public internet/NAT and large production media load"
+  },
+  "probotParity": "Not fully certified; see BOTS.md for implemented modules and remaining differences",
+  "coverageClaim": "Passing automated suites are not a 100 percent product or production-load certification",
+  "packaging": "No runtime database, configured admin password, session secret, LiveKit credential or test account included"
+}

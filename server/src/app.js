@@ -30,6 +30,7 @@ import { ssoRouter } from './routes/sso.js';
 import { integrationsRouter } from './routes/integrations.js';
 import { e2eeRouter } from './routes/e2ee.js';
 import { ttsRouter } from './routes/tts.js';
+import { builtinBotsRouter } from './routes/builtinBots.js';
 import { getDb, getReadDb, readReplicaMode } from './db/index.js';
 import { cacheMode } from './cache/index.js';
 import {
@@ -250,6 +251,7 @@ export function createApp() {
   app.use('/api/moderation', requirePasswordCurrent, moderationRouter);
   app.use('/api/voice', requirePasswordCurrent, voiceRouter);
   app.use('/api/integrations', requirePasswordCurrent, integrationsRouter);
+  app.use('/api/builtin-bots', requirePasswordCurrent, builtinBotsRouter);
   app.use('/api/e2ee', requirePasswordCurrent, e2eeRouter);
   app.use('/api/tts', requirePasswordCurrent, ttsRouter);
   app.use('/api/admin', requirePasswordCurrent, adminRouter);

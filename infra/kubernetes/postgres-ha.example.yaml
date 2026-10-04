@@ -37,7 +37,7 @@ spec:
   maxSyncReplicas: 1
   bootstrap:
     initdb:
-      database: youtbelimo
+      database: zdis
       owner: app
       secret:
         name: postgres-app
@@ -72,7 +72,7 @@ spec:
       log_checkpoints: "on"
 ---
 # PgBouncer is the normal application endpoint:
-# postgres-pooler-rw.youtbelimo.svc:5432
+# postgres-pooler-rw.zdis.svc:5432
 apiVersion: postgresql.cnpg.io/v1
 kind: Pooler
 metadata:

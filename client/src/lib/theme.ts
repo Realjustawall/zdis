@@ -21,7 +21,7 @@ export interface UiPreferences {
   animations: 'full' | 'reduced';
 }
 
-const STORAGE_KEY = 'youtbelimo.theme';
+const STORAGE_KEY = 'ZDIS.theme';
 const CUSTOM_STORAGE_KEY = 'zdis.custom-theme';
 const UI_STORAGE_KEY = 'zdis.ui-preferences';
 const listeners = new Set<(theme: ThemePreference) => void>();

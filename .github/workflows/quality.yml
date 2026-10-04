@@ -104,11 +104,11 @@ jobs:
           ignore-unfixed: true
           exit-code: '1'
       - name: Build production image
-        run: docker build -t youtbelimo:${{ github.sha }} .
+        run: docker build -t ZDIS:${{ github.sha }} .
       - name: Scan production image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: youtbelimo:${{ github.sha }}
+          image-ref: ZDIS:${{ github.sha }}
           scanners: vuln,secret,misconfig
           severity: HIGH,CRITICAL
           ignore-unfixed: true
@@ -129,13 +129,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: youtbelimo
+          POSTGRES_USER: ZDIS
           POSTGRES_PASSWORD: integration-password
-          POSTGRES_DB: youtbelimo_test
+          POSTGRES_DB: ZDIS_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U youtbelimo -d youtbelimo_test"
+          --health-cmd "pg_isready -U ZDIS -d ZDIS_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -171,7 +171,7 @@ jobs:
           --health-retries 20
 
     env:
-      DATABASE_URL: postgres://youtbelimo:integration-password@127.0.0.1:5432/youtbelimo_test
+      DATABASE_URL: postgres://ZDIS:integration-password@127.0.0.1:5432/ZDIS_test
       REDIS_URL: redis://127.0.0.1:6379
       REQUIRE_POSTGRES: 'true'
       REQUIRE_REDIS: 'true'
@@ -182,7 +182,7 @@ jobs:
       S3_REGION: us-east-1
       S3_ENDPOINT: http://127.0.0.1:4566
       S3_PUBLIC_ENDPOINT: http://127.0.0.1:4566
-      S3_BUCKET: youtbelimo-ci
+      S3_BUCKET: ZDIS-ci
       S3_ACCESS_KEY_ID: test
       S3_SECRET_ACCESS_KEY: test
       S3_FORCE_PATH_STYLE: 'true'
@@ -197,7 +197,7 @@ jobs:
       - name: Install PostgreSQL backup tools
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Create private S3 test bucket
-        run: aws --endpoint-url http://127.0.0.1:4566 s3 mb s3://youtbelimo-ci
+        run: aws --endpoint-url http://127.0.0.1:4566 s3 mb s3://ZDIS-ci
       - run: npm run build
       - run: npm test
 

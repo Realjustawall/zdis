@@ -5,6 +5,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { writeLimiter } from '../middleware/rateLimit.js';
 import {
   createGroup,
+  refreshGroupAccess,
   listGroupsForUser,
   listChannels,
   listMembers,
@@ -61,7 +62,24 @@ import {
 } from '../services/channelPermissions.js';
 
 export const groupsRouter = express.Router();
+
+async function publishVisibleChannel(groupId,channel,event){
+ const raw=await getChannel(channel.id);
+ for(const member of await getDb().all('SELECT u.* FROM users u JOIN group_members gm ON gm.user_id=u.id WHERE gm.group_id=? AND u.is_active=1',[groupId])){
+  const context=await groupContext(groupId,member);
+  if(await canAccessChannel(raw,context))emitToUser(member.id,event,{channel});
+  else if(event==='channel:updated')emitToUser(member.id,'channel:deleted',{groupId,channelId:channel.id});
+ }
+}
 groupsRouter.use(requireAuth);
+groupsRouter.use(asyncRoute(async(req,res,next)=>{
+ if(!['POST','PUT','PATCH','DELETE'].includes(req.method))return next();
+ const parts=req.path.split('/').filter(Boolean),groupId=parts[0];
+ if(!idSchema.safeParse(groupId).success)return next();
+ const destructive=(parts[1]==='bans'&&req.method==='POST')||(parts[1]==='members'&&parts[2]&&['PATCH','DELETE'].includes(req.method))||parts[1]==='roles'||(['channels','categories'].includes(parts[1])&&req.method==='DELETE');
+ if(destructive){const {guardBotAction}=await import('../services/botProtection.js');await guardBotAction(groupId,req.user,['members','bans'].includes(parts[1])&&parts[2]?[parts[2]]:[]);}
+ next();
+}));
 
 const createSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters.').max(64),
@@ -195,9 +213,6 @@ groupsRouter.post(
       'SELECT COUNT(*) AS count FROM chat_groups WHERE owner_id = ?',
       [req.user.id],
     );
-    if (req.user.role !== 'admin' && Number(owned?.count ?? 0) >= 20) {
-      throw badRequest('You have reached the limit of 20 groups.');
-    }
 
     const group = await createGroup({
       name: body.name,
@@ -236,11 +251,6 @@ groupsRouter.get(
 
     // Hide private channels the viewer has no seat in.
     const memberIds = new Set(members.map((m) => m.id));
-    const privateRows = await getDb().all(
-      'SELECT channel_id FROM channel_members WHERE user_id = ?',
-      [req.user.id],
-    );
-    const allowedPrivate = new Set(privateRows.map((row) => row.channel_id));
     const visibleChannels = (
       await Promise.all(
         channels.map(async (channel) => {
@@ -250,9 +260,7 @@ groupsRouter.get(
               raw,
               context,
             );
-          const privateSeat =
-            !channel.isPrivate || context.can('manageChannels') || allowedPrivate.has(channel.id);
-          return visible && privateSeat ? channel : null;
+          return visible ? channel : null;
         }),
       )
     ).filter(Boolean);
@@ -273,6 +281,7 @@ groupsRouter.get(
         deleteGroup: context.can('deleteGroup'),
         viewAuditLog: context.can('viewAuditLog'),
         manageChannels: context.can('manageChannels'),
+      createChannels: context.can('manageChannels'),
         manageMembers: context.can('manageMembers'),
         manageRoles: context.can('manageRoles'),
         createInvite: context.can('createInvite'),
@@ -348,7 +357,7 @@ groupsRouter.post(
     const body = parse(
       z.object({
         name: z.string().trim().toLowerCase().regex(/^[a-z0-9_]{2,32}$/),
-        type: z.enum(['emoji', 'sticker', 'sound']),
+        type: z.enum(['emoji', 'sticker', 'gif', 'sound']),
         attachmentId: idSchema,
       }),
       req.body,
@@ -363,9 +372,11 @@ groupsRouter.post(
     const limits = {
       emoji: { prefix: 'image/', bytes: 512 * 1024 },
       sticker: { prefix: 'image/', bytes: 2 * 1024 * 1024 },
+      gif: { prefix: 'image/', bytes: 8 * 1024 * 1024 },
       sound: { prefix: 'audio/', bytes: 2 * 1024 * 1024 },
     };
     const limit = limits[body.type];
+    if(body.type==='gif'&&attachment.mime!=='image/gif')throw badRequest('GIF assets must be actual GIF files.');
     if (!attachment.mime.startsWith(limit.prefix)) {
       throw badRequest(`${body.type} assets must be ${limit.prefix.slice(0, -1)} files.`);
     }
@@ -929,7 +940,7 @@ groupsRouter.put(
     const userId = parse(idSchema, req.params.userId);
     const context = await requireGroupPermission(groupId, req.user, 'banMembers');
     const body = parse(z.object({ reason: z.string().trim().max(300).optional().nullable() }), req.body ?? {});
-    const target = await getDb().get('SELECT role FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId]);
+    const target = await getDb().get('SELECT role, joined_at FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId]);
     if (!target) throw notFound('Server member not found.');
     if (!(await context.outranksMember(userId))) {
       throw forbidden('You can only ban members below your highest role.');
@@ -950,6 +961,11 @@ groupsRouter.put(
     });
     await refreshUserRooms(userId);
     await audit({ actorId: req.user.id, action: 'group.member_ban', targetType: 'user', targetId: userId, meta: { groupId, reason: body.reason } });
+    await invalidateGroup(groupId);
+    const {recordMembershipBotEvent}=await import('../services/builtinBots.js');
+    await recordMembershipBotEvent(groupId,userId,'leave',target.joined_at).catch(()=>{});
+    emitToGroup(groupId,'group:member-removed',{groupId,userId});emitToUser(userId,'group:left',{groupId});
+    const {removeUserFromGroupVoice}=await import('../realtime/voice.js');await removeUserFromGroupVoice(groupId,userId,getIo());
     return res.json({ ok: true });
   }),
 );
@@ -1565,6 +1581,7 @@ groupsRouter.patch(
     assertGrantablePermissions(context, body.permissions);
     const role = await updateServerRole(groupId, roleId, body);
     await invalidateGroup(groupId);
+    await refreshGroupAccess(groupId);
     emitToGroup(groupId, 'group:roles-updated', { groupId });
     await audit({
       actorId: req.user.id,
@@ -1589,6 +1606,7 @@ groupsRouter.delete(
     }
     await deleteServerRole(groupId, roleId);
     await invalidateGroup(groupId);
+    await refreshGroupAccess(groupId);
     emitToGroup(groupId, 'group:roles-updated', { groupId });
     await audit({
       actorId: req.user.id,
@@ -2188,13 +2206,17 @@ groupsRouter.post(
   '/:groupId/channels',
   asyncRoute(async (req, res) => {
     const groupId = parse(idSchema, req.params.groupId);
-    await requireGroupPermission(groupId, req.user, 'manageChannels');
+    const context = await groupContext(groupId, req.user);
+    if (!context.membership) throw forbidden('Only group members can create channels.');
+    if(!context.can('manageChannels'))throw forbidden('Manage Channels permission is required.');
     const body = parse(channelSchema, req.body);
 
     const count = await getDb().get('SELECT COUNT(*) AS count FROM channels WHERE group_id = ?', [
       groupId,
     ]);
-    if (Number(count?.count ?? 0) >= 100) throw badRequest('This group has reached 100 channels.');
+    const {assertUserLimit}=await import('../services/userAccess.js');
+    await assertUserLimit(req.user.id,'maxCreatedChannels',Number((await getDb().get('SELECT COUNT(*) AS count FROM channels WHERE created_by=?',[req.user.id])).count));
+    await assertUserLimit(context.group.owner_id,'maxChannelsPerGroup',Number(count.count));
 
     const id = newId();
     const now = Date.now();
@@ -2208,11 +2230,17 @@ groupsRouter.post(
       if (!category) throw badRequest('Category does not belong to this group.');
     }
 
-    await getDb().run(
+    await getDb().tx(async tx=>{
+      if(getDb().dialect==='postgres'){
+        for(const userId of [...new Set([req.user.id,context.group.owner_id])].sort())await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[userId]);
+      }
+      await assertUserLimit(req.user.id,'maxCreatedChannels',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE created_by=?',[req.user.id])).count));
+      await assertUserLimit(context.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE group_id=?',[groupId])).count));
+    await tx.run(
       `INSERT INTO channels
        (id, group_id, category_id, name, topic, type, position, is_private,
-        slowmode, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        slowmode, created_at, updated_at, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         groupId,
@@ -2225,8 +2253,10 @@ groupsRouter.post(
         body.slowmode,
         now,
         now,
+        req.user.id,
       ],
     );
+    });
 
     if (body.isPrivate) {
       const seats = new Set([req.user.id, ...(body.memberIds ?? [])]);
@@ -2255,7 +2285,7 @@ groupsRouter.post(
     }
 
     const channel = toChannel(await getChannel(id));
-    emitToGroup(groupId, 'channel:created', { channel });
+    await publishVisibleChannel(groupId,channel,'channel:created');
 
     const affectedMembers = await getDb().all(
       'SELECT user_id FROM group_members WHERE group_id = ?',
@@ -2383,7 +2413,7 @@ groupsRouter.patch(
       );
     }
     const updated = toChannel(await getChannel(channelId));
-    emitToGroup(groupId, 'channel:updated', { channel: updated });
+    await publishVisibleChannel(groupId,updated,'channel:updated');
     return res.json({ channel: updated });
   }),
 );

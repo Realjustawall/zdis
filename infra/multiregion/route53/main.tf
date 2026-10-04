@@ -9,7 +9,7 @@ resource "aws_route53_health_check" "primary" {
   failure_threshold = 3
   enable_sni        = true
   tags = {
-    Name = "youtbelimo-primary-ready"
+    Name = "zdis-primary-ready"
   }
 }
 
@@ -22,7 +22,7 @@ resource "aws_route53_health_check" "secondary" {
   failure_threshold = 3
   enable_sni        = true
   tags = {
-    Name = "youtbelimo-secondary-ready"
+    Name = "zdis-secondary-ready"
   }
 }
 

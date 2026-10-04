@@ -10,7 +10,19 @@ const CACHE_KEY = 'settings:all';
  * client hides the attach button entirely.
  */
 export const DEFAULT_SETTINGS = {
-  app_name: 'sahsha',
+  default_max_owned_groups: 10,
+  default_max_joined_groups: 50,
+  default_max_created_channels: 10,
+  default_max_channels_per_group: 100,
+  default_sendFiles: true,
+  default_sendImages: true,
+  default_sendVideos: true,
+  default_sendAudio: true,
+  default_connectVoice: true,
+  default_speak: true,
+  default_video: true,
+  default_screenShare: true,
+  app_name: 'ZDIS',
   app_logo_url: '',
   registration_enabled: false,
   login_title: 'Welcome back',
@@ -28,7 +40,7 @@ export const DEFAULT_SETTINGS = {
   allow_dms: true,
   allow_group_dms: true,
   youtubers_can_create_groups: true,
-  members_can_create_groups: false,
+  members_can_create_groups: true,
   message_edit_window_minutes: 0,
   spam_messages_per_30s: 5,
   blocked_terms: '',
@@ -75,6 +87,7 @@ export async function getSettings() {
     for (const row of rows) {
       if (row.key in DEFAULT_SETTINGS) merged[row.key] = decode(row.key, row.value);
     }
+    merged.app_name = 'ZDIS';
     return merged;
   });
 }
@@ -91,6 +104,7 @@ export async function updateSettings(patch) {
 
   for (const [key, value] of Object.entries(patch)) {
     if (!(key in DEFAULT_SETTINGS)) continue;
+    if (key === 'app_name' && value !== 'ZDIS') continue;
     const encoded = encode(key, value);
     await db.run(
       `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
@@ -105,9 +119,12 @@ export async function updateSettings(patch) {
 }
 
 /** Settings safe to expose to every authenticated client. */
-export async function getPublicSettings() {
+export async function getPublicSettings(userId=null) {
   const settings = await getSettings();
+  const {userAccess}=await import('./userAccess.js');
+  const account=userId?(await userAccess(userId)).effective:null;
   return {
+    ...(account?{accountAccess:account}:{}),
     app_name: settings.app_name,
     app_logo_url: settings.app_logo_url,
     registration_enabled: settings.registration_enabled,

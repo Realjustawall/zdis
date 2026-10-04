@@ -13,6 +13,14 @@ import { invalidateUser } from './users.js';
  * streamer may hand to somebody on their own roster; they carry no power.
  */
 export const BADGE_CATALOGUE = [
+  { id: 'bot', label: 'BOT', kind: 'primary', icon: 'code', color: '#5865f2', position: -3 },
+  { id: 'verified_bot', label: 'Verified bot', kind: 'primary', icon: 'check', color: '#168545', position: -2 },
+  { id: 'official', label: 'Official account', kind: 'primary', icon: 'check', color: '#b8860b', position: -1 },
+  { id: 'partner', label: 'Partner', kind: 'primary', icon: 'handshake', color: '#8864dc', position: 10 },
+  { id: 'early_supporter', label: 'Early Supporter', kind: 'primary', icon: 'star', color: '#ad4ba5', position: 11 },
+  { id: 'bug_hunter', label: 'Bug Hunter', kind: 'primary', icon: 'shield', color: '#168545', position: 12 },
+  { id: 'community_moderator', label: 'Community Moderator', kind: 'primary', icon: 'shield', color: '#5275c9', position: 13 },
+  { id: 'booster', label: 'Server Booster', kind: 'primary', icon: 'star', color: '#ba42a0', position: 14 },
   // --- primary: capability-bearing ---
   { id: 'admin', label: 'Administrator', kind: 'primary', icon: 'shield', color: '#ed4245', position: 0 },
   { id: 'staff', label: 'Staff', kind: 'primary', icon: 'star', color: '#5865f2', position: 1 },
@@ -47,6 +55,7 @@ const userBadgeKey = (userId) => `badges:${userId}`;
 export async function ensureBadgeCatalogue() {
   const db = getDb();
   const now = Date.now();
+  for(const badge of await db.all("SELECT * FROM badges WHERE id LIKE 'custom_%'")){BY_ID.set(badge.id,badge);if(!PRIMARY_BADGE_IDS.includes(badge.id))PRIMARY_BADGE_IDS.push(badge.id);}
   for (const badge of BADGE_CATALOGUE) {
     await db.run(
       `INSERT INTO badges (id, label, kind, icon, color, position, created_at)
@@ -57,6 +66,7 @@ export async function ensureBadgeCatalogue() {
       [badge.id, badge.label, badge.kind, badge.icon, badge.color, badge.position, now],
     );
   }
+  await db.run("INSERT INTO user_badges(user_id,badge_id,granted_at) SELECT user_id,'bot',? FROM bots WHERE 1=1 ON CONFLICT(user_id,badge_id) DO NOTHING",[now]);
 
   // Upgrade accounts created before badges existed. Do not replace an
   // account's explicit badge set; only seed the capability represented by the
@@ -75,6 +85,21 @@ export async function ensureBadgeCatalogue() {
      ON CONFLICT (user_id, badge_id) DO NOTHING`,
     [now],
   );
+}
+
+export async function badgeCatalogue(){return [...BY_ID.values()].sort((a,b)=>a.position-b.position);}
+export async function createCustomBadge({label,icon,color}){
+ const {newId}=await import('../lib/ids.js');const id='custom_'+newId();
+ const badge={id,label,icon,color,kind:'primary',position:30,created_at:Date.now()};
+ await getDb().run('INSERT INTO badges(id,label,kind,icon,color,position,created_at) VALUES(?,?,?,?,?,?,?)',[id,label,'primary',icon,color,30,badge.created_at]);
+ BY_ID.set(id,badge);PRIMARY_BADGE_IDS.push(id);return badge;
+}
+export async function deleteCustomBadge(id){
+ if(!id.startsWith('custom_')||!BY_ID.has(id))throw badRequest('Only custom badges may be deleted.');
+ const users=await getDb().all('SELECT user_id FROM user_badges WHERE badge_id=?',[id]);
+ await getDb().tx(async tx=>{await tx.run('DELETE FROM user_badges WHERE badge_id=?',[id]);await tx.run('DELETE FROM badges WHERE id=?',[id]);});
+ BY_ID.delete(id);const index=PRIMARY_BADGE_IDS.indexOf(id);if(index>=0)PRIMARY_BADGE_IDS.splice(index,1);
+ for(const row of users)await invalidateBadges(row.user_id);
 }
 
 export function getBadgeDefinition(badgeId) {

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-03",
+  "serviceTests": 17,
+  "httpWebSocketTests": 8,
+  "apiTests": 67,
+  "realtimeTests": 23,
+  "networkTests": 13,
+  "platformE2eeTests": 10,
+  "backendSuite": "passed",
+  "productionBuild": "passed",
+  "realServerBrowser": {
+    "desktopChrome": "passed",
+    "mobileChromeEmulation": "passed"
+  },
+  "concurrentTicketRequests": 20,
+  "newBotsHeavyLoadValidated": false,
+  "physicalPhoneValidated": false,
+  "preview": "latest backend running on 18181; authenticated runtime checks passed",
+  "cleanup": "Temporary test folders excluded from release; requested removal rejected by automatic tool policy."
+}

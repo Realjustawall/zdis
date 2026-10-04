@@ -3,15 +3,16 @@ import { useRealtime } from './realtime';
 import { useSession } from './session';
 import { toast } from './toast';
 import { api } from '../lib/api';
+import { captureMicrophone, releaseMicrophone } from '../lib/microphone';
+import { registerSfuVideo, setScreenTrack } from '../lib/useMediaPlayback';
 
 /**
  * Full-mesh WebRTC. Each participant keeps one RTCPeerConnection per peer and
  * the server only carries signalling, so no media ever passes through it.
  *
- * Glare (both sides offering at once) is avoided by a fixed rule: the peer who
- * joined later always creates the offer. The server tells a newcomer who is
- * already present, and tells everyone present that a newcomer arrived — the
- * newcomer offers, the incumbents answer.
+ * Both peers can renegotiate when camera or screen tracks change. The
+ * incumbent is polite and rolls back a colliding offer; the newcomer ignores
+ * collisions. This keeps simultaneous media changes from deadlocking.
  */
 
 interface PeerEntry {
@@ -19,6 +20,12 @@ interface PeerEntry {
   stream: MediaStream;
   /** Buffered until the remote description exists. */
   pendingCandidates: RTCIceCandidateInit[];
+  polite: boolean;
+  makingOffer: boolean;
+  ignoreOffer: boolean;
+  settingRemoteAnswer: boolean;
+  remoteScreenStreamId: string | null;
+  trackStreams: Map<MediaStreamTrack, string>;
 }
 
 interface VoiceState {
@@ -37,6 +44,7 @@ interface VoiceState {
 
   join: (channelId: string, options?: { withVideo?: boolean }) => Promise<void>;
   leave: () => void;
+  changeInputDevice: () => Promise<void>;
   toggleMute: () => void;
   toggleDeafen: () => void;
   toggleCamera: () => Promise<void>;
@@ -45,6 +53,7 @@ interface VoiceState {
 
 const peers = new Map<string, PeerEntry>();
 let sfuRoom: import('livekit-client').Room | null = null;
+let sfuPermissions={speak:true,video:true,screenShare:true};
 let detachSignalling: (() => void) | null = null;
 let speakingMonitor: number | null = null;
 let audioContext: AudioContext | null = null;
@@ -72,13 +81,16 @@ function createPeer(peerId: string, initiator: boolean): PeerEntry {
 
   const connection = new RTCPeerConnection(iceConfig());
   const stream = new MediaStream();
-  const entry: PeerEntry = { connection, stream, pendingCandidates: [] };
+  const entry: PeerEntry = { connection, stream, pendingCandidates: [], polite: !initiator, makingOffer: false, ignoreOffer: false, settingRemoteAnswer: false, remoteScreenStreamId: null, trackStreams: new Map() };
   peers.set(peerId, entry);
 
   attachLocalTracks(connection);
 
   connection.ontrack = (event) => {
     for (const track of event.streams[0]?.getTracks() ?? [event.track]) {
+      const streamId = event.streams[0]?.id ?? '';
+      entry.trackStreams.set(track, streamId);
+      setScreenTrack(track, streamId === entry.remoteScreenStreamId);
       if (!stream.getTracks().includes(track)) stream.addTrack(track);
     }
     useVoice.setState((state) => ({
@@ -100,17 +112,17 @@ function createPeer(peerId: string, initiator: boolean): PeerEntry {
     if (connection.connectionState === 'closed') dropPeer(peerId);
   };
 
-  if (initiator) {
-    connection.onnegotiationneeded = async () => {
+  connection.onnegotiationneeded = async () => {
       try {
-        const offer = await connection.createOffer();
-        await connection.setLocalDescription(offer);
-        useRealtime.getState().emit('voice:offer', { to: peerId, payload: connection.localDescription });
+        entry.makingOffer = true;
+        await connection.setLocalDescription();
+        useRealtime.getState().emit('voice:offer', { to: peerId, payload: { ...connection.localDescription?.toJSON(), screenStreamId: useVoice.getState().screenStream?.id ?? null } });
       } catch {
         /* renegotiation races are recovered by the next state change */
+      } finally {
+        entry.makingOffer = false;
       }
     };
-  }
 
   return entry;
 }
@@ -146,6 +158,8 @@ function teardown() {
 
 /** Lightweight local speaking detection so the UI can highlight the talker. */
 function startSpeakingDetection(stream: MediaStream, selfId: string) {
+  if (speakingMonitor !== null) cancelAnimationFrame(speakingMonitor);
+  void audioContext?.close().catch(() => {});
   try {
     audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
@@ -204,7 +218,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
     // Direct-message calls use the existing end-to-end WebRTC mesh. Channel
     // calls may use the configured SFU, but DM room ids are intentionally not
     // sent to the channel-only voice REST API.
-    if (useSession.getState().voiceMode === 'sfu' && !channelId.startsWith('dm:')) {
+    if (useSession.getState().voiceMode === 'sfu') {
+      let pendingMicrophone: MediaStream | null = null;
       try {
         const credentials = await api.post<{
           url?: string;
@@ -215,7 +230,10 @@ export const useVoice = create<VoiceState>((set, get) => ({
           pending?: boolean;
           stage?: boolean;
           canPublish?: boolean;
-        }>(`/api/voice/${channelId}/token`);
+          canSpeak?: boolean;
+          canUseVideo?: boolean;
+          canScreenShare?: boolean;
+        }>(channelId.startsWith('dm:') ? `/api/voice/direct/${channelId.slice(3)}/token` : `/api/voice/${channelId}/token`);
         if (credentials.lobby) {
           if (!credentials.pending) {
             await api.post(`/api/voice/${channelId}/lobby`);
@@ -235,15 +253,17 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
         // LiveKit is the largest client dependency. Load it only for SFU calls
         // so normal chat sessions keep a small initial bundle and memory map.
-        const { Room, RoomEvent } = await import('livekit-client');
+        const { Room, RoomEvent, Track } = await import('livekit-client');
         const room = new Room({
           adaptiveStream: true,
           dynacast: true,
           disconnectOnPageLeave: true,
         });
         sfuRoom = room;
-        room.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
+        room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
           const mediaTrack = track.mediaStreamTrack;
+          if (track.kind === 'video') registerSfuVideo(mediaTrack, track);
+          setScreenTrack(mediaTrack, publication.source === 'screen_share');
           set((state) => {
             const stream = state.remoteStreams[participant.identity] ?? new MediaStream();
             if (!stream.getTracks().includes(mediaTrack)) stream.addTrack(mediaTrack);
@@ -275,6 +295,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
         room.on(RoomEvent.Disconnected, () => {
           if (sfuRoom !== room) return;
           sfuRoom = null;
+          releaseMicrophone(get().localStream);
+          releaseMicrophone(pendingMicrophone);
           set({
             channelId: null,
             connecting: false,
@@ -293,9 +315,25 @@ export const useVoice = create<VoiceState>((set, get) => ({
             iceServers: useSession.getState().iceServers,
           },
         });
+        room.on(RoomEvent.ParticipantPermissionsChanged,(_previous,participant)=>{
+          if(participant.identity!==selfId)return;
+          const permission=participant.permissions;
+          const allows=(source:number)=>Boolean(permission?.canPublish && (!permission.canPublishSources.length||permission.canPublishSources.includes(source)));
+          sfuPermissions={speak:allows(2),video:allows(1),screenShare:allows(3)};
+          if(!sfuPermissions.speak)set({muted:true});
+          if(!sfuPermissions.video)set({cameraOn:false});
+          if(!sfuPermissions.screenShare)set({screenSharing:false,screenStream:null});
+        });
+        const callEnded = (payload:{channelId:string}) => { if(payload.channelId===get().channelId)get().leave(); };
+        const callOffs = [realtime.on('voice:closed',callEnded as never), realtime.on('voice:ended',callEnded as never), realtime.on('voice:peer-left',((payload:{channelId:string})=>{if(payload.channelId===get().channelId && payload.channelId.startsWith('dm:') && room.remoteParticipants.size<=1)get().leave();}) as never)];
+        detachSignalling=()=>callOffs.forEach(off=>off());
         const canPublish = credentials.canPublish !== false;
-        if (canPublish) await room.localParticipant.setMicrophoneEnabled(true);
-        if (options.withVideo && canPublish) await room.localParticipant.setCameraEnabled(true);
+        sfuPermissions={speak:credentials.canSpeak??canPublish,video:credentials.canUseVideo??canPublish,screenShare:credentials.canScreenShare??canPublish};
+        if (sfuPermissions.speak) {
+          pendingMicrophone = await captureMicrophone();
+          await room.localParticipant.publishTrack(pendingMicrophone.getAudioTracks()[0], { source: Track.Source.Microphone });
+        }
+        if (options.withVideo && sfuPermissions.video) await room.localParticipant.setCameraEnabled(true);
         const localTracks = [...room.localParticipant.trackPublications.values()]
           .map((publication) => publication.track?.mediaStreamTrack)
           .filter((track): track is MediaStreamTrack => Boolean(track));
@@ -304,14 +342,15 @@ export const useVoice = create<VoiceState>((set, get) => ({
           channelId,
           connecting: false,
           localStream,
-          muted: !canPublish,
+          muted: !sfuPermissions.speak,
           deafened: false,
-          cameraOn: Boolean(options.withVideo && canPublish),
+          cameraOn: Boolean(options.withVideo && sfuPermissions.video),
           stageAudience: Boolean(credentials.stage && !canPublish),
           joinedAt: Date.now(),
         });
         return;
       } catch (error) {
+        releaseMicrophone(pendingMicrophone);
         sfuRoom?.disconnect();
         sfuRoom = null;
         realtime.emit('voice:leave');
@@ -323,14 +362,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
     let localStream: MediaStream;
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-        video: options.withVideo ? { width: { ideal: 1280 }, height: { ideal: 720 } } : false,
-      });
+      localStream = await captureMicrophone(Boolean(options.withVideo));
     } catch (error) {
       set({ connecting: false });
       const name = (error as DOMException)?.name;
@@ -357,6 +389,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
     );
 
     if (!ack.ok) {
+      releaseMicrophone(localStream);
       for (const track of localStream.getTracks()) track.stop();
       set({ connecting: false, localStream: null, cameraOn: false });
       toast.error(ack.error ?? 'Could not join the voice channel.');
@@ -375,37 +408,49 @@ export const useVoice = create<VoiceState>((set, get) => ({
         createPeer(payload.userId, false);
       }) as never),
 
-      realtime.on('voice:offer', (async (payload: { from: string; payload: RTCSessionDescriptionInit }) => {
+      realtime.on('voice:offer', (async (payload: { from: string; payload: RTCSessionDescriptionInit & { screenStreamId?: string | null } }) => {
         const entry = createPeer(payload.from, false);
         try {
+          const ready = !entry.makingOffer && (entry.connection.signalingState === 'stable' || entry.settingRemoteAnswer);
+          entry.ignoreOffer = !entry.polite && !ready;
+          if (entry.ignoreOffer) return;
+          entry.remoteScreenStreamId = payload.payload.screenStreamId ?? null;
+          for (const [track, streamId] of entry.trackStreams) setScreenTrack(track, streamId === entry.remoteScreenStreamId);
           await entry.connection.setRemoteDescription(new RTCSessionDescription(payload.payload));
           for (const candidate of entry.pendingCandidates.splice(0)) {
             await entry.connection.addIceCandidate(candidate).catch(() => {});
           }
           const answer = await entry.connection.createAnswer();
           await entry.connection.setLocalDescription(answer);
-          realtime.emit('voice:answer', { to: payload.from, payload: entry.connection.localDescription });
+          realtime.emit('voice:answer', { to: payload.from, payload: { ...entry.connection.localDescription?.toJSON(), screenStreamId: get().screenStream?.id ?? null } });
         } catch {
           toast.error('A peer connection could not be established.');
         }
       }) as never),
 
-      realtime.on('voice:answer', (async (payload: { from: string; payload: RTCSessionDescriptionInit }) => {
+      realtime.on('voice:answer', (async (payload: { from: string; payload: RTCSessionDescriptionInit & { screenStreamId?: string | null } }) => {
         const entry = peers.get(payload.from);
         if (!entry) return;
         try {
+          entry.settingRemoteAnswer = true;
+          entry.ignoreOffer = false;
+          entry.remoteScreenStreamId = payload.payload.screenStreamId ?? null;
+          for (const [track, streamId] of entry.trackStreams) setScreenTrack(track, streamId === entry.remoteScreenStreamId);
           await entry.connection.setRemoteDescription(new RTCSessionDescription(payload.payload));
           for (const candidate of entry.pendingCandidates.splice(0)) {
             await entry.connection.addIceCandidate(candidate).catch(() => {});
           }
         } catch {
           /* a late answer for a closed connection is harmless */
+        } finally {
+          entry.settingRemoteAnswer = false;
         }
       }) as never),
 
       realtime.on('voice:ice', (async (payload: { from: string; payload: RTCIceCandidateInit }) => {
         const entry = peers.get(payload.from);
         if (!entry) return;
+        if (entry.ignoreOffer) return;
         if (!entry.connection.remoteDescription) {
           entry.pendingCandidates.push(payload.payload);
           return;
@@ -415,6 +460,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
       realtime.on('voice:peer-left', ((payload: { userId: string }) => {
         dropPeer(payload.userId);
+        const active = get().channelId;
+        if (active?.startsWith('dm:') && peers.size === 0) get().leave();
       }) as never),
 
       realtime.on('voice:closed', (() => {
@@ -431,6 +478,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
     if (sfuRoom) {
       const room = sfuRoom;
+      releaseMicrophone(localStream);
       sfuRoom = null;
       room.disconnect();
       useRealtime.getState().emit('voice:leave');
@@ -452,6 +500,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
     }
 
     teardown();
+    releaseMicrophone(localStream);
     for (const track of localStream?.getTracks() ?? []) track.stop();
     for (const track of screenStream?.getTracks() ?? []) track.stop();
     useRealtime.getState().emit('voice:leave');
@@ -472,6 +521,35 @@ export const useVoice = create<VoiceState>((set, get) => ({
     });
   },
 
+  async changeInputDevice() {
+    const { localStream, channelId, muted, deafened, stageAudience } = get();
+    if (!localStream || !channelId || stageAudience) return;
+    const replacement = await captureMicrophone();
+    const track = replacement.getAudioTracks()[0];
+    track.enabled = !muted && !deafened;
+    const oldTrack = localStream.getAudioTracks()[0];
+    try {
+      if (get().channelId !== channelId) throw new Error('The call ended while changing microphone.');
+      if (sfuRoom) {
+        const room = sfuRoom;
+        const { Track } = await import('livekit-client');
+        const publication = [...room.localParticipant.trackPublications.values()].find(item => item.source === Track.Source.Microphone);
+        if (publication?.track) await room.localParticipant.unpublishTrack(publication.track, false);
+        try { await room.localParticipant.publishTrack(track, { source: Track.Source.Microphone }); }
+        catch (error) { if (oldTrack?.readyState === 'live') await room.localParticipant.publishTrack(oldTrack, { source: Track.Source.Microphone }); throw error; }
+      } else {
+        const senders = [...peers.values()].flatMap(peer => peer.connection.getSenders()).filter(sender => sender.track?.kind === 'audio');
+        try { await Promise.all(senders.map(sender => sender.replaceTrack(track))); }
+        catch (error) { await Promise.allSettled(senders.map(sender => sender.replaceTrack(oldTrack))); throw error; }
+      }
+      if (get().channelId !== channelId) throw new Error('The call ended while changing microphone.');
+      releaseMicrophone(localStream);
+      const updated = new MediaStream([track, ...localStream.getVideoTracks()]);
+      set({ localStream: updated });
+      if (!sfuRoom) startSpeakingDetection(updated, useSession.getState().user?.id ?? '');
+    } catch (error) { releaseMicrophone(replacement); throw error; }
+  },
+
   toggleMute() {
     const { localStream, muted, deafened, stageAudience } = get();
     if (stageAudience) {
@@ -480,7 +558,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
     }
     const next = !muted;
     if (sfuRoom) {
-      void sfuRoom.localParticipant.setMicrophoneEnabled(!next);
+      if(!next&&!sfuPermissions.speak){toast.info('Speaking is disabled by your permissions.');return;}
+      void sfuRoom.localParticipant.setMicrophoneEnabled(!next).catch(()=>toast.error('Could not change microphone state.'));
       set({ muted: next, deafened: next ? deafened : false });
       useRealtime.getState().emit('voice:update', { muted: next });
       return;
@@ -501,7 +580,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
           publication.setEnabled(!next);
         }
       }
-      void sfuRoom.localParticipant.setMicrophoneEnabled(!next);
+      void sfuRoom.localParticipant.setMicrophoneEnabled(!next&&sfuPermissions.speak).catch(()=>toast.error('Could not change microphone state.'));
       set({ deafened: next, muted: next ? true : get().muted });
       useRealtime.getState().emit('voice:update', { deafened: next, muted: next ? true : get().muted });
       return;
@@ -521,6 +600,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
     if (!localStream) return;
     if (sfuRoom) {
       const next = !cameraOn;
+      if(next&&!sfuPermissions.video){toast.info('Camera sharing is disabled by your permissions.');return;}
       try {
         await sfuRoom.localParticipant.setCameraEnabled(next);
         const tracks = [...sfuRoom.localParticipant.trackPublications.values()]
@@ -563,13 +643,14 @@ export const useVoice = create<VoiceState>((set, get) => ({
   },
 
   async toggleScreenShare() {
-    const { screenStream, screenSharing, localStream, stageAudience } = get();
+    const { screenStream, screenSharing, stageAudience } = get();
     if (stageAudience) {
       toast.info('Only stage speakers can share their screen.');
       return;
     }
     if (sfuRoom) {
       const next = !screenSharing;
+      if(next&&!sfuPermissions.screenShare){toast.info('Screen sharing is disabled by your permissions.');return;}
       try {
         await sfuRoom.localParticipant.setScreenShareEnabled(next, { audio: true });
         const publication = [...sfuRoom.localParticipant.trackPublications.values()].find(
@@ -613,7 +694,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
       for (const track of capture.getTracks()) {
         for (const { connection } of peers.values()) {
-          connection.addTrack(track, localStream ?? capture);
+          connection.addTrack(track, capture);
         }
       }
       set({ screenStream: capture, screenSharing: true });

@@ -36,7 +36,7 @@ spec:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       nodeSelector:
-        youtbelimo.io/media-edge: "true"
+        zdis.io/media-edge: "true"
       terminationGracePeriodSeconds: 30
       containers:
         - name: coturn
@@ -58,12 +58,12 @@ spec:
             - name: TURN_REALM
               valueFrom:
                 secretKeyRef:
-                  name: youtbelimo-secrets
+                  name: zdis-secrets
                   key: TURN_REALM
             - name: TURN_SHARED_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: youtbelimo-secrets
+                  name: zdis-secrets
                   key: TURN_SHARED_SECRET
           ports:
             - { name: turn-tcp, containerPort: 3478, hostPort: 3478, protocol: TCP }

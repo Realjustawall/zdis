@@ -131,11 +131,11 @@ const RULES: Rule[] = [
     ),
   },
   {
-    pattern: /<sticker:([a-z0-9_]{2,32}):([a-zA-Z0-9_-]{8,64})>/,
+    pattern: /<(?:sticker|gif):([a-z0-9_]{2,32}):([a-zA-Z0-9_-]{8,64})>/,
     render: (m) => (
       <img
         className="custom-sticker"
-        src={`/api/files/${m[2]}`}
+        src={m[2].startsWith('builtin_') ? `/media-presets/${m[0].startsWith('<gif:')?'gifs':'stickers'}/${m[2].slice(8)}.${m[0].startsWith('<gif:')?'gif':'png'}` : `/api/files/${m[2]}`}
         alt={m[1]}
         title={m[1]}
         loading="lazy"

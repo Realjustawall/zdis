@@ -8,6 +8,7 @@ import { badRequest, conflict, notFound } from '../lib/errors.js';
 import { reserveStorage, releaseReservation } from './storageQuota.js';
 import { storeUpload } from './uploads.js';
 import { getSettings } from './settings.js';
+import { assertUploadAccess } from './userAccess.js';
 
 function uploadDir(id) {
   return path.join(config.dataDir, 'resumable', id);
@@ -25,6 +26,7 @@ export async function createResumableUpload({
   expectedSha256 = null,
 }) {
   const settings = await getSettings();
+  await assertUploadAccess(userId, declaredMime);
   const maxBytes = settings.upload_limit_enabled
     ? Math.min(config.maxUploadBytes, settings.max_upload_mb * 1024 * 1024)
     : config.maxUploadBytes;

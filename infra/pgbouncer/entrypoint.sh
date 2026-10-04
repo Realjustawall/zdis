@@ -3,13 +3,13 @@ set -eu
 
 install -d -m 0700 /tmp/pgbouncer
 cat > /tmp/pgbouncer/userlist.txt <<EOF
-"youtbelimo" "${POSTGRES_PASSWORD}"
+"zdis" "${POSTGRES_PASSWORD}"
 EOF
 chmod 0600 /tmp/pgbouncer/userlist.txt
 
 cat > /tmp/pgbouncer/pgbouncer.ini <<EOF
 [databases]
-youtbelimo = host=postgres port=5432 dbname=youtbelimo user=youtbelimo password=${POSTGRES_PASSWORD}
+zdis = host=postgres port=5432 dbname=zdis user=zdis password=${POSTGRES_PASSWORD}
 
 [pgbouncer]
 listen_addr = 0.0.0.0
@@ -26,8 +26,8 @@ server_idle_timeout = 60
 server_lifetime = 3600
 query_wait_timeout = 30
 ignore_startup_parameters = extra_float_digits
-admin_users = youtbelimo
-stats_users = youtbelimo
+admin_users = zdis
+stats_users = zdis
 EOF
 
 exec pgbouncer /tmp/pgbouncer/pgbouncer.ini

@@ -1,5 +1,5 @@
 groups:
-  - name: youtbelimo-sla
+  - name: zdis-sla
     rules:
       - alert: ServiceProbeFailed
         expr: probe_success == 0
@@ -10,7 +10,7 @@ groups:
           summary: "Synthetic probe failed for {{ $labels.instance }}"
 
       - alert: ApiInstanceDown
-        expr: up{job="youtbelimo"} == 0
+        expr: up{job="zdis"} == 0
         for: 1m
         labels:
           severity: critical
@@ -20,9 +20,9 @@ groups:
       - alert: ElevatedHttpErrorRate
         expr: |
           (
-            sum(rate(youtbelimo_http_request_duration_seconds_count{status=~"5.."}[5m]))
+            sum(rate(zdis_http_request_duration_seconds_count{status=~"5.."}[5m]))
             /
-            clamp_min(sum(rate(youtbelimo_http_request_duration_seconds_count[5m])), 0.001)
+            clamp_min(sum(rate(zdis_http_request_duration_seconds_count[5m])), 0.001)
           ) > 0.01
         for: 10m
         labels:
@@ -35,7 +35,7 @@ groups:
         expr: |
           histogram_quantile(
             0.95,
-            sum by (le) (rate(youtbelimo_http_request_duration_seconds_bucket[5m]))
+            sum by (le) (rate(zdis_http_request_duration_seconds_bucket[5m]))
           ) > 0.75
         for: 10m
         labels:
@@ -70,8 +70,8 @@ groups:
 
       - alert: BackupTooOld
         expr: |
-          (time() - max(youtbelimo_backup_last_success_timestamp_seconds) > 93600)
-          or absent(youtbelimo_backup_last_success_timestamp_seconds)
+          (time() - max(zdis_backup_last_success_timestamp_seconds) > 93600)
+          or absent(zdis_backup_last_success_timestamp_seconds)
         for: 15m
         labels:
           severity: critical
@@ -80,7 +80,7 @@ groups:
           summary: "No successful application backup in the last 26 hours"
 
       - alert: BackgroundJobFailures
-        expr: sum(increase(youtbelimo_background_jobs_total{status="failed"}[15m])) > 0
+        expr: sum(increase(zdis_background_jobs_total{status="failed"}[15m])) > 0
         for: 1m
         labels:
           severity: warning

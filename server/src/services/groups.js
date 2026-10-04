@@ -5,6 +5,7 @@ import { cache } from '../cache/index.js';
 import { toPublicUser } from './users.js';
 import { listBadgesForUsers } from './badges.js';
 import { DEFAULT_EVERYONE_PERMISSIONS, memberRolesByUser } from './serverRoles.js';
+import {assertUserLimit} from './userAccess.js';
 
 const groupCacheKey = (id) => `group:${id}`;
 const memberListKey = (id) => `group:${id}:members`;
@@ -73,6 +74,12 @@ export async function createGroup({ name, description = null, ownerId, accentCol
   const slug = await uniqueSlug(name);
 
   await db.tx(async (tx) => {
+    if(db.dialect==='postgres')await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[ownerId]);
+    const owned=await tx.get('SELECT COUNT(*) AS count FROM chat_groups WHERE owner_id=?',[ownerId]);
+    const joined=await tx.get('SELECT COUNT(*) AS count FROM group_members WHERE user_id=?',[ownerId]);
+    await assertUserLimit(ownerId,'maxOwnedGroups',Number(owned.count));
+    await assertUserLimit(ownerId,'maxJoinedGroups',Number(joined.count));
+    await assertUserLimit(ownerId,'maxChannelsPerGroup',2);
     await tx.run(
       `INSERT INTO chat_groups (id, name, slug, description, accent_color, owner_id, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -231,6 +238,11 @@ export async function invalidateGroup(groupId) {
   await cache.del(groupCacheKey(groupId), memberListKey(groupId));
 }
 
+export async function refreshGroupAccess(groupId){
+ const {refreshUserRooms}=await import('../realtime/index.js');
+ for(const member of await getDb().all('SELECT user_id FROM group_members WHERE group_id=?',[groupId]))await refreshUserRooms(member.user_id);
+}
+
 export async function addMember({ groupId, userId, role = 'member', invitedBy = null }) {
   const db = getDb();
   const banned = await db.get('SELECT 1 AS ok FROM server_bans WHERE group_id = ? AND user_id = ?', [
@@ -248,15 +260,26 @@ export async function addMember({ groupId, userId, role = 'member', invitedBy = 
   if (!user) throw notFound('User not found.');
   if (!user.is_active) throw badRequest('That account is disabled.');
 
-  await db.run(
-    'INSERT INTO group_members (group_id, user_id, role, invited_by, joined_at) VALUES (?, ?, ?, ?, ?)',
-    [groupId, userId, role, invitedBy, Date.now()],
-  );
+  await db.tx(async tx=>{
+    if(db.dialect==='postgres')await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[userId]);
+    if(db.dialect==='postgres')await tx.get('SELECT id FROM chat_groups WHERE id=? FOR UPDATE',[groupId]);
+    const {checkBotJoin}=await import('./botProtection.js');
+    await checkBotJoin(tx,groupId,userId);
+    await assertUserLimit(userId,'maxJoinedGroups',Number((await tx.get('SELECT COUNT(*) AS count FROM group_members WHERE user_id=?',[userId])).count));
+    await tx.run('INSERT INTO group_members (group_id,user_id,role,invited_by,joined_at) VALUES(?,?,?,?,?)',[groupId,userId,role,invitedBy,Date.now()]);
+  });
   await invalidateGroup(groupId);
+  await membershipAutomation(groupId,userId,'join');
+}
+
+async function membershipAutomation(groupId,userId,kind,joinedAt=null){
+  try{const {recordMembershipBotEvent}=await import('./builtinBots.js');await recordMembershipBotEvent(groupId,userId,kind,joinedAt);}
+  catch(error){const {logger}=await import('../lib/logger.js');logger.warn('membership automation failed',{groupId,userId,kind,error:error.message});}
 }
 
 export async function removeMember({ groupId, userId }) {
   const db = getDb();
+  const existed=await db.get('SELECT joined_at FROM group_members WHERE group_id=? AND user_id=?',[groupId,userId]);
   await db.tx(async (tx) => {
     await tx.run('DELETE FROM server_member_roles WHERE group_id = ? AND user_id = ?', [groupId, userId]);
     await tx.run('DELETE FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId]);
@@ -267,6 +290,7 @@ export async function removeMember({ groupId, userId }) {
     );
   });
   await invalidateGroup(groupId);
+  if(existed)await membershipAutomation(groupId,userId,'leave',existed.joined_at);
 }
 
 export async function setMemberRole({ groupId, userId, role }) {
@@ -399,10 +423,7 @@ export async function redeemInvite(code, userId) {
     userId,
   ]);
   if (!already) {
-    await db.run(
-      'INSERT INTO group_members (group_id, user_id, role, invited_by, joined_at) VALUES (?, ?, ?, ?, ?)',
-      [invite.group_id, userId, 'member', invite.created_by, Date.now()],
-    );
+    await addMember({groupId:invite.group_id,userId,invitedBy:invite.created_by});
     await db.run('UPDATE group_invites SET uses = uses + 1 WHERE id = ?', [invite.id]);
     await invalidateGroup(invite.group_id);
   }

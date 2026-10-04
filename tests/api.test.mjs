@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:4000';
+const BASE = process.env.TEST_BASE_URL || 'http://localhost:8080';
 
 class Client {
   constructor(name) {
@@ -63,7 +63,7 @@ const assert = (cond, msg) => { if (!cond) throw new Error(msg); };
 const admin = new Client('admin');
 const suffix = Math.random().toString(36).slice(2, 7);
 
-console.log('=== youtBeLimo smoke test ===\n');
+console.log('=== ZDIS smoke test ===\n');
 
 await check('CSP permits only the Cloudflare analytics beacon', async () => {
   const response = await fetch(`${BASE}/api/health`);
@@ -218,9 +218,23 @@ await check('youtuber creates a group', async () => {
   assert(channels.some((c) => c.type === 'voice'), 'expected a voice channel');
 });
 
-await check('plain member cannot create a group', async () => {
-  const r = await out.post('/api/groups', { name: 'Nope' }, { allowFail: true });
-  assert(r.status === 403, `expected 403, got ${r.status}`);
+await check('plain member creates a group and channel by default', async () => {
+  const r = await out.post('/api/groups', { name: `Member server ${suffix}` });
+  assert(r.status === 201, `expected 201, got ${r.status}`);
+  assert(r.body.group.memberRole === 'owner', 'member should own their server');
+  const channelResult = await out.post(`/api/groups/${r.body.group.id}/channels`, { name: 'member-channel', type: 'text' });
+  assert(channelResult.status === 201, 'member owner should create a channel');
+  await out.del(`/api/groups/${r.body.group.id}`);
+});
+
+await check('administrator can restrict member group creation', async () => {
+  await admin.patch('/api/admin/settings', { members_can_create_groups: false });
+  try {
+    const r = await out.post('/api/groups', { name: 'Restricted' }, { allowFail: true });
+    assert(r.status === 403, `expected 403, got ${r.status}`);
+  } finally {
+    await admin.patch('/api/admin/settings', { members_can_create_groups: true });
+  }
 });
 
 await check('non-member cannot see the group', async () => {

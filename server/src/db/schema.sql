@@ -1,4 +1,4 @@
--- youtBeLimo schema.
+-- ZDIS schema.
 -- Deliberately written in the portable subset shared by SQLite and PostgreSQL:
 --   * ids are application-generated TEXT (sortable, see lib/ids.js)
 --   * timestamps are BIGINT epoch milliseconds

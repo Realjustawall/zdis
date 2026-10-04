@@ -104,6 +104,8 @@ export async function audit({
         [entryHash, entry.createdAt],
       );
     });
+    const {logBotAudit}=await import('./botLogs.js');
+    await logBotAudit({actorId,action,targetType,targetId,meta}).catch(error=>logger.warn('Bot event log delivery failed',{action,error:error.message}));
   } catch (error) {
     // Availability is kept separate from audit integrity. Alerting receives the
     // structured error, while a logging outage does not turn into an API outage.

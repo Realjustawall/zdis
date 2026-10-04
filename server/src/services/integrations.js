@@ -123,6 +123,8 @@ export async function createBot({ ownerId, name, description = null }) {
     name: 'Bot token',
     scopes: ['read', 'write'],
   });
+  await getDb().run('INSERT INTO user_badges(user_id,badge_id,granted_by,granted_at) VALUES (?,?,?,?) ON CONFLICT(user_id,badge_id) DO NOTHING',[user.id,'bot',ownerId,Date.now()]);
+  const {invalidateUser}=await import('./users.js');await invalidateUser(user.id);
   return {
     bot: { id, user: toPublicUser(user), name, description, createdAt: Date.now() },
     token: credentials.token,
@@ -346,11 +348,11 @@ export async function deliverWebhook({ deliveryId, payload }) {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'user-agent': 'sahsha-Webhooks/1.0',
-        'x-youtbelimo-event': row.event_type,
-        'x-youtbelimo-delivery': row.event_id,
-        'x-youtbelimo-timestamp': String(timestamp),
-        'x-youtbelimo-signature': `v1=${signature}`,
+        'user-agent': 'ZDIS-Webhooks/1.0',
+        'x-ZDIS-event': row.event_type,
+        'x-ZDIS-delivery': row.event_id,
+        'x-ZDIS-timestamp': String(timestamp),
+        'x-ZDIS-signature': `v1=${signature}`,
       },
       body,
       redirect: 'error',

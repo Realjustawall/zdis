@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import { logger } from '../lib/logger.js';
 import { createRedisConnection, getRedis } from '../cache/index.js';
 
-export const QUEUE_NAME = 'youtbelimo';
+export const QUEUE_NAME = 'ZDIS';
 let connection;
 let queue;
 
@@ -17,7 +17,7 @@ export async function initJobQueue() {
   });
   connection.on('error', (error) => logger.warn('job redis error', { error: error.message }));
   // Hash tag keeps every BullMQ key in one Redis Cluster slot.
-  queue = new Queue(QUEUE_NAME, { connection, prefix: '{youtbelimo}' });
+  queue = new Queue(QUEUE_NAME, { connection, prefix: '{ZDIS}' });
   await queue.waitUntilReady();
   await queue.add(
     'maintenance.purge',

@@ -264,7 +264,7 @@ server {
   client_max_body_size 12m;
   # Preserve both the public host and the complete bucket path. They are part
   # of the S3 signature MinIO validates.
-  location ^~ /youtbelimo/ {
+  location ^~ /ZDIS/ {
     proxy_pass http://127.0.0.1:9000;
     proxy_http_version 1.1;
     proxy_set_header Host \$host;

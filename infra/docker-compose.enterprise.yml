@@ -1,4 +1,4 @@
-name: youtbelimo-enterprise
+name: zdis-enterprise
 
 x-app-environment: &app-environment
   NODE_ENV: production
@@ -14,7 +14,7 @@ x-app-environment: &app-environment
   SEED_ADMIN_EMAIL: "${SEED_ADMIN_EMAIL:-office@intesho.com}"
   SEED_ADMIN_USERNAME: "${SEED_ADMIN_USERNAME:-admin}"
   SEED_ADMIN_PASSWORD: "${SEED_ADMIN_PASSWORD:?set SEED_ADMIN_PASSWORD}"
-  DATABASE_URL: "postgres://youtbelimo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@pgbouncer:5432/youtbelimo"
+  DATABASE_URL: "postgres://zdis:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@pgbouncer:5432/zdis"
   REQUIRE_POSTGRES: "true"
   REDIS_URL: "redis://redis:6379"
   REQUIRE_REDIS: "true"
@@ -25,7 +25,7 @@ x-app-environment: &app-environment
   S3_REGION: us-east-1
   S3_ENDPOINT: http://minio:9000
   S3_PUBLIC_ENDPOINT: "${S3_PUBLIC_ENDPOINT:-http://localhost:9000}"
-  S3_BUCKET: youtbelimo
+  S3_BUCKET: zdis
   S3_ACCESS_KEY_ID: "${MINIO_ROOT_USER:?set MINIO_ROOT_USER}"
   S3_SECRET_ACCESS_KEY: "${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}"
   S3_FORCE_PATH_STYLE: "true"
@@ -41,7 +41,7 @@ x-app-environment: &app-environment
   TURN_URL: "${PUBLIC_TURN_URL:-turn:localhost:3478}"
   TURN_SHARED_SECRET: "${TURN_SHARED_SECRET:?set TURN_SHARED_SECRET}"
   TURN_CREDENTIAL_TTL_SECONDS: "3600"
-  OTEL_SERVICE_NAME: youtbelimo-api
+  OTEL_SERVICE_NAME: zdis-api
   OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
   METRICS_TOKEN_FILE: /run/secrets/metrics_token
   SMTP_HOST: "${SMTP_HOST:-}"
@@ -54,7 +54,7 @@ x-app-environment: &app-environment
   VAPID_SUBJECT: "${VAPID_SUBJECT:-mailto:admin@example.com}"
   BACKUP_RETENTION_DAYS: "${BACKUP_RETENTION_DAYS:-30}"
   OPENSEARCH_URL: http://opensearch:9200
-  OPENSEARCH_INDEX: youtbelimo-messages-v1
+  OPENSEARCH_INDEX: zdis-messages-v1
   OPENSEARCH_REQUIRED: "true"
 
 services:
@@ -105,7 +105,7 @@ services:
     command: ["npm", "run", "worker", "--workspace", "server"]
     environment:
       <<: *app-environment
-      OTEL_SERVICE_NAME: youtbelimo-worker
+      OTEL_SERVICE_NAME: zdis-worker
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9464/health"]
       interval: 10s
@@ -116,13 +116,13 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: youtbelimo
-      POSTGRES_USER: youtbelimo
+      POSTGRES_DB: zdis
+      POSTGRES_USER: zdis
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U youtbelimo -d youtbelimo"]
+      test: ["CMD-SHELL", "pg_isready -U zdis -d zdis"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -138,7 +138,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U youtbelimo -d youtbelimo"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U zdis -d zdis"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -210,9 +210,9 @@ services:
       - -ec
       - |
         mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
-        mc mb --ignore-existing local/youtbelimo
-        mc anonymous set none local/youtbelimo
-        mc ilm rule add --expire-days "${BACKUP_RETENTION_DAYS:-30}" --prefix backups/ local/youtbelimo
+        mc mb --ignore-existing local/zdis
+        mc anonymous set none local/zdis
+        mc ilm rule add --expire-days "${BACKUP_RETENTION_DAYS:-30}" --prefix backups/ local/zdis
 
   clamav:
     image: clamav/clamav:1.4
@@ -316,7 +316,7 @@ services:
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:v0.17.1
     environment:
-      DATA_SOURCE_NAME: "postgresql://youtbelimo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/youtbelimo?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://zdis:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/zdis?sslmode=disable"
     depends_on:
       postgres:
         condition: service_healthy

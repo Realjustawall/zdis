@@ -5,7 +5,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: youtbelimo
+      app.kubernetes.io/name: zdis
       app.kubernetes.io/component: api
   policyTypes: [Ingress]
   ingress:
@@ -28,7 +28,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: youtbelimo
+      app.kubernetes.io/name: zdis
       app.kubernetes.io/component: worker
   policyTypes: [Ingress]
   ingress:

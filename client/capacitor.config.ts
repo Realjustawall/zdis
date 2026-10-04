@@ -3,8 +3,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const hostedUrl = process.env.CAPACITOR_SERVER_URL?.trim();
 
 const config: CapacitorConfig = {
-  appId: 'com.youtbelimo.chat',
-  appName: 'sahsha',
+  appId: 'com.zdis.chat',
+  appName: 'ZDIS',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: hostedUrl ? {

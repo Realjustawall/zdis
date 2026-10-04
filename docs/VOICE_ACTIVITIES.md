@@ -1,0 +1,13 @@
+# Voice audio and Activities
+
+Open **Voice & Audio** in the voice view to choose microphone and speaker devices, adjust input/output volume, hear the microphone with **Let's Check**, and play a speaker test. Microphone selection also replaces the active call input. Closing the preview stops its media tracks and audio contexts. Device selection requires browser media permission; output selection depends on browser support for `setSinkId`. Use HTTPS outside localhost.
+
+Join a voice channel and open **Activities** to launch Chess, Tic-tac-toe or Backgammon. A second channel member chooses **Join game**; other members can watch. Minimize returns to the call without ending the game. The creator or a member with channel management permission can end the activity.
+
+Moves, seats, turns and dice are validated by the server. State persists in SQLite and is broadcast to channel members. Stale or concurrent moves are rejected. Chess supports castling, en passant, promotion and draw detection. Backgammon includes opening dice, doubles, bar entry, hits, forced dice usage, bearing off and single/gammon/backgammon scoring; this version plays individual games without a doubling cube or tournament matches.
+
+Run `npm run test:activities` for the game rules and SQLite/socket handler tests. Build with `npm run build`. Restart the backend after upgrading: new frontend assets alone do not enable the new Activities protocol.
+
+Verification for this release: 14 automated tests passed, including three complete seeded backgammon games, concurrent seat claims and stale move rejection. Browser checks covered fake microphone/speaker preview, input replacement during a call, cleanup, all three game interfaces, and a 320px mobile viewport. Activities browser checks used generated game states and intercepted acknowledgements; a live two-user game on the upgraded backend and physical audio hardware were not verified in this session because process restart/start was blocked by automatic approval review.
+
+Additional browser verification: two authenticated browser contexts exchanged screen video over the running P2P backend, with more than ten decoded frames confirmed at the receiver. Start/stop/restart, camera coexistence and fallback, display-track end handling, picker cancellation, and the remaining voice connection passed. Chrome supplied synthetic capture media; a physical Windows desktop capture, system audio, SFU and Internet/NAT conditions were not verified. The temporary second account was deleted. Light voice/settings/Activities and the 320px layout were inspected; call and video fullscreen bounds matched the viewport with no offset, including focused view.

@@ -14,6 +14,7 @@ import { channelPermission } from '../services/channelPermissions.js';
 import { createMessage, hydrateMessage } from '../services/messages.js';
 import { newId } from '../lib/ids.js';
 import { emitToChannel } from '../realtime/index.js';
+import { inspectModeratorMessage } from '../services/builtinBots.js';
 
 export const forumsRouter = express.Router();
 forumsRouter.use(requireAuth);
@@ -140,6 +141,7 @@ forumsRouter.post(
     ) {
       throw forbidden('You do not have permission to mention @everyone or @here.');
     }
+    await inspectModeratorMessage({kind:'channel',channel,channelId,context},req.user,body.title+'\n'+body.content,0);
     const root = await createMessage({
       channelId,
       authorId: req.user.id,

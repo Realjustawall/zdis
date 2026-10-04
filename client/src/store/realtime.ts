@@ -54,6 +54,13 @@ export const useRealtime = create<RealtimeState>((set, get) => ({
     socket.on('ready', (payload: { voice: Record<string, VoiceParticipant[]> }) => {
       set({ voice: payload.voice ?? {} });
     });
+    socket.on('voice:moved',async(payload:{fromChannelId:string;channelId:string})=>{
+      const {useVoice}=await import('./voice');
+      const active=useVoice.getState().channelId;
+      if(active&&active!==payload.fromChannelId)return;
+      useVoice.getState().leave();
+      await useVoice.getState().join(payload.channelId);
+    });
 
     socket.on('presence:update', ({ userId, presence }: { userId: string; presence: Presence }) => {
       set((state) => ({ presence: { ...state.presence, [userId]: presence } }));

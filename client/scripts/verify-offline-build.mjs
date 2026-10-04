@@ -1,7 +1,8 @@
+import { fileURLToPath } from 'node:url';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 
-const distDir = new URL('../dist/', import.meta.url).pathname;
+const distDir = fileURLToPath(new URL('../dist/', import.meta.url));
 const failures = [];
 
 async function listFiles(directory) {

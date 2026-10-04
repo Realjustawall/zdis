@@ -992,7 +992,7 @@ integrationsRouter.get(
       targetId: req.user.id,
       meta: { targets: targets.length, messages: messages.length },
     });
-    res.setHeader('Content-Disposition', `attachment; filename="youtbelimo-export-${Date.now()}.json"`);
+    res.setHeader('Content-Disposition', `attachment; filename="ZDIS-export-${Date.now()}.json"`);
     return res.json({
       schemaVersion: 1,
       exportedAt: new Date().toISOString(),

@@ -2,6 +2,7 @@ import { getDb, getReadDb, likeClause, likeValue } from '../db/index.js';
 import { newId } from '../lib/ids.js';
 import { notFound, badRequest } from '../lib/errors.js';
 import { sanitizeText } from '../lib/validate.js';
+import { listBadgesForUsers } from './badges.js';
 
 const MENTION_PATTERN = /(?:^|[^\w@])@([a-z0-9._-]{3,32})/gi;
 
@@ -21,9 +22,11 @@ export function toMessage(row, extras = {}) {
           avatarUrl: row.author_avatar_url ?? null,
           bannerColor: row.author_banner_color ?? null,
           role: row.author_role ?? 'member',
+          badges: extras.authorBadges ?? [],
         }
       : null,
     content: deleted ? '' : row.content,
+    botEmbed: deleted || !row.bot_embed ? null : JSON.parse(row.bot_embed),
     type: row.type,
     replyToId: row.reply_to_id ?? null,
     pinned: Boolean(row.pinned),
@@ -79,6 +82,7 @@ export async function createMessage({
   expiresAt = null,
   suppressEmbeds = false,
   clientId = null,
+  botEmbed = null,
 }) {
   if (!channelId && !conversationId) throw badRequest('A message needs a destination.');
 
@@ -93,6 +97,13 @@ export async function createMessage({
     if (existing) return { ...(await hydrateMessage(existing.id)), idempotentReplay: true };
   }
   const encrypted = type === 'encrypted';
+  if(attachmentIds.length){
+    const {assertUploadAccess}=await import('./userAccess.js');
+    for(const attachmentId of attachmentIds){
+      const file=await db.get('SELECT mime FROM attachments WHERE id=? AND uploader_id=?',[attachmentId,authorId]);
+      if(file)await assertUploadAccess(authorId,file.mime);
+    }
+  }
   const clean = encrypted ? String(content).trim() : sanitizeText(content, 4000).trim();
   if (encrypted && (!conversationId || !/^e2ee:v1:[A-Za-z0-9_-]{20,65520}$/.test(clean))) {
     throw badRequest('Invalid encrypted message envelope.');
@@ -122,17 +133,38 @@ export async function createMessage({
     ? []
     : [
         ...new Set(
-          [...clean.matchAll(/<(?:(?:sticker|sound):[a-z0-9_]{2,32}|:[a-z0-9_]{2,32}):([a-zA-Z0-9_-]{8,64})>/gi)]
+          [...clean.matchAll(/<(?:(?:sticker|gif|sound):[a-z0-9_]{2,32}|:[a-z0-9_]{2,32}):([a-zA-Z0-9_-]{8,64})>/gi)]
             .map((match) => match[1]),
         ),
       ].slice(0, 50);
+
+  if(expressionAttachmentIds.length){
+    const {assertUploadAccess}=await import('./userAccess.js');
+    for(const attachmentId of expressionAttachmentIds){const file=await db.get('SELECT mime FROM attachments WHERE id=?',[attachmentId]);if(file)await assertUploadAccess(authorId,file.mime);}
+  }
+  if(!encrypted&&/<(?:gif|sticker):/i.test(clean)){
+    const {assertUserFeature}=await import('./userAccess.js');await assertUserFeature(authorId,'sendImages');
+    if(channelId){const {groupContext}=await import('./permissions.js');const {channelPermission}=await import('./channelPermissions.js');const {findUserById}=await import('./users.js');const channel=await db.get('SELECT * FROM channels WHERE id=?',[channelId]);if(channel&&!(await channelPermission(channel,await groupContext(channel.group_id,await findUserById(authorId)),'sendImages'))){const {forbidden}=await import('../lib/errors.js');throw forbidden('Images are disabled in this channel.');}}
+  }
+  if(channelId&&(attachmentIds.length||expressionAttachmentIds.length)){
+    const {groupContext}=await import('./permissions.js');const {channelPermission}=await import('./channelPermissions.js');const {findUserById}=await import('./users.js');
+    const channel=await db.get('SELECT * FROM channels WHERE id=?',[channelId]),actor=await findUserById(authorId);
+    if(channel&&actor){
+      const context=await groupContext(channel.group_id,actor);
+      for(const id of [...attachmentIds,...expressionAttachmentIds]){
+        const file=await db.get('SELECT mime FROM attachments WHERE id=?',[id]);
+        const key=file?.mime?.startsWith('image/')?'sendImages':file?.mime?.startsWith('video/')?'sendVideos':file?.mime?.startsWith('audio/')?'sendAudio':null;
+        if(!(await channelPermission(channel,context,'attachFiles')) || key&&!(await channelPermission(channel,context,key))){const {forbidden}=await import('../lib/errors.js');throw forbidden('Media attachments are disabled in this channel.');}
+      }
+    }
+  }
 
   await db.tx(async (tx) => {
     await tx.run(
       `INSERT INTO messages
          (id, client_nonce, channel_id, conversation_id, author_id, content, type, reply_to_id,
-          created_at, expires_at, suppress_embeds)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          created_at, expires_at, suppress_embeds, bot_embed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         clientId,
@@ -145,6 +177,7 @@ export async function createMessage({
         now,
         expiresAt,
         suppressEmbeds ? 1 : 0,
+        botEmbed ? JSON.stringify(botEmbed) : null,
       ],
     );
 
@@ -188,6 +221,7 @@ export async function hydrateMessage(messageId, viewerId = null) {
 async function attachExtras(rows, viewerId = null) {
   if (!rows.length) return [];
   const db = getDb();
+  const authorBadges=await listBadgesForUsers([...new Set(rows.map(row=>row.author_id))]);
   const ids = rows.map((row) => row.id);
   const placeholders = ids.map(() => '?').join(', ');
 
@@ -251,6 +285,7 @@ async function attachExtras(rows, viewerId = null) {
 
   return rows.map((row) =>
     toMessage(row, {
+      authorBadges: authorBadges.get(row.author_id)??[],
       attachments: (attachmentsBy.get(row.id) ?? []).map(toAttachment),
       reactions: summariseReactions(reactionsBy.get(row.id) ?? []),
       mentionedUserIds: (mentionsBy.get(row.id) ?? []).map((mention) => mention.user_id),
@@ -396,6 +431,23 @@ export async function editMessage(messageId, content) {
   if (!clean) throw badRequest('Message cannot be empty.');
 
   const db = getDb();
+  const row = await getMessage(messageId);
+  if (!row) throw notFound('Message not found.');
+  if (/<(?:gif|sticker):/i.test(clean)) {
+    const {assertUserFeature} = await import('./userAccess.js');
+    await assertUserFeature(row.author_id, 'sendImages');
+    if (row.channel_id) {
+      const {groupContext} = await import('./permissions.js');
+      const {channelPermission} = await import('./channelPermissions.js');
+      const {findUserById} = await import('./users.js');
+      const channel = await db.get('SELECT * FROM channels WHERE id=?', [row.channel_id]);
+      const context = await groupContext(channel.group_id, await findUserById(row.author_id));
+      if (!(await channelPermission(channel, context, 'sendImages'))) {
+        const {forbidden} = await import('../lib/errors.js');
+        throw forbidden('Images are disabled in this channel.');
+      }
+    }
+  }
   const now = Date.now();
   await db.run('UPDATE messages SET content = ?, edited_at = ? WHERE id = ?', [clean, now, messageId]);
 

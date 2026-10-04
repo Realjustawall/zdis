@@ -4,7 +4,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { DatabaseSync } from 'node:sqlite';
 
-const dataDir = await mkdtemp(path.join(tmpdir(), 'youtbelimo-migration-'));
+const dataDir = await mkdtemp(path.join(tmpdir(), 'ZDIS-migration-'));
 const databaseFile = path.join(dataDir, 'legacy.db');
 const database = new DatabaseSync(databaseFile);
 

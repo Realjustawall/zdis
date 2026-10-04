@@ -21,6 +21,13 @@ export type IconName =
   | 'logout'
   | 'menu'
   | 'message'
+  | 'microphoneOff'
+  | 'videoOff'
+  | 'headphonesOff'
+  | 'grid'
+  | 'focus'
+  | 'activity'
+  | 'phoneOff'
   | 'microphone'
   | 'pin'
   | 'poll'
@@ -50,6 +57,13 @@ export type IconName =
   | 'users';
 
 const paths: Record<IconName, string> = {
+  activity: 'M8 7h8a5 5 0 0 1 5 4l1 6a2 2 0 0 1-3.4 1.7L16 16H8l-2.6 2.7A2 2 0 0 1 2 17l1-6a5 5 0 0 1 5-4ZM7 10v5m-2.5-2.5h5M16 11h.01M18 14h.01',
+  grid: 'M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3ZM14 14h7v7h-7Z',
+  focus: 'M3 3h18v12H3ZM3 19h4v3H3Zm7 0h4v3h-4Zm7 0h4v3h-4Z',
+  videoOff: 'M3 3l18 18M9 5h5v5m3 1 4-3v8l-4-3M14 14v5H3V8m0-3h2',
+  headphonesOff: 'M3 3l18 18M4 13v-1a8 8 0 0 1 1-4m3-3a8 8 0 0 1 12 7v5M4 13h4v8H4Zm12 3v5h4v-2',
+  microphoneOff: 'M3 3l18 18M9 9v3a3 3 0 0 0 5 2M9 5a3 3 0 0 1 6 0v6M5 11a7 7 0 0 0 12 5m2-5a7 7 0 0 1-.6 3M12 18v4m-4 0h8',
+  phoneOff: 'M4 15v4h4l1-4a15 15 0 0 1 6 0l1 4h4v-4c-4-5-12-5-16 0Z',
   add: 'M12 5v14M5 12h14',
   arrowLeft: 'M19 12H5m7-7-7 7 7 7',
   announcement: 'M4 13V9l12-5v14L4 13Zm0 0 2.5 6h3L8 13m8-4a3 3 0 0 1 0 4',

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test-fixtures';
 
 test('boots when Safari restricts storage and only exposes legacy media listeners', async ({ page }) => {
   const pageErrors: string[] = [];

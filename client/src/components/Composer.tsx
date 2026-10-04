@@ -6,6 +6,9 @@ import { useSession } from '../store/session';
 import type { Attachment, GroupExpression, Message, PublicUser, ServerRole } from '../types';
 import { useI18n } from '../lib/i18n';
 import { Icon } from './Icon';
+import { MediaPicker } from './MediaPicker';
+import { SupportTickets } from './SupportTickets';
+import { SelfRoles } from './SelfRoles';
 import { encryptUploadFile, type EncryptedFileMetadata } from '../lib/fileCrypto';
 import { storageGet, storageRemove, storageSet } from '../lib/storage';
 
@@ -156,6 +159,7 @@ export function Composer({
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [mediaOpen,setMediaOpen]=useState<'gif'|'sticker'|null>(null);
   const [emojiQuery, setEmojiQuery] = useState('');
   const [codeOpen, setCodeOpen] = useState(false);
   const [expressions, setExpressions] = useState<GroupExpression[]>([]);
@@ -309,7 +313,7 @@ export function Composer({
     [],
   );
 
-  const uploadsEnabled = settings?.uploads_enabled ?? false;
+  const uploadsEnabled = Boolean(settings?.uploads_enabled && settings?.accountAccess?.sendFiles!==false);
   const maxMb = settings?.max_upload_mb ?? 10;
   const uploadLimitEnabled = settings?.upload_limit_enabled ?? true;
 
@@ -778,6 +782,12 @@ export function Composer({
       <div
         className={`composer${editing || replyTo || pending.length ? ' has-context' : ''}`}
         style={{ position: 'relative' }}
+        onPointerDown={(event) => {
+          if (event.target instanceof Element && event.target.closest('button')) event.preventDefault();
+        }}
+        onMouseDown={(event) => {
+          if (event.target instanceof Element && event.target.closest('button')) event.preventDefault();
+        }}
       >
         {uploadsEnabled ? (
           <>
@@ -825,6 +835,7 @@ export function Composer({
           className={`composer-btn composer-code${codeOpen ? ' active' : ''}`}
           onClick={() => {
             setCodeOpen((open) => !open);
+            setMediaOpen(null);
             setEmojiOpen(false);
           }}
           disabled={busy}
@@ -836,6 +847,7 @@ export function Composer({
           className="composer-btn composer-emoji"
           onClick={() => {
             setEmojiOpen((open) => !open);
+            setMediaOpen(null);
             setEmojiQuery('');
             setCodeOpen(false);
           }}
@@ -873,6 +885,11 @@ export function Composer({
           <Icon name="send" size={19} />
         </button>
 
+        <button className="composer-btn" title="GIF" disabled={busy} onClick={()=>{setMediaOpen(v=>v==='gif'?null:'gif');setEmojiOpen(false);setCodeOpen(false);}}>GIF</button>
+        <button className="composer-btn" title={fa?'استیکر':'Stickers'} disabled={busy} onClick={()=>{setMediaOpen(v=>v==='sticker'?null:'sticker');setEmojiOpen(false);setCodeOpen(false);}}><Icon name="tag" size={19}/></button>
+        {groupId?<SupportTickets groupId={groupId}/>:null}
+        {groupId?<SelfRoles groupId={groupId}/>:null}
+        {mediaOpen?<MediaPicker kind={mediaOpen} expressions={expressions} onPick={token=>insertAtCaret(token,true)} onClose={()=>setMediaOpen(null)}/>:null}
         {emojiOpen ? (
           <div className="emoji-popover emoji-picker" role="dialog" aria-label={fa ? 'انتخاب شکلک' : 'Choose an emoji'}>
             <div className="emoji-picker-head">

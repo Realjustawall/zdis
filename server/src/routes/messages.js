@@ -63,6 +63,7 @@ import {
 import { dispatchWebhookEvent, recordSyncEvent } from '../services/integrations.js';
 import { searchOpenSearch } from '../services/search.js';
 import { channelPermission } from '../services/channelPermissions.js';
+import { inspectModeratorMessage, afterBotMessage } from '../services/builtinBots.js';
 
 export const messagesRouter = express.Router();
 messagesRouter.use(requireAuth);
@@ -194,7 +195,7 @@ async function enforceExpressionPermissions(target, content) {
   if (target.kind !== 'channel' || !content) return;
   const tokens = [];
   const pattern =
-    /<(?:(:)([a-z0-9_]{2,32})|(sticker|sound):([a-z0-9_]{2,32})):([a-zA-Z0-9_-]{8,64})>/gi;
+    /<(?:(:)([a-z0-9_]{2,32})|(sticker|gif|sound):([a-z0-9_]{2,32})):([a-zA-Z0-9_-]{8,64})>/gi;
   let match;
   while ((match = pattern.exec(content)) !== null) {
     tokens.push({
@@ -225,7 +226,7 @@ async function enforceExpressionPermissions(target, content) {
     const permission =
       token.type === 'emoji'
         ? 'useExternalEmojis'
-        : token.type === 'sticker'
+        : ['sticker','gif'].includes(token.type)
           ? 'useExternalStickers'
           : 'useExternalSounds';
     if (!(await channelPermission(target.channel, target.context, permission))) {
@@ -357,8 +358,14 @@ function mountAt(prefix, paramName) {
       ) {
         throw forbidden('You do not have permission to attach files in this channel.');
       }
-      if (target.kind === 'channel' && body.attachmentIds.length > 0) {
-        const placeholders = body.attachmentIds.map(() => '?').join(', ');
+        if (target.kind === 'channel' && body.attachmentIds.length > 0) {
+          for(const id of body.attachmentIds){
+            const file=await getDb().get('SELECT mime FROM attachments WHERE id=? AND uploader_id=?',[id,req.user.id]);
+            const permission=file?.mime?.startsWith('image/')?'sendImages':file?.mime?.startsWith('video/')?'sendVideos':file?.mime?.startsWith('audio/')?'sendAudio':null;
+            if(permission && !(await channelPermission(target.channel,target.context,permission)))throw forbidden('This media type is not permitted in this channel.');
+            if(file?.mime==='application/vnd.zdis.encrypted')for(const key of ['sendImages','sendVideos','sendAudio'])if(!(await channelPermission(target.channel,target.context,key)))throw forbidden('Encrypted media cannot be sent when media permissions are restricted.');
+          }
+          const placeholders = body.attachmentIds.map(() => '?').join(', ');
         const voiceAttachment = await getDb().get(
           `SELECT 1 AS ok FROM attachments
            WHERE id IN (${placeholders}) AND uploader_id = ? AND message_id IS NULL
@@ -381,6 +388,7 @@ function mountAt(prefix, paramName) {
         throw forbidden('You do not have permission to mention @everyone or @here.');
       }
       await enforceExpressionPermissions(target, body.content);
+      if(!body.encrypted)await inspectModeratorMessage(target,req.user,body.content,body.attachmentIds.length);
       const roleMentionRecipientIds = await resolveRoleMentionRecipients(
         target,
         body.content,
@@ -628,6 +636,7 @@ function mountAt(prefix, paramName) {
         }).catch(() => {});
       }
 
+      if(!forumPost?.private&&!req.user.shadow_banned_at)await afterBotMessage(target,req.user,message).catch(error=>console.warn('Bot message processing failed:',error.message));
       return res.status(201).json({ message });
     }),
   );
@@ -842,6 +851,8 @@ function mountAt(prefix, paramName) {
         throw badRequest(`Messages can only be edited within ${window} minutes.`);
       }
 
+      await enforceExpressionPermissions(target,body.content);
+      await inspectModeratorMessage(target,req.user,body.content);
       const message = await editMessage(messageId, body.content);
       await recordMessageEvent(target, 'message.updated', message);
       void dispatchWebhookEvent({
@@ -1087,6 +1098,11 @@ function mountAt(prefix, paramName) {
       }
 
       const result = await toggleReaction({ messageId, userId: req.user.id, emoji });
+      if(target.kind==='channel'){
+        const {updateBotStarboard}=await import('../services/botStarboard.js');
+        const {logger}=await import('../lib/logger.js');
+        await updateBotStarboard(target.channel.group_id,messageId).catch(error=>logger.warn('Starboard update failed',{messageId,error:error.message}));
+      }
       const reactionPayload = {
         messageId,
         channelId: target.channelId,
@@ -1396,18 +1412,13 @@ messagesRouter.get(
 
     // Scope the search to exactly what this user is allowed to read.
     const channelRows = await db.all(
-      `SELECT c.id, c.is_private FROM channels c
+      `SELECT c.* FROM channels c
        JOIN group_members m ON m.group_id = c.group_id AND m.user_id = ?
        WHERE c.type = 'text'`,
       [req.user.id],
     );
-    const privateRows = await db.all('SELECT channel_id FROM channel_members WHERE user_id = ?', [
-      req.user.id,
-    ]);
-    const allowedPrivate = new Set(privateRows.map((row) => row.channel_id));
-    const channelIds = channelRows
-      .filter((row) => !row.is_private || allowedPrivate.has(row.id))
-      .map((row) => row.id);
+    const channelIds=[];
+    for(const row of channelRows){const context=await groupContext(row.group_id,req.user);if(await canAccessChannel(row,context)&&await channelPermission(row,context,'readMessageHistory'))channelIds.push(row.id);}
 
     const conversationRows = await db.all(
       'SELECT conversation_id FROM conversation_members WHERE user_id = ?',

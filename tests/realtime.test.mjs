@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 const clientRequire = createRequire(new URL('../client/package.json', import.meta.url));
 const { io: ioClient } = clientRequire('socket.io-client');
 
-const BASE = 'http://localhost:4000';
+const BASE = process.env.TEST_BASE_URL || 'http://localhost:8080';
 const suffix = Math.random().toString(36).slice(2, 7);
 
 class Client {

@@ -1,8 +1,8 @@
 {
-  "name": "youtbelimo",
+  "name": "zdis",
   "version": "1.0.0",
   "private": true,
-  "description": "youtBeLimo - secure chat platform for YouTubers",
+  "description": "ZDIS - secure chat platform for YouTubers",
   "type": "module",
   "workspaces": [
     "server",
@@ -24,7 +24,10 @@
     "test:load": "node tests/load/realtime-load.mjs",
     "test:load:smoke": "node tests/load/smoke.mjs",
     "test:failover": "node tests/load/kubernetes-failover.mjs",
-    "enterprise:check": "npm run enterprise:check --workspace server"
+    "enterprise:check": "npm run enterprise:check --workspace server",
+    "test:windows": "node tests/windows-runtime.test.mjs",
+    "test:activities": "node --test tests/voice-games.test.mjs tests/voice-activities.test.mjs",
+    "test:bots": "node --test tests/builtin-bots.test.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",

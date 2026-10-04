@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-const BASE = 'http://localhost:4000';
+const BASE = process.env.TEST_BASE_URL || 'http://localhost:8080';
 const subtle = crypto.webcrypto.subtle;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();

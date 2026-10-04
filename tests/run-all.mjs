@@ -2,10 +2,21 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 
+const testPort = process.env.TEST_PORT || '18080';
+const testBase = `http://localhost:${testPort}`;
 const root = path.resolve(import.meta.dirname, '..');
 const dataDir = path.join(root, '.tmp', `test-${process.pid}`);
 const inheritedDatabase = process.env.DATABASE_URL || '';
 const useExternalDatabase = Boolean(inheritedDatabase);
+// Blank explicit paths also prevent dotenv from loading production paths.
+const isolatedEnv = {
+  ...process.env, SQLITE_FILE: '', UPLOAD_DIR: '', DATA_DIR: dataDir,
+  DATABASE_DRIVER: useExternalDatabase ? 'postgres' : 'sqlite',
+  DATABASE_URL: inheritedDatabase, PGHOST: '', PGUSER: '',
+  REQUIRE_POSTGRES: useExternalDatabase ? 'true' : 'false',
+  REQUIRE_REDIS: 'false', REDIS_URL: process.env.REDIS_URL || '',
+  REDIS_CLUSTER_NODES: process.env.REDIS_CLUSTER_NODES || '',
+};
 
 if (!useExternalDatabase) await fs.rm(dataDir, { recursive: true, force: true });
 
@@ -17,13 +28,16 @@ const testFiles = [
   'tests/e2ee-migration.test.mjs',
   'tests/file-crypto.test.mjs',
   'tests/api.test.mjs',
+  'tests/builtin-bots-http.test.mjs',
+  'tests/user-access-http.test.mjs',
   'tests/realtime.test.mjs',
   'tests/network.test.mjs',
   'tests/enterprise.test.mjs',
   'tests/platform-e2ee.test.mjs',
+  'tests/sqlite-transactions.test.mjs',
 ];
 
-function run(file, env = process.env) {
+function run(file, env = isolatedEnv) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [file], {
       cwd: root,
@@ -44,12 +58,17 @@ await run(testFiles[2]);
 await run(testFiles[3]);
 await run(testFiles[4]);
 await run(testFiles[5]);
+await run('tests/builtin-bots.test.mjs');
+await run('tests/user-access.test.mjs');
+await run('tests/voice-games.test.mjs');
+await run('tests/voice-activities.test.mjs');
 
 const serverEnv = {
-  ...process.env,
+  ...isolatedEnv,
   NODE_ENV: 'test',
   LOG_LEVEL: 'warn',
-  PORT: '4000',
+  PORT: testPort,
+  TEST_BASE_URL: testBase,
   WORKER_METRICS_PORT: '9464',
   DATA_DIR: dataDir,
   APP_SECRET: 'test-only-secret-that-is-longer-than-thirty-two-characters',
@@ -84,7 +103,7 @@ async function waitForServer() {
       throw new Error(`test server exited early:\n${serverOutput}`);
     }
     try {
-      const response = await fetch('http://localhost:4000/api/ready');
+      const response = await fetch(`${testBase}/api/ready`);
       if (response.ok) return;
     } catch {
       // Startup is still in progress.
@@ -121,7 +140,7 @@ try {
     }
     if (Date.now() >= deadline) throw new Error(`test worker did not become ready:\n${workerOutput}`);
   }
-  for (const file of testFiles.slice(6)) await run(file);
+  for (const file of testFiles.slice(6)) await run(file, serverEnv);
 } finally {
   worker?.kill('SIGTERM');
   server.kill('SIGTERM');

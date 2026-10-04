@@ -1,4 +1,4 @@
-name: youtbelimo-scale
+name: zdis-scale
 
 x-app: &app
   build:
@@ -15,12 +15,12 @@ x-app: &app
     SEED_ADMIN_EMAIL: scale-admin@example.com
     SEED_ADMIN_USERNAME: scaleadmin
     SEED_ADMIN_PASSWORD: "${SCALE_ADMIN_PASSWORD:?set SCALE_ADMIN_PASSWORD}"
-    DATABASE_URL: "postgres://youtbelimo:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/youtbelimo"
+    DATABASE_URL: "postgres://zdis:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/zdis"
     REQUIRE_POSTGRES: "true"
     REDIS_URL: redis://redis:6379
     REQUIRE_REDIS: "true"
     STORAGE_DRIVER: local
-    DATA_DIR: /tmp/youtbelimo
+    DATA_DIR: /tmp/zdis
   depends_on:
     postgres:
       condition: service_healthy
@@ -74,8 +74,8 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: youtbelimo
-      POSTGRES_USER: youtbelimo
+      POSTGRES_DB: zdis
+      POSTGRES_USER: zdis
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
     command:
       - postgres
@@ -84,7 +84,7 @@ services:
       - -c
       - shared_buffers=512MB
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U youtbelimo -d youtbelimo"]
+      test: ["CMD-SHELL", "pg_isready -U zdis -d zdis"]
       interval: 3s
       timeout: 3s
       retries: 30

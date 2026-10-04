@@ -15,7 +15,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { config } from '../config.js';
 import { getDb } from '../db/index.js';
 import { newId } from '../lib/ids.js';
-import { activeServerTimeout, groupContext } from '../services/permissions.js';
+import { activeServerTimeout, groupContext, canAccessChannel } from '../services/permissions.js';
 import { channelPermission } from '../services/channelPermissions.js';
 import { audit } from '../services/audit.js';
 import { emitToChannel } from '../realtime/index.js';
@@ -69,6 +69,25 @@ voiceRouter.post(
 );
 
 voiceRouter.use(requireAuth);
+
+// Private calls use the same server-enforced publication grants as channels.
+voiceRouter.post('/direct/:conversationId/token', asyncRoute(async (req, res) => {
+  const conversationId = parse(idSchema, req.params.conversationId);
+  const { voicePermission } = await import('../realtime/voice.js');
+  const channelId = `dm:${conversationId}`;
+  if (!await voicePermission(req.user.id, channelId, 'connectVoice')) throw forbidden('You cannot join this call.');
+  if (!config.livekit.url || !config.livekit.apiKey || !config.livekit.apiSecret) throw badRequest('Server media service is not configured.');
+  const canSpeak = await voicePermission(req.user.id, channelId, 'speak');
+  const canUseVideo = await voicePermission(req.user.id, channelId, 'video');
+  const canScreenShare = canUseVideo && await voicePermission(req.user.id, channelId, 'screenShare');
+  const sources = [...(canSpeak ? [TrackSource.MICROPHONE] : []), ...(canUseVideo ? [TrackSource.CAMERA] : []), ...(canScreenShare ? [TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO] : [])];
+  const room = `direct-${conversationId}`;
+  const token = new AccessToken(config.livekit.apiKey, config.livekit.apiSecret, { identity: req.user.id, name: req.user.display_name, ttl: '10m' });
+  token.addGrant({ roomJoin: true, room, canPublish: sources.length > 0, canPublishSources: sources, canSubscribe: true, canPublishData: true });
+  const service = new RoomServiceClient((config.livekit.apiUrl || config.livekit.url).replace(/^ws/, 'http'), config.livekit.apiKey, config.livekit.apiSecret);
+  await service.createRoom({ name: room, emptyTimeout: 300, departureTimeout: 30, maxParticipants: 8 });
+  res.json({ url: config.livekit.url, token: await token.toJwt(), room, maxParticipants: 8, canPublish: sources.length > 0, canSpeak, canUseVideo, canScreenShare, stage: false });
+}));
 
 voiceRouter.get(
   '/:channelId',
@@ -319,13 +338,13 @@ voiceRouter.post(
     ).region;
     const region = selectRegion(requestedRegion ?? callRoom.preferred_region);
     const room = `channel-${channelId}`;
-    let canPublish = await channelPermission(channel, context, 'speak');
+    let canPublish = true;
     if (channel.type === 'stage' && callRoom.host_id !== req.user.id) {
       const stageMember = await getDb().get(
         'SELECT role FROM stage_members WHERE channel_id = ? AND user_id = ?',
         [channelId, req.user.id],
       );
-      canPublish = canPublish && stageMember?.role === 'speaker';
+      canPublish = stageMember?.role === 'speaker';
     }
     const token = new AccessToken(config.livekit.apiKey, config.livekit.apiSecret, {
       identity: req.user.id,
@@ -339,18 +358,20 @@ voiceRouter.post(
       }),
     });
     const canUseVideo = await channelPermission(channel, context, 'video');
+    const canSpeak = await channelPermission(channel,context,'speak');
+    const canScreenShare = await channelPermission(channel,context,'screenShare') && canUseVideo;
     const canPublishSources = canPublish
       ? [
-          TrackSource.MICROPHONE,
+          ...(canSpeak?[TrackSource.MICROPHONE]:[]),
           ...(canUseVideo
             ? [
                 TrackSource.CAMERA,
-                TrackSource.SCREEN_SHARE,
-                TrackSource.SCREEN_SHARE_AUDIO,
               ]
             : []),
+          ...(canScreenShare?[TrackSource.SCREEN_SHARE,TrackSource.SCREEN_SHARE_AUDIO]:[]),
         ]
       : [];
+    canPublish=canPublishSources.length>0;
     token.addGrant({
       roomJoin: true,
       room,
@@ -377,6 +398,9 @@ voiceRouter.post(
       stage: channel.type === 'stage',
       canPublish,
       maxParticipants: config.livekit.maxParticipants,
+      canSpeak:canPublishSources.includes(TrackSource.MICROPHONE),
+      canUseVideo:canPublishSources.includes(TrackSource.CAMERA),
+      canScreenShare:canPublishSources.includes(TrackSource.SCREEN_SHARE),
     });
   }),
 );
@@ -663,15 +687,7 @@ async function voiceAccess(req, channelId) {
   if (!(await channelPermission(channel, context, 'connectVoice'))) {
     throw forbidden('You do not have permission to connect to this voice channel.');
   }
-  if (channel.is_private) {
-    const seat = await getDb().get(
-      'SELECT 1 AS ok FROM channel_members WHERE channel_id = ? AND user_id = ?',
-      [channelId, req.user.id],
-    );
-    if (!seat && !context.can('manageChannels')) {
-      throw forbidden('You cannot join this voice channel.');
-    }
-  }
+  if(!(await canAccessChannel(channel,context)))throw forbidden('You cannot join this voice channel.');
   return { channel, context };
 }
 
@@ -722,19 +738,18 @@ async function participantPublishGrant(channel, userId, requested) {
   if (!user) return { canPublish: false, canPublishSources: [] };
   const context = await groupContext(channel.group_id, user);
   const canSpeak = await channelPermission(channel, context, 'speak');
-  if (!canSpeak) return { canPublish: false, canPublishSources: [] };
   const canUseVideo = await channelPermission(channel, context, 'video');
+  const canScreenShare = await channelPermission(channel,context,'screenShare') && canUseVideo;
   return {
-    canPublish: true,
+    canPublish: canSpeak || canUseVideo || canScreenShare,
     canPublishSources: [
-      TrackSource.MICROPHONE,
+      ...(canSpeak?[TrackSource.MICROPHONE]:[]),
       ...(canUseVideo
         ? [
             TrackSource.CAMERA,
-            TrackSource.SCREEN_SHARE,
-            TrackSource.SCREEN_SHARE_AUDIO,
           ]
         : []),
+      ...(canScreenShare?[TrackSource.SCREEN_SHARE,TrackSource.SCREEN_SHARE_AUDIO]:[]),
     ],
   };
 }

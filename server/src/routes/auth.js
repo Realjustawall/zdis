@@ -262,7 +262,7 @@ authRouter.post(
     return res.json({
       user: toSelfUser(await withBadges(fresh)),
       csrfToken: csrfTokenFor(session.csrfSecret),
-      settings: await getPublicSettings(),
+      settings: await getPublicSettings(user.id),
       needsTotpEnrolment: settings.require_2fa_for_admins && user.role === 'admin' && !user.totp_enabled,
     });
   }),
@@ -299,7 +299,7 @@ authRouter.get(
     return res.json({
       user: toSelfUser(await withBadges(req.user)),
       csrfToken: req.session ? csrfTokenFor(req.session.csrfSecret) : undefined,
-      settings: await getPublicSettings(),
+      settings: await getPublicSettings(req.user.id),
       ice: iceServers(req.user.id),
       voice: {
         mode: config.livekit.url ? 'sfu' : 'mesh',

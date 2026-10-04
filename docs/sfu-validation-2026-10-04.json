@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-04",
+  "liveKitVersion": "1.13.7 Windows amd64",
+  "latestRun": {
+    "passed": 3,
+    "skipped": 1,
+    "failed": 0,
+    "restartValidated": true
+  },
+  "scenarios": [
+    "Desktop SDK: independent received audio bytes, camera frames and screen frames",
+    "Mobile Chrome emulation: same independent media and policy checks",
+    "Desktop production UI: two-way audio and camera, remote screen playback, live camera denial, listen-only rejoin without getUserMedia"
+  ],
+  "policyChecks": [
+    "microphone publication denial",
+    "camera publication permitted independently of microphone",
+    "camera source revoked and track removed during the call",
+    "connectVoice revocation removes participant",
+    "listen-only account receives audio without requesting capture"
+  ],
+  "browserNetworkFlags": "none",
+  "sdkCaptureBrowserPermission": "microphone/camera not granted (asserted)",
+  "captureSources": "Generated oscillator/canvas for SDK; fake microphone/camera and generated screen for UI",
+  "mediaBinding": "Selected local IPv4 only, explicit TCP/UDP ports, local TURN fallback",
+  "initialFailures": "Unfiltered multi-adapter configurations repeatedly failed ICE; they are not counted as successful runs",
+  "limitations": [
+    "Physical devices and OS capture chooser not validated",
+    "Internet/NAT/TLS and external-client paths not validated",
+    "High-load media and multi-worker refresh not validated",
+    "Windows LiveKit reports unavailable CPU capacity management",
+    "Mobile production voice UI scenario deliberately skipped"
+  ],
+  "preview": "App and media server remain running for user inspection; separate .tmp data",
+  "release": "Runtime credentials, databases, logs, binaries and reports under .tmp excluded"
+}

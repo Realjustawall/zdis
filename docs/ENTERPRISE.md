@@ -75,9 +75,9 @@ Kubernetes resources or managed multi-AZ services for HA.
 Before `kubectl apply -k infra/kubernetes`:
 
 1. Build and push the image, then replace
-   `ghcr.io/your-org/youtbelimo:1.0.0`.
+   `ghcr.io/your-org/ZDIS:1.0.0`.
 2. Use `infra/kubernetes/secret.example.yaml` only as a key inventory. Create
-   `youtbelimo-secrets` with External Secrets, Sealed Secrets, or your cloud
+   `ZDIS-secrets` with External Secrets, Sealed Secrets, or your cloud
    secret manager before applying the Kustomization; the placeholder file is
    intentionally excluded.
 3. Install Metrics Server for HPA and an ingress controller.
@@ -86,7 +86,7 @@ Before `kubectl apply -k infra/kubernetes`:
 5. Provision private S3-compatible storage with versioning, object lock where
    required, server-side encryption, cross-region replication, and a lifecycle
    rule for `backups/`.
-6. Label public media nodes with `youtbelimo.io/media-edge=true`. Open TCP 7881,
+6. Label public media nodes with `ZDIS.io/media-edge=true`. Open TCP 7881,
    UDP 50000-50100 for LiveKit, and TCP/UDP 3478/5349 plus UDP 49160-49200 for
    coturn. Create `turn-tls`.
 7. Put `media.example.com` behind TLS and direct it to the LiveKit signaling

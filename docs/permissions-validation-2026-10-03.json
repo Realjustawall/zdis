@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-03",
+  "sqlitePolicyTests": 7,
+  "httpWebSocketPolicyScenarios": 7,
+  "backendSuite": "passed",
+  "productionBuild": "passed",
+  "browser": {
+    "desktopChrome": "passed",
+    "mobileChromeEmulation": "passed",
+    "scenarios": [
+      "admin policy persistence",
+      "per-user quotas",
+      "custom badge creation and deletion",
+      "bots regression"
+    ]
+  },
+  "concurrentChannelRequests": 8,
+  "allowedConcurrentChannelCreations": 2,
+  "liveKitPublicationValidated": true,
+  "discordFullFeatureParity": false,
+  "notes": "P2P accounts with restricted publication cannot join; fine-grained media publication needs LiveKit. Group memberships and internal channels use separate quotas.",
+  "liveKitMediaTest": {
+    "result": "passed on 2026-10-04",
+    "scope": "generated local media and live policies; see sfu-validation-2026-10-04.json",
+    "initialResult": "ICE failures before network configuration fix",
+    "passed": 3,
+    "skipped": 1
+  },
+  "previewBackend": "Latest backend running on 127.0.0.1:18181; migration 030 applied",
+  "testEnvironmentCleanup": "SFU tests remove their temporary groups/accounts. App/media processes and isolated demo data remain running for preview. Temporary runtime artifacts are excluded from release.",
+  "previewRuntimeChecks": [
+    "HTML 200",
+    "production JS 200",
+    "admin login successful",
+    "auth/me 200",
+    "groups 200",
+    "admin/settings 200",
+    "user access policy 200",
+    "authenticated WebSocket ready"
+  ]
+}

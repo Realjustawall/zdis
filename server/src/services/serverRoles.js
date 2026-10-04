@@ -59,7 +59,7 @@ export const DISCORD_PERMISSION_KEYS = [
 ];
 
 /** Product-specific abilities that are intentionally outside Discord's API. */
-export const PLATFORM_PERMISSION_KEYS = ['manageMembers'];
+export const PLATFORM_PERMISSION_KEYS = ['manageMembers','sendImages','sendVideos','sendAudio','screenShare'];
 
 export const SERVER_PERMISSION_KEYS = [
   ...DISCORD_PERMISSION_KEYS,
@@ -69,6 +69,7 @@ export const SERVER_PERMISSION_KEYS = [
 const permissionSet = new Set(SERVER_PERMISSION_KEYS);
 
 export const DEFAULT_EVERYONE_PERMISSIONS = [
+  'sendImages','sendVideos','sendAudio','screenShare',
   'viewChannel',
   'sendMessages',
   'sendTtsMessages',
@@ -298,6 +299,7 @@ export async function setServerMemberRole({ groupId, userId, roleId, assignedBy,
       [groupId, userId, roleId],
     );
   }
+  const {refreshUserRooms}=await import('../realtime/index.js');await refreshUserRooms(userId);
 }
 
 export async function roleStateForMember(groupId, userId) {

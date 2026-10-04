@@ -219,7 +219,7 @@ function ProfileTab({
           <button
             className="btn small"
             onClick={async () => {
-              const name = window.prompt('What are you doing?', 'Working on sahsha');
+              const name = window.prompt('What are you doing?', 'Working on ZDIS');
               if (!name) return;
               await api.put('/api/users/me/activity', {
                 type: 'custom',

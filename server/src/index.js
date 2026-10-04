@@ -17,6 +17,9 @@ import {
 import { loadRuntimeConfiguration } from './services/runtimeConfiguration.js';
 import { resetDeliveryTransport } from './services/delivery.js';
 import { resetEnterpriseAuthClients } from './services/enterpriseAuth.js';
+import { initLocalMedia, closeLocalMedia } from './jobs/localMedia.js';
+import { initLocalTasks, closeLocalTasks } from './jobs/localTasks.js';
+import { ensureBuiltinBots, runBotMaintenance } from './services/builtinBots.js';
 
 async function main() {
   await initDb();
@@ -31,7 +34,15 @@ async function main() {
   await initCache();
   await ensureBadgeCatalogue();
   await ensureSeedAdmin();
+  await ensureBuiltinBots();
+  let botsRunning=false;
+  const botMaintenance=setInterval(()=>{if(botsRunning)return;botsRunning=true;runBotMaintenance().catch(error=>logger.warn('bot maintenance failed',{error:error.message})).finally(()=>{botsRunning=false;});},30_000);
+  botMaintenance.unref();
   await initJobQueue();
+  if (!queueEnabled()) {
+    await initLocalMedia();
+    await initLocalTasks();
+  }
 
   const app = createApp();
   const server = http.createServer(app);
@@ -58,12 +69,18 @@ async function main() {
     });
   });
 
+  let stopping = false;
   const shutdown = async (signal) => {
+    if (stopping) return;
+    stopping = true;
     logger.info(`received ${signal}, shutting down`);
     if (housekeeping) clearInterval(housekeeping);
+    clearInterval(botMaintenance);
     clearInterval(runtimeConfigurationRefresh);
     getIo()?.close();
     server.close();
+    await closeLocalTasks().catch(() => {});
+    await closeLocalMedia().catch(() => {});
     await closeCache().catch(() => {});
     await closeJobQueue().catch(() => {});
     await closeDatabases().catch(() => {});
@@ -72,6 +89,11 @@ async function main() {
 
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
+  if (process.platform === 'win32') process.on('SIGBREAK', () => shutdown('SIGBREAK'));
+  server.on('error', (error) => {
+    logger.error('HTTP listener failed; check PORT and Windows reserved ports', { port: config.port, error: error.message });
+    process.exit(1);
+  });
   process.on('unhandledRejection', (reason) => {
     logger.error('unhandled rejection', { reason: String(reason) });
   });

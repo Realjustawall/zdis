@@ -19,7 +19,7 @@ export async function runBackup() {
     [id, config.storageDriver === 's3' ? 's3' : 'local', startedAt],
   );
   const staging = path.join(config.backupDir, `.staging-${id}`);
-  const filename = `youtbelimo-${new Date(startedAt).toISOString().replace(/[:.]/g, '-')}-${id}.tar.gz`;
+  const filename = `ZDIS-${new Date(startedAt).toISOString().replace(/[:.]/g, '-')}-${id}.tar.gz`;
   const archive = path.join(config.backupDir, filename);
   try {
     await fsp.mkdir(staging, { recursive: true });

@@ -6,6 +6,7 @@ import { getDb } from '../db/index.js';
 import { newId } from '../lib/ids.js';
 import { badRequest, forbidden, notFound } from '../lib/errors.js';
 import { getSettings } from './settings.js';
+import { assertUploadAccess } from './userAccess.js';
 import { logger } from '../lib/logger.js';
 import { scanBuffer } from './antivirus.js';
 import {
@@ -183,6 +184,7 @@ export async function storeUpload({
     if (!detected) throw badRequest('That file type is not supported.');
 
     const spec = ALLOWED_TYPES[detected];
+    await assertUploadAccess(uploaderId, detected);
     if (!spec) throw badRequest('That file type is not supported.');
     if (kind === 'voice' && spec.category !== 'audio') {
       throw badRequest('Voice messages must contain audio.');
@@ -363,6 +365,9 @@ export async function purgeOrphanAttachments() {
        )
        AND NOT EXISTS (
          SELECT 1 FROM group_expressions e WHERE e.attachment_id = a.id
+       )
+       AND NOT EXISTS (
+         SELECT 1 FROM builtin_bot_assets b WHERE b.attachment_id = a.id
        )
        AND NOT EXISTS (
          SELECT 1 FROM server_roles r WHERE r.icon_attachment_id = a.id

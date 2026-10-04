@@ -1,8 +1,20 @@
+# ZDIS Ubuntu Server edition
+
+Start here: [Ubuntu installation guide](ubuntu/README.md).
+
+Voice device preview and playable games: [Voice & Activities guide](docs/VOICE_ACTIVITIES.md).
+
+Welcomer, moderation, tickets and GIF/sticker packs: [Server bots guide](docs/BOTS.md).
+Account quotas, media restrictions and custom badges: [Permissions guide](docs/PERMISSIONS.md).
+
+This independent edition defaults to SQLite, local file storage and in-process cache.
+Linux deployment files below are retained for reference; use the Windows scripts for this edition.
+
 # ZDIS
 
 **Private communication platform for creators and their teams.**
 
-Developed by **Sahsha Team — JustAWall**
+Developed by **ZDIS Team — JustAWall**
 
 > **License:** This project is distributed under its own license terms.
 > Before using, modifying, redistributing, or using ZDIS commercially, please read the [LICENSE](LICENSE) file.
@@ -388,7 +400,7 @@ Three platform roles, set by an administrator:
 | Role         | Can do                                                                                                                                                                                                      |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **admin**    | Everything below, plus the admin panel: create/edit/disable/delete accounts, reset passwords and 2FA, force sign-outs, delete any group, change server settings, read the audit log. Moderates every group. |
-| **staff** | Creates their own groups and becomes owner. Adds people from the member directory straight into their group, issues invite codes, promotes moderators, manages channels. This is the intended primary role. |
+| **youtuber** | Creates their own groups and becomes owner. Adds people from the member directory straight into their group, issues invite codes, promotes moderators, manages channels. This is the intended primary role. |
 | **member**   | Joins groups they are added to or invited to, DMs anyone, takes part in voice. Cannot create groups by default (an admin can switch this on).                                                               |
 
 Every account can see every other account in the **member directory** and start
@@ -584,7 +596,13 @@ ZDIS is distributed under the terms described in the repository's
 ## Credits
 
 **ZDIS**
-Developed by **Sahsha Team**
+Developed by **ZDIS Team**
 **JustAWall**
 
-© ZDIS / Sahsha Team. All rights reserved where applicable.
+© ZDIS / ZDIS Team. All rights reserved where applicable.
+
+## Local Windows preview with SFU
+
+For the isolated admin/admin preview with real LiveKit transport, see
+[Windows SFU preview and test limits](docs/PERMISSIONS.md#windows-sfu-preview).
+Latest media validation: [2026-10-04 report](docs/sfu-validation-2026-10-04.json).

@@ -20,7 +20,7 @@ databases.
 2. Install the ingress controller, cert-manager, metrics-server,
    CloudNativePG/Barman plugin (or the chosen managed database), external
    secrets operator and monitoring stack.
-3. Create `youtbelimo-secrets` from a secret manager. Never apply
+3. Create `ZDIS-secrets` from a secret manager. Never apply
    `secret.example.yaml` unchanged.
 4. Provision S3 versioning, object lock where required, lifecycle rules,
    cross-region replication, a CDN origin access policy and KMS grants for both

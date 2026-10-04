@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS builtin_bot_profiles (
+ group_id TEXT NOT NULL REFERENCES chat_groups(id) ON DELETE CASCADE,
+ user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ credits INTEGER NOT NULL DEFAULT 0,
+ reputation INTEGER NOT NULL DEFAULT 0,
+ last_rep_at BIGINT NOT NULL DEFAULT 0,
+ last_daily_at BIGINT NOT NULL DEFAULT 0,
+ voice_xp INTEGER NOT NULL DEFAULT 0,
+ last_voice_at BIGINT NOT NULL DEFAULT 0,
+ title TEXT NOT NULL DEFAULT '',
+ PRIMARY KEY(group_id,user_id)
+);
+CREATE TABLE IF NOT EXISTS builtin_bot_transfers (
+ id TEXT PRIMARY KEY,
+ group_id TEXT NOT NULL REFERENCES chat_groups(id) ON DELETE CASCADE,
+ sender_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ recipient_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ amount INTEGER NOT NULL,
+ created_at BIGINT NOT NULL
+);

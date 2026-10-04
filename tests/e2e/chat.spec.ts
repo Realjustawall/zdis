@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test-fixtures';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('zdis.locale', 'en'));
@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
     }
   });
   await page.goto('/');
-  await page.getByLabel('Email or username').fill('office@intesho.com');
+  await page.getByLabel('Email or username').fill(test.info().project.name === 'mobile-chromium' ? 'admin' : 'office@intesho.com');
   await page.getByLabel('Password').fill('cNL2*8o$1F;"');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText('Direct messages', { exact: true })).toBeVisible();
@@ -63,8 +63,7 @@ test('notification inbox and preference controls are reachable', async ({ page }
   await expect(page.getByText('Push delivery')).toBeVisible();
 });
 
-test('offers the expanded dark theme collection', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium', 'The same theme studio is shared by desktop and mobile.');
+test('offers the expanded dark theme collection', async ({ page }) => {
   await page.getByTitle('Customize appearance').click();
   await expect(page.getByRole('heading', { name: 'Appearance & themes' })).toBeVisible();
   await expect(page.locator('.theme-preset-card')).toHaveCount(11);
@@ -143,8 +142,7 @@ test('opens at the newest message and follows messages sent by the viewer', asyn
   }
 });
 
-test('removes a deleted message without leaving a tombstone row', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium', 'Desktop interaction coverage is sufficient for the shared deletion state.');
+test('removes a deleted message without leaving a tombstone row', async ({ page }) => {
   const suffix = `${Date.now()}`.slice(-10);
   const groupName = `Delete ${suffix}`;
   const content = `Remove me ${suffix}`;

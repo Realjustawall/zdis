@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import http from 'node:http';
-import { transformWithEsbuild } from '../client/node_modules/vite/dist/node/index.js';
+import { transformWithEsbuild } from 'vite';
 
 const source = await fs.readFile(new URL('../client/src/lib/fileCrypto.ts', import.meta.url), 'utf8');
 const transformed = await transformWithEsbuild(source, 'fileCrypto.ts', { loader: 'ts', format: 'esm' });

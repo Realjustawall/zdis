@@ -153,7 +153,7 @@ const worker = new Worker(
   },
   {
     connection,
-    prefix: '{youtbelimo}',
+    prefix: '{ZDIS}',
     concurrency: config.jobConcurrency,
     limiter: { max: 100, duration: 1000 },
   },

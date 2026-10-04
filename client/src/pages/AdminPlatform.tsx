@@ -84,6 +84,13 @@ export function AdminPlatform() {
         <button className="btn" onClick={() => void api.post('/api/admin/platform/smtp/test').then(() => toast.success('ارتباط SMTP سالم است.')).catch(() => toast.error('تست SMTP ناموفق بود.'))}>تست اتصال SMTP</button>
       </section>
     </div>
+    <section className="settings-group admin-card"><h3>صدا و تصویر LiveKit SFU</h3><p className="desc">کنترل مستقل میکروفون، دوربین و اشتراک صفحه به سرور LiveKit نیاز دارد. بعد از تغییر اتصال، کاربران صفحه را تازه کنند. کلیدها رمز‌شده ذخیره می‌شوند.</p>
+      <Field label="LiveKit WebSocket URL" value={String(form['livekit.url']??'')} onChange={v=>set('livekit.url',v)}/>
+      <Field label="LiveKit API URL" value={String(form['livekit.apiUrl']??'')} onChange={v=>set('livekit.apiUrl',v)}/>
+      <Field label={`LiveKit API Key ${form['livekit.apiKeyConfigured']?'(ثبت شده)':''}`} secret value="" onChange={v=>set('livekit.apiKey',v)}/>
+      <Field label={`LiveKit API Secret ${form['livekit.apiSecretConfigured']?'(ثبت شده)':''}`} secret value="" onChange={v=>set('livekit.apiSecret',v)}/>
+      <Field label="حداکثر افراد هر کانال صوتی SFU" type="number" value={String(form['livekit.maxParticipants']??500)} onChange={v=>set('livekit.maxParticipants',Number(v))}/>
+    </section>
     <section className="settings-group admin-card fish-audio-card">
       <div className="row between"><div><h3>تبدیل متن به گفتار Fish Audio</h3><p className="desc">کلید API رمز‌شده ذخیره می‌شود. خالی گذاشتن کلید، مقدار فعلی را تغییر نمی‌دهد.</p></div>
         <span className={`provider-pill ${state.providers.fishAudio?.configured ? 'ready' : ''}`}>{state.providers.fishAudio?.configured ? 'فعال' : state.providers.fishAudio?.keyConfigured ? 'انتخاب صدا لازم است' : 'تنظیم نشده'}</span>

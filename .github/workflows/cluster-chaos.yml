@@ -36,13 +36,13 @@ jobs:
       - name: Prove selected context and namespace
         run: |
           kubectl config current-context
-          kubectl --namespace youtbelimo get deployments
+          kubectl --namespace ZDIS get deployments
       - name: Execute bounded failover drill
         env:
           CHAOS_CONFIRM: 'yes'
           CHAOS_TARGET: ${{ inputs.target }}
           CHAOS_BASE_URL: ${{ inputs.base_url }}
-          CHAOS_NAMESPACE: youtbelimo
+          CHAOS_NAMESPACE: ZDIS
           CHAOS_MAX_RECOVERY_SECONDS: '180'
         run: node tests/load/kubernetes-failover.mjs | tee failover-report.json
       - uses: actions/upload-artifact@v4

@@ -1,0 +1,1100 @@
+﻿{
+    "date":  "2026-10-02",
+    "platform":  "Windows 11 Enterprise 10.0.22631",
+    "node":  "24.11.0",
+    "npm":  "11.6.1",
+    "backend":  {
+                    "platformE2ee":  10,
+                    "failed":  0,
+                    "realtime":  23,
+                    "network":  13,
+                    "api":  66,
+                    "sqliteIsolation":  "20 concurrent transactions; unrelated writes before and during rollback"
+                },
+    "browser":  {
+                    "realMobileDevice":  false,
+                    "skipped":  0,
+                    "failed":  0,
+                    "passed":  26
+                },
+    "auditVulnerabilities":  0,
+    "supplemental":  {
+                         "results-load-transaction-final.json":  {
+                                                                     "value":  [
+                                                                                   {
+                                                                                       "name":  "Load server: production limits and ninety distinct accounts",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  29.063,
+                                                                                       "detail":  {
+                                                                                                      "distinctAccounts":  90
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Load: 10 authenticated WebSockets across 10 identities",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  3.176,
+                                                                                       "detail":  {
+                                                                                                      "count":  10,
+                                                                                                      "distinctAccounts":  10,
+                                                                                                      "p95ConnectMs":  38,
+                                                                                                      "failed":  0
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Load: 100 authenticated WebSockets across 89 identities",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  3.611,
+                                                                                       "detail":  {
+                                                                                                      "count":  100,
+                                                                                                      "distinctAccounts":  89,
+                                                                                                      "p95ConnectMs":  183,
+                                                                                                      "failed":  0
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Load: 500 authenticated WebSockets across 89 identities",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  4.738,
+                                                                                       "detail":  {
+                                                                                                      "count":  500,
+                                                                                                      "distinctAccounts":  89,
+                                                                                                      "p95ConnectMs":  103,
+                                                                                                      "failed":  0
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Load: 1500 authenticated WebSockets across 89 identities",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  6.366,
+                                                                                       "detail":  {
+                                                                                                      "count":  1500,
+                                                                                                      "distinctAccounts":  89,
+                                                                                                      "p95ConnectMs":  73,
+                                                                                                      "failed":  0
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "High-load fan-out: two hundred writes with 1500 sockets, exact once observer and database IDs",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  7.774,
+                                                                                       "detail":  {
+                                                                                                      "attempted":  200,
+                                                                                                      "persisted":  200,
+                                                                                                      "rateLimited":  0,
+                                                                                                      "p95WriteMs":  849,
+                                                                                                      "activeSockets":  1500
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "High-load simultaneous files and messages remain byte-exact and responsive",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  100.527,
+                                                                                       "detail":  {
+                                                                                                      "uploads":  20,
+                                                                                                      "bytes":  20971520,
+                                                                                                      "activeSockets":  1500
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Socket recovery: one hundred disconnected clients reconnect with existing sessions",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  0.618,
+                                                                                       "detail":  {
+                                                                                                      "reconnected":  100
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Default shared-IP and per-user limits reject excess requests with 429 without server crash",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  0.264,
+                                                                                       "detail":  {
+                                                                                                      "requests":  900,
+                                                                                                      "limited":  301
+                                                                                                  }
+                                                                                   },
+                                                                                   {
+                                                                                       "name":  "Post-load restart, SQLite integrity and foreign keys",
+                                                                                       "status":  "PASS",
+                                                                                       "seconds":  1.045
+                                                                                   }
+                                                                               ],
+                                                                     "Count":  10
+                                                                 },
+                         "results-files-final.json":  {
+                                                          "value":  [
+                                                                        {
+                                                                            "name":  "Updated dependencies: isolated file server",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  4.726
+                                                                        },
+                                                                        {
+                                                                            "name":  "File text/plain: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  5.044,
+                                                                            "detail":  {
+                                                                                           "bytes":  22,
+                                                                                           "attachmentId":  "06gfpecjd5n8910pf0366mhfv4"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File text/markdown: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.014,
+                                                                            "detail":  {
+                                                                                           "bytes":  11,
+                                                                                           "attachmentId":  "06gfped62tqb4bc0kk5ftsz080"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File text/csv: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.013,
+                                                                            "detail":  {
+                                                                                           "bytes":  8,
+                                                                                           "attachmentId":  "06gfped64qvrvxssrbmt2nn2vm"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File application/json: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.018,
+                                                                            "detail":  {
+                                                                                           "bytes":  11,
+                                                                                           "attachmentId":  "06gfped6680tc6vs5mx4bcbv6w"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File text/css: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.013,
+                                                                            "detail":  {
+                                                                                           "bytes":  20,
+                                                                                           "attachmentId":  "06gfped68k12x8zz970thagrkm"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File text/javascript: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.012,
+                                                                            "detail":  {
+                                                                                           "bytes":  18,
+                                                                                           "attachmentId":  "06gfped6ab6myy7s4e2ptma82w"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File image/png: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.013,
+                                                                            "detail":  {
+                                                                                           "bytes":  635,
+                                                                                           "attachmentId":  "06gfped6c0208m5ftzpm28hcfg"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File image/jpeg: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.013,
+                                                                            "detail":  {
+                                                                                           "bytes":  388,
+                                                                                           "attachmentId":  "06gfped6dtdzesyabjmgq0bbam"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File image/webp: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.013,
+                                                                            "detail":  {
+                                                                                           "bytes":  118,
+                                                                                           "attachmentId":  "06gfped6ff11mhz7kzfym98nt8"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File image/gif: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.013,
+                                                                            "detail":  {
+                                                                                           "bytes":  211,
+                                                                                           "attachmentId":  "06gfped6h6g4whqhz6nvjdjrhc"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File audio/wav: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.017,
+                                                                            "detail":  {
+                                                                                           "bytes":  88278,
+                                                                                           "attachmentId":  "06gfped6k1vbtrtt5dcv0jg25g"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File audio/mpeg: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.012,
+                                                                            "detail":  {
+                                                                                           "bytes":  8586,
+                                                                                           "attachmentId":  "06gfped6n6an7rh6kkhw226dam"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File audio/ogg: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.027,
+                                                                            "detail":  {
+                                                                                           "bytes":  5237,
+                                                                                           "attachmentId":  "06gfped6pqa16qrzsnbqgw95f4"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File video/mp4: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.025,
+                                                                            "detail":  {
+                                                                                           "bytes":  5390,
+                                                                                           "attachmentId":  "06gfped6t760epkeq0khdyp0z8"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File video/webm: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.017,
+                                                                            "detail":  {
+                                                                                           "bytes":  5705,
+                                                                                           "attachmentId":  "06gfped6y8dhyf3qdwk2mhv3xw"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File application/pdf: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.038,
+                                                                            "detail":  {
+                                                                                           "bytes":  45,
+                                                                                           "attachmentId":  "06gfped6zpbhgzmjkm8pj9mdqc"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "File application/zip: upload, message attachment, authorized hash, outsider denial",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.139,
+                                                                            "detail":  {
+                                                                                           "bytes":  141,
+                                                                                           "attachmentId":  "06gfped74j701f94dn4eqskvmg"
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "Media preview is generated automatically with the default in-memory queue",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  1.517
+                                                                        },
+                                                                        {
+                                                                            "name":  "Original media byte ranges and invalid ranges",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.007
+                                                                        },
+                                                                        {
+                                                                            "name":  "Reject empty, executable-disguised-as-PNG, HTML and oversized declarations",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.015
+                                                                        },
+                                                                        {
+                                                                            "name":  "20 MiB resumable upload: out-of-order parts, duplicate part, server restart, SHA256 integrity",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  21.483,
+                                                                            "detail":  {
+                                                                                           "bytes":  20971657,
+                                                                                           "parts":  5,
+                                                                                           "restarted":  true
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "Resumable checksum errors, cancellation and reservation release",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.032
+                                                                        },
+                                                                        {
+                                                                            "name":  "Ten simultaneous 2 MiB uploads across separate users",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  205.901,
+                                                                            "detail":  {
+                                                                                           "count":  10,
+                                                                                           "totalBytes":  20971520
+                                                                                       }
+                                                                        }
+                                                                    ],
+                                                          "Count":  24
+                                                      },
+                         "results-background-final.json":  {
+                                                               "value":  [
+                                                                             {
+                                                                                 "name":  "No Redis: automatic image preview, audio transcoding and video poster/derivative",
+                                                                                 "status":  "PASS",
+                                                                                 "seconds":  2.724
+                                                                             },
+                                                                             {
+                                                                                 "name":  "No Redis: interrupted processing rows recover on server restart",
+                                                                                 "status":  "PASS",
+                                                                                 "seconds":  2.616
+                                                                             },
+                                                                             {
+                                                                                 "name":  "No Redis: twenty concurrent images produce twenty automatic previews",
+                                                                                 "status":  "PASS",
+                                                                                 "seconds":  1.259,
+                                                                                 "detail":  {
+                                                                                                "previews":  20
+                                                                                            }
+                                                                             },
+                                                                             {
+                                                                                 "name":  "No Redis: scheduled message publishes automatically once, with realtime notification",
+                                                                                 "status":  "PASS",
+                                                                                 "seconds":  6.991,
+                                                                                 "detail":  {
+                                                                                                "scheduledId":  "06gfpjpn7kt1zem5e0a8ajxvrm"
+                                                                                            }
+                                                                             },
+                                                                             {
+                                                                                 "name":  "No Redis: recovered scheduled publication does not duplicate an already committed message",
+                                                                                 "status":  "PASS",
+                                                                                 "seconds":  8.766
+                                                                             }
+                                                                         ],
+                                                               "Count":  5
+                                                           },
+                         "results-webhooks.json":  {
+                                                       "value":  [
+                                                                     {
+                                                                         "name":  "No Redis: real HTTP webhook delivery, HMAC signature and bounded retry after HTTP 503",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  4.121,
+                                                                         "detail":  {
+                                                                                        "realHttpRequests":  2,
+                                                                                        "signatureVerified":  true,
+                                                                                        "testModeAllowsLocalReceiver":  true
+                                                                                    }
+                                                                     },
+                                                                     {
+                                                                         "name":  "Production webhook protection rejects HTTPS loopback/private endpoints",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  0.004
+                                                                     }
+                                                                 ],
+                                                       "Count":  2
+                                                   },
+                         "results-fixed-dm.json":  {
+                                                       "value":  [
+                                                                     {
+                                                                         "name":  "Private voice incoming answer and bidirectional real RTP",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  2.438,
+                                                                         "detail":  {
+                                                                                        "endpoints":  [
+                                                                                                          {
+                                                                                                              "audio":  1234,
+                                                                                                              "frames":  0,
+                                                                                                              "videos":  0
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "audio":  1219,
+                                                                                                              "frames":  0,
+                                                                                                              "videos":  0
+                                                                                                          }
+                                                                                                      ]
+                                                                                    }
+                                                                     },
+                                                                     {
+                                                                         "name":  "Private call end releases both peers",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  0.032
+                                                                     },
+                                                                     {
+                                                                         "name":  "Private incoming call decline ends caller waiting state",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  0.874
+                                                                     },
+                                                                     {
+                                                                         "name":  "Private video incoming answer and bidirectional real RTP",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  3.036,
+                                                                         "detail":  {
+                                                                                        "endpoints":  [
+                                                                                                          {
+                                                                                                              "audio":  3542,
+                                                                                                              "frames":  6,
+                                                                                                              "videos":  1
+                                                                                                          },
+                                                                                                          {
+                                                                                                              "audio":  3241,
+                                                                                                              "frames":  6,
+                                                                                                              "videos":  1
+                                                                                                          }
+                                                                                                      ]
+                                                                                    }
+                                                                     },
+                                                                     {
+                                                                         "name":  "Private video caller native screen share reaches remote endpoint",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  0.559,
+                                                                         "detail":  {
+                                                                                        "remote":  {
+                                                                                                       "audio":  5970,
+                                                                                                       "frames":  16,
+                                                                                                       "videos":  2
+                                                                                                   }
+                                                                                    }
+                                                                     },
+                                                                     {
+                                                                         "name":  "Private call end releases both peers",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  0.048
+                                                                     },
+                                                                     {
+                                                                         "name":  "Private incoming call decline ends caller waiting state",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  0.869
+                                                                     },
+                                                                     {
+                                                                         "name":  "Native denied microphone permission returns room UI to joinable state",
+                                                                         "status":  "PASS",
+                                                                         "seconds":  1.366
+                                                                     }
+                                                                 ],
+                                                       "Count":  8
+                                                   },
+                         "results-smtp.json":  {
+                                                   "value":  [
+                                                                 {
+                                                                     "name":  "Updated Nodemailer: SMTP handshake and local notification delivery",
+                                                                     "status":  "PASS",
+                                                                     "seconds":  0.121
+                                                                 },
+                                                                 {
+                                                                     "name":  "No Redis: immediate notification reaches local SMTP receiver",
+                                                                     "status":  "PASS",
+                                                                     "seconds":  0.026
+                                                                 },
+                                                                 {
+                                                                     "name":  "No Redis: due notification digest is delivered and marked delivered",
+                                                                     "status":  "PASS",
+                                                                     "seconds":  0.019
+                                                                 }
+                                                             ],
+                                                   "Count":  3
+                                               },
+                         "results-sfu-controls-final.json":  {
+                                                                 "value":  [
+                                                                               {
+                                                                                   "name":  "sfu isolated first-camera publication after audio join",
+                                                                                   "status":  "PASS",
+                                                                                   "seconds":  4.009,
+                                                                                   "detail":  {
+                                                                                                  "remote":  {
+                                                                                                                 "rows":  [
+                                                                                                                              {
+                                                                                                                                  "kind":  "audio",
+                                                                                                                                  "bytes":  19746
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                  "kind":  "video",
+                                                                                                                                  "bytes":  4374,
+                                                                                                                                  "frames":  6
+                                                                                                                              }
+                                                                                                                          ],
+                                                                                                                 "captures":  [
+                                                                                                                                  {
+                                                                                                                                      "key":  "getUserMedia",
+                                                                                                                                      "tracks":  [
+                                                                                                                                                     {
+                                                                                                                                                         "kind":  "audio",
+                                                                                                                                                         "state":  "live",
+                                                                                                                                                         "settings":  {
+                                                                                                                                                                          "autoGainControl":  true,
+                                                                                                                                                                          "channelCount":  1,
+                                                                                                                                                                          "deviceId":  "default",
+                                                                                                                                                                          "echoCancellation":  true,
+                                                                                                                                                                          "groupId":  "2522fa5c2f1ef3d7d1b8455489c2e920e95af339e19275aa50838edf5f08b8d4",
+                                                                                                                                                                          "latency":  0.01,
+                                                                                                                                                                          "noiseSuppression":  true,
+                                                                                                                                                                          "sampleRate":  48000,
+                                                                                                                                                                          "sampleSize":  16,
+                                                                                                                                                                          "voiceIsolation":  false
+                                                                                                                                                                      }
+                                                                                                                                                     }
+                                                                                                                                                 ]
+                                                                                                                                  }
+                                                                                                                              ]
+                                                                                                             }
+                                                                                              }
+                                                                               },
+                                                                               {
+                                                                                   "name":  "sfu isolated first-screen publication after audio join",
+                                                                                   "status":  "PASS",
+                                                                                   "seconds":  2.661,
+                                                                                   "detail":  {
+                                                                                                  "remote":  {
+                                                                                                                 "rows":  [
+                                                                                                                              {
+                                                                                                                                  "kind":  "audio",
+                                                                                                                                  "bytes":  7011
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                  "kind":  "audio",
+                                                                                                                                  "bytes":  7811
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                  "kind":  "video",
+                                                                                                                                  "bytes":  25318,
+                                                                                                                                  "frames":  7
+                                                                                                                              }
+                                                                                                                          ],
+                                                                                                                 "captures":  [
+                                                                                                                                  {
+                                                                                                                                      "key":  "getUserMedia",
+                                                                                                                                      "tracks":  [
+                                                                                                                                                     {
+                                                                                                                                                         "kind":  "audio",
+                                                                                                                                                         "state":  "live",
+                                                                                                                                                         "settings":  {
+                                                                                                                                                                          "autoGainControl":  true,
+                                                                                                                                                                          "channelCount":  1,
+                                                                                                                                                                          "deviceId":  "default",
+                                                                                                                                                                          "echoCancellation":  true,
+                                                                                                                                                                          "groupId":  "6b15998a8f21388f31956fa46e29786773d7ce2ed4687aa8cda2d93c8c28dca8",
+                                                                                                                                                                          "latency":  0.01,
+                                                                                                                                                                          "noiseSuppression":  true,
+                                                                                                                                                                          "sampleRate":  48000,
+                                                                                                                                                                          "sampleSize":  16,
+                                                                                                                                                                          "voiceIsolation":  false
+                                                                                                                                                                      }
+                                                                                                                                                     }
+                                                                                                                                                 ]
+                                                                                                                                  }
+                                                                                                                              ]
+                                                                                                             }
+                                                                                              }
+                                                                               },
+                                                                               {
+                                                                                   "name":  "sfu isolated second-screen publication after audio join",
+                                                                                   "status":  "PASS",
+                                                                                   "seconds":  2.644,
+                                                                                   "detail":  {
+                                                                                                  "remote":  {
+                                                                                                                 "rows":  [
+                                                                                                                              {
+                                                                                                                                  "kind":  "audio",
+                                                                                                                                  "bytes":  5366
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                  "kind":  "audio",
+                                                                                                                                  "bytes":  6430
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                  "kind":  "video",
+                                                                                                                                  "bytes":  25860,
+                                                                                                                                  "frames":  7
+                                                                                                                              }
+                                                                                                                          ],
+                                                                                                                 "captures":  [
+                                                                                                                                  {
+                                                                                                                                      "key":  "getUserMedia",
+                                                                                                                                      "tracks":  [
+                                                                                                                                                     {
+                                                                                                                                                         "kind":  "audio",
+                                                                                                                                                         "state":  "live",
+                                                                                                                                                         "settings":  {
+                                                                                                                                                                          "autoGainControl":  true,
+                                                                                                                                                                          "channelCount":  1,
+                                                                                                                                                                          "deviceId":  "default",
+                                                                                                                                                                          "echoCancellation":  true,
+                                                                                                                                                                          "groupId":  "36f415d7a228fbd6b4bd652b010563abbb1c784140e9cbe29812e11685ef017c",
+                                                                                                                                                                          "latency":  0.01,
+                                                                                                                                                                          "noiseSuppression":  true,
+                                                                                                                                                                          "sampleRate":  48000,
+                                                                                                                                                                          "sampleSize":  16,
+                                                                                                                                                                          "voiceIsolation":  false
+                                                                                                                                                                      }
+                                                                                                                                                     }
+                                                                                                                                                 ]
+                                                                                                                                  }
+                                                                                                                              ]
+                                                                                                             }
+                                                                                              }
+                                                                               },
+                                                                               {
+                                                                                   "name":  "sfu isolated first-camera-screen publication after audio join",
+                                                                                   "status":  "PASS",
+                                                                                   "seconds":  5.299,
+                                                                                   "detail":  {
+                                                                                                  "remote":  {
+                                                                                                                 "rows":  [
+                                                                                                                              {
+                                                                                                                                  "kind":  "audio",
+                                                                                                                                  "bytes":  30015
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                  "kind":  "video",
+                                                                                                                                  "bytes":  13794,
+                                                                                                                                  "frames":  11
+                                                                                                                              }
+                                                                                                                          ],
+                                                                                                                 "captures":  [
+                                                                                                                                  {
+                                                                                                                                      "key":  "getUserMedia",
+                                                                                                                                      "tracks":  [
+                                                                                                                                                     {
+                                                                                                                                                         "kind":  "audio",
+                                                                                                                                                         "state":  "live",
+                                                                                                                                                         "settings":  {
+                                                                                                                                                                          "autoGainControl":  true,
+                                                                                                                                                                          "channelCount":  1,
+                                                                                                                                                                          "deviceId":  "default",
+                                                                                                                                                                          "echoCancellation":  true,
+                                                                                                                                                                          "groupId":  "20f000da9dab75a6cbe60fb4ce2a6b86dea51b69457148b1ea0bc8b9d0a5b844",
+                                                                                                                                                                          "latency":  0.01,
+                                                                                                                                                                          "noiseSuppression":  true,
+                                                                                                                                                                          "sampleRate":  48000,
+                                                                                                                                                                          "sampleSize":  16,
+                                                                                                                                                                          "voiceIsolation":  false
+                                                                                                                                                                      }
+                                                                                                                                                     }
+                                                                                                                                                 ]
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                      "key":  "getUserMedia",
+                                                                                                                                      "tracks":  [
+                                                                                                                                                     {
+                                                                                                                                                         "kind":  "video",
+                                                                                                                                                         "state":  "live",
+                                                                                                                                                         "settings":  {
+                                                                                                                                                                          "aspectRatio":  1.3333333333333333,
+                                                                                                                                                                          "deviceId":  "9c0a7a48bfcc44be4669ec789cad24adcc558d8937396ebeaa70f535077c6b38",
+                                                                                                                                                                          "frameRate":  5,
+                                                                                                                                                                          "groupId":  "5e78e19f0b8eeee61cde287f7d736e3a9b136883eb2319f9c04dd3e3e033f65b",
+                                                                                                                                                                          "height":  120,
+                                                                                                                                                                          "resizeMode":  "none",
+                                                                                                                                                                          "width":  160
+                                                                                                                                                                      }
+                                                                                                                                                     }
+                                                                                                                                                 ]
+                                                                                                                                  }
+                                                                                                                              ]
+                                                                                                             }
+                                                                                              }
+                                                                               }
+                                                                           ],
+                                                                 "Count":  4
+                                                             },
+                         "results-sfu-four-final.json":  {
+                                                             "value":  [
+                                                                           {
+                                                                               "name":  "Sequential low resolution sfu room initialization",
+                                                                               "status":  "PASS",
+                                                                               "seconds":  3.828
+                                                                           },
+                                                                           {
+                                                                               "name":  "sfu: 2 distinct users in one voice/video room",
+                                                                               "status":  "PASS",
+                                                                               "seconds":  5.61,
+                                                                               "detail":  {
+                                                                                              "participants":  2,
+                                                                                              "connections":  [
+                                                                                                                  1,
+                                                                                                                  1
+                                                                                                              ],
+                                                                                              "audioBytes":  [
+                                                                                                                 9157,
+                                                                                                                 15023
+                                                                                                             ],
+                                                                                              "videoFrames":  [
+                                                                                                                  7,
+                                                                                                                  8
+                                                                                                              ]
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "sfu: 4 distinct users in one voice/video room",
+                                                                               "status":  "PASS",
+                                                                               "seconds":  3.2,
+                                                                               "detail":  {
+                                                                                              "participants":  4,
+                                                                                              "connections":  [
+                                                                                                                  1,
+                                                                                                                  1,
+                                                                                                                  1,
+                                                                                                                  1
+                                                                                                              ],
+                                                                                              "audioBytes":  [
+                                                                                                                 55573,
+                                                                                                                 62775,
+                                                                                                                 46564,
+                                                                                                                 18046
+                                                                                                             ],
+                                                                                              "videoFrames":  [
+                                                                                                                  33,
+                                                                                                                  34,
+                                                                                                                  18,
+                                                                                                                  9
+                                                                                                              ]
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "sfu: 4 distinct users in one voice/video room",
+                                                                               "status":  "PASS",
+                                                                               "seconds":  0.018,
+                                                                               "detail":  {
+                                                                                              "participants":  4,
+                                                                                              "connections":  [
+                                                                                                                  1,
+                                                                                                                  1,
+                                                                                                                  1,
+                                                                                                                  1
+                                                                                                              ],
+                                                                                              "audioBytes":  [
+                                                                                                                 55573,
+                                                                                                                 62775,
+                                                                                                                 46564,
+                                                                                                                 18046
+                                                                                                             ],
+                                                                                              "videoFrames":  [
+                                                                                                                  33,
+                                                                                                                  34,
+                                                                                                                  18,
+                                                                                                                  9
+                                                                                                              ]
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "sfu: all-to-all camera and audio remain active for 120 seconds",
+                                                                               "status":  "PASS",
+                                                                               "seconds":  121.878,
+                                                                               "detail":  {
+                                                                                              "seconds":  120,
+                                                                                              "participants":  4,
+                                                                                              "audioStreamsPerUser":  3,
+                                                                                              "videoStreamsPerUser":  3,
+                                                                                              "videoFixture":  "160x120 at 5 FPS"
+                                                                                          }
+                                                                           }
+                                                                       ],
+                                                             "Count":  5
+                                                         },
+                         "results-mesh-four-final.json":  {
+                                                              "value":  [
+                                                                            {
+                                                                                "name":  "Sequential low resolution mesh room initialization",
+                                                                                "status":  "PASS",
+                                                                                "seconds":  3.232
+                                                                            },
+                                                                            {
+                                                                                "name":  "mesh: 2 distinct users in one voice/video room",
+                                                                                "status":  "PASS",
+                                                                                "seconds":  3.943,
+                                                                                "detail":  {
+                                                                                               "participants":  2,
+                                                                                               "connections":  [
+                                                                                                                   1,
+                                                                                                                   1
+                                                                                                               ],
+                                                                                               "audioBytes":  [
+                                                                                                                  3627,
+                                                                                                                  3614
+                                                                                                              ],
+                                                                                               "videoFrames":  [
+                                                                                                                   7,
+                                                                                                                   7
+                                                                                                               ]
+                                                                                           }
+                                                                            },
+                                                                            {
+                                                                                "name":  "mesh: 4 distinct users in one voice/video room",
+                                                                                "status":  "PASS",
+                                                                                "seconds":  2.404,
+                                                                                "detail":  {
+                                                                                               "participants":  4,
+                                                                                               "connections":  [
+                                                                                                                   3,
+                                                                                                                   3,
+                                                                                                                   3,
+                                                                                                                   3
+                                                                                                               ],
+                                                                                               "audioBytes":  [
+                                                                                                                  15841,
+                                                                                                                  16423,
+                                                                                                                  9459,
+                                                                                                                  4599
+                                                                                                              ],
+                                                                                               "videoFrames":  [
+                                                                                                                   29,
+                                                                                                                   29,
+                                                                                                                   17,
+                                                                                                                   9
+                                                                                                               ]
+                                                                                           }
+                                                                            },
+                                                                            {
+                                                                                "name":  "mesh: 4 distinct users in one voice/video room",
+                                                                                "status":  "PASS",
+                                                                                "seconds":  0.026,
+                                                                                "detail":  {
+                                                                                               "participants":  4,
+                                                                                               "connections":  [
+                                                                                                                   3,
+                                                                                                                   3,
+                                                                                                                   3,
+                                                                                                                   3
+                                                                                                               ],
+                                                                                               "audioBytes":  [
+                                                                                                                  15841,
+                                                                                                                  16423,
+                                                                                                                  9459,
+                                                                                                                  4599
+                                                                                                              ],
+                                                                                               "videoFrames":  [
+                                                                                                                   29,
+                                                                                                                   29,
+                                                                                                                   17,
+                                                                                                                   9
+                                                                                                               ]
+                                                                                           }
+                                                                            },
+                                                                            {
+                                                                                "name":  "mesh: all-to-all camera and audio remain active for 120 seconds",
+                                                                                "status":  "PASS",
+                                                                                "seconds":  121.299,
+                                                                                "detail":  {
+                                                                                               "seconds":  120,
+                                                                                               "participants":  4,
+                                                                                               "audioStreamsPerUser":  3,
+                                                                                               "videoStreamsPerUser":  3,
+                                                                                               "videoFixture":  "160x120 at 5 FPS"
+                                                                                           }
+                                                                            }
+                                                                        ],
+                                                              "Count":  5
+                                                          },
+                         "results-mesh-hd-final.json":  {
+                                                            "value":  [
+                                                                          {
+                                                                              "name":  "Sequential low resolution mesh room initialization",
+                                                                              "status":  "PASS",
+                                                                              "seconds":  3.017
+                                                                          },
+                                                                          {
+                                                                              "name":  "mesh: 2 distinct users in one voice/video room",
+                                                                              "status":  "PASS",
+                                                                              "seconds":  3.62,
+                                                                              "detail":  {
+                                                                                             "participants":  2,
+                                                                                             "connections":  [
+                                                                                                                 1,
+                                                                                                                 1
+                                                                                                             ],
+                                                                                             "audioBytes":  [
+                                                                                                                2882,
+                                                                                                                3198
+                                                                                                            ],
+                                                                                             "videoFrames":  [
+                                                                                                                 9,
+                                                                                                                 9
+                                                                                                             ]
+                                                                                         }
+                                                                          },
+                                                                          {
+                                                                              "name":  "mesh: all-to-all camera and audio remain active for 60 seconds",
+                                                                              "status":  "PASS",
+                                                                              "seconds":  60.137,
+                                                                              "detail":  {
+                                                                                             "seconds":  60,
+                                                                                             "participants":  2,
+                                                                                             "audioStreamsPerUser":  1,
+                                                                                             "videoStreamsPerUser":  1,
+                                                                                             "videoFixture":  "hd-720p-10fps.y4m"
+                                                                                         }
+                                                                          }
+                                                                      ],
+                                                            "Count":  3
+                                                        },
+                         "results-sfu-adaptive-five-minute.json":  {
+                                                                       "value":  [
+                                                                                     {
+                                                                                         "name":  "Sequential low resolution sfu room initialization",
+                                                                                         "status":  "PASS",
+                                                                                         "seconds":  3.844
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "sfu: 2 distinct users in one voice/video room",
+                                                                                         "status":  "PASS",
+                                                                                         "seconds":  5.467,
+                                                                                         "detail":  {
+                                                                                                        "participants":  2,
+                                                                                                        "connections":  [
+                                                                                                                            1,
+                                                                                                                            1
+                                                                                                                        ],
+                                                                                                        "audioBytes":  [
+                                                                                                                           8459,
+                                                                                                                           13789
+                                                                                                                       ],
+                                                                                                        "videoFrames":  [
+                                                                                                                            6,
+                                                                                                                            8
+                                                                                                                        ]
+                                                                                                    }
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "sfu: 4 distinct users in one voice/video room",
+                                                                                         "status":  "PASS",
+                                                                                         "seconds":  3.569,
+                                                                                         "detail":  {
+                                                                                                        "participants":  4,
+                                                                                                        "connections":  [
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1
+                                                                                                                        ],
+                                                                                                        "audioBytes":  [
+                                                                                                                           61986,
+                                                                                                                           67943,
+                                                                                                                           53045,
+                                                                                                                           25674
+                                                                                                                       ],
+                                                                                                        "videoFrames":  [
+                                                                                                                            35,
+                                                                                                                            37,
+                                                                                                                            22,
+                                                                                                                            9
+                                                                                                                        ]
+                                                                                                    }
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "sfu: 12 distinct users in one voice/video room",
+                                                                                         "status":  "PASS",
+                                                                                         "seconds":  16.388,
+                                                                                         "detail":  {
+                                                                                                        "participants":  12,
+                                                                                                        "connections":  [
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1,
+                                                                                                                            1
+                                                                                                                        ],
+                                                                                                        "audioBytes":  [
+                                                                                                                           1063215,
+                                                                                                                           1070362,
+                                                                                                                           1055049,
+                                                                                                                           1034539,
+                                                                                                                           976670,
+                                                                                                                           910066,
+                                                                                                                           827886,
+                                                                                                                           724972,
+                                                                                                                           592136,
+                                                                                                                           430657,
+                                                                                                                           270181,
+                                                                                                                           58394
+                                                                                                                       ],
+                                                                                                        "videoFrames":  [
+                                                                                                                            490,
+                                                                                                                            487,
+                                                                                                                            479,
+                                                                                                                            467,
+                                                                                                                            439,
+                                                                                                                            412,
+                                                                                                                            389,
+                                                                                                                            338,
+                                                                                                                            259,
+                                                                                                                            210,
+                                                                                                                            123,
+                                                                                                                            13
+                                                                                                                        ]
+                                                                                                    }
+                                                                                     },
+                                                                                     {
+                                                                                         "name":  "sfu: all-to-all camera and audio remain active for 300 seconds",
+                                                                                         "status":  "FAIL",
+                                                                                         "seconds":  21.451,
+                                                                                         "error":  "The expression evaluated to a falsy value:\n\n  assert.ok(current[n].states.every(x=\u003ex===\u0027connected\u0027))\n"
+                                                                                     }
+                                                                                 ],
+                                                                       "Count":  5
+                                                                   },
+                         "results-native-mesh.json":  {
+                                                          "value":  [
+                                                                        {
+                                                                            "name":  "Independent eight-user native full mesh retains every media stream for 60 seconds",
+                                                                            "status":  "FAIL",
+                                                                            "seconds":  23.37,
+                                                                            "error":  "Expected values to be strictly equal:\n+ actual - expected\n\n+ \u0027disconnected\u0027\n- \u0027connected\u0027\n"
+                                                                        }
+                                                                    ],
+                                                          "Count":  1
+                                                      },
+                         "results-native-no-pool.json":  {
+                                                             "value":  [
+                                                                           {
+                                                                               "name":  "Independent eight-user native full mesh retains every media stream for 60 seconds",
+                                                                               "status":  "FAIL",
+                                                                               "seconds":  23.459,
+                                                                               "error":  "Expected values to be strictly equal:\n+ actual - expected\n\n+ \u0027disconnected\u0027\n- \u0027connected\u0027\n"
+                                                                           }
+                                                                       ],
+                                                             "Count":  1
+                                                         },
+                         "results-extra-final.json":  {
+                                                          "value":  [
+                                                                        {
+                                                                            "name":  "Voice note upload, duration metadata, message delivery and exact downloaded audio",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.114,
+                                                                            "detail":  {
+                                                                                           "bytes":  88278,
+                                                                                           "durationMs":  1000
+                                                                                       }
+                                                                        },
+                                                                        {
+                                                                            "name":  "Reject invalid voice note duration and non-audio payload",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.091
+                                                                        },
+                                                                        {
+                                                                            "name":  "Scheduled event creation, RSVP, modification, cancellation and permission checks",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.045
+                                                                        },
+                                                                        {
+                                                                            "name":  "Boost duplicate protection and cancellation",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.028
+                                                                        },
+                                                                        {
+                                                                            "name":  "Subscription tier authorization, subscription ownership and cancellation",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  0.031
+                                                                        },
+                                                                        {
+                                                                            "name":  "Truly concurrent message writes and file transfers with persisted exact data",
+                                                                            "status":  "PASS",
+                                                                            "seconds":  20.44,
+                                                                            "detail":  {
+                                                                                           "concurrentMessages":  40,
+                                                                                           "concurrentUploads":  16,
+                                                                                           "bytesEach":  1048576
+                                                                                       }
+                                                                        }
+                                                                    ],
+                                                          "Count":  6
+                                                      }
+                     },
+    "finalChecks":  {
+                        "ownedProcessesStopped":  true,
+                        "sourceHashesMatch":  true,
+                        "testTcpListeners":  0,
+                        "databaseFailures":  0,
+                        "databasesChecked":  48
+                    }
+}

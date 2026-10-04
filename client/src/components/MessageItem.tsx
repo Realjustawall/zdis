@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react';
-import { Avatar } from './ui';
+import { Avatar, BadgeList } from './ui';
 import { formatFullTimestamp, formatBytes, formatTimestamp } from '../lib/format';
 import { renderRichText } from '../lib/richText';
 import type { Attachment, Message } from '../types';
@@ -171,6 +171,7 @@ function MessageItemInner({
             >
               {message.author?.displayName ?? (fa ? 'کاربر حذف‌شده' : 'Deleted user')}
             </bdi>
+            <BadgeList badges={message.author?.badges?.filter(b=>['bot','verified_bot','official','staff','developer','community_moderator'].includes(b.id))} compact />
             <span className="time" dir="ltr" title={formatFullTimestamp(message.createdAt)}>
               {formatTimestamp(message.createdAt)}
             </span>
@@ -202,6 +203,12 @@ function MessageItemInner({
             {!message.suppressEmbeds && message.type !== 'encrypted' ? (
               <LinkEmbed content={message.content} />
             ) : null}
+            {!message.suppressEmbeds && message.botEmbed ? <section className="zdis-bot-embed" style={{borderInlineStartColor:message.botEmbed.color}}>
+              {message.botEmbed.title?<h4>{message.botEmbed.title}</h4>:null}
+              {message.botEmbed.description?<div>{renderRichText(message.botEmbed.description,{mentionNames})}</div>:null}
+              <div className="zdis-bot-embed-fields">{message.botEmbed.fields.map((field,index)=><div key={index} style={{gridColumn:field.inline?'auto':'1 / -1'}}><strong>{field.name}</strong><div>{renderRichText(field.value,{mentionNames})}</div></div>)}</div>
+              {message.botEmbed.footer?<small>{message.botEmbed.footer}</small>:null}
+            </section>:null}
 
             {message.type !== 'encrypted' && message.attachments.length > 0 ? (
               <div className="attachments">

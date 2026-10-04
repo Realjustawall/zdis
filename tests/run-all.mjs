@@ -39,15 +39,20 @@ const testFiles = [
 
 function run(file, env = isolatedEnv) {
   return new Promise((resolve, reject) => {
+    console.log(`START ${file}`);
     const child = spawn(process.execPath, [file], {
       cwd: root,
       env,
       stdio: 'inherit',
       windowsHide: true,
     });
-    child.once('error', reject);
+    const timeout = setTimeout(() => {
+      child.kill('SIGTERM');
+      reject(new Error(`${file} did not finish within 180 seconds`));
+    }, 180_000);
+    child.once('error', (error) => { clearTimeout(timeout); reject(error); });
     child.once('exit', (code) =>
-      code === 0 ? resolve() : reject(new Error(`${file} exited with ${code}`)),
+      { clearTimeout(timeout); code === 0 ? resolve() : reject(new Error(`${file} exited with ${code}`)); },
     );
   });
 }

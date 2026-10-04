@@ -41,6 +41,7 @@ class Client {
 
 let passed = 0, failed = 0; const out = [];
 async function check(label, fn) {
+  console.log(`CHECK ${label}`);
   try { await fn(); passed++; out.push(`  PASS  ${label}`); }
   catch (e) { failed++; out.push(`  FAIL  ${label}\n          ${e.message}`); }
 }
@@ -51,9 +52,9 @@ const waitFor = (socket, event, ms = 6000) =>
     socket.once(event, (payload) => { clearTimeout(timer); resolve(payload); });
   });
 const connected = (socket) => new Promise((resolve, reject) => {
-  socket.once('connect', resolve);
-  socket.once('connect_error', (e) => reject(new Error(`connect_error: ${e.message}`)));
-  setTimeout(() => reject(new Error('connect timed out')), 6000);
+  const timer = setTimeout(() => reject(new Error('application ready timed out')), 6000);
+  socket.once('ready', (payload) => { clearTimeout(timer); resolve(payload); });
+  socket.once('connect_error', (e) => { clearTimeout(timer); reject(new Error(`connect_error: ${e.message}`)); });
 });
 
 console.log('=== realtime / webrtc signalling ===\n');

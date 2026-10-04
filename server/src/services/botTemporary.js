@@ -24,8 +24,8 @@ export async function createTemporaryVoice(groupId,user,name){
   if(db.dialect==='postgres')await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[user.id]);
   if(db.dialect==='postgres')await tx.get('SELECT id FROM chat_groups WHERE id=? FOR UPDATE',[groupId]);
   if(await tx.get('SELECT channel_id FROM builtin_bot_temp_channels WHERE group_id=? AND owner_id=?',[groupId,user.id]))throw badRequest('You already own a temporary voice channel.');
-  await assertUserLimit(user.id,'maxCreatedChannels',Number((await tx.get('SELECT COUNT(*) AS n FROM channels WHERE created_by=?',[user.id])).n));
-  await assertUserLimit(ctx.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS n FROM channels WHERE group_id=?',[groupId])).n));
+  await assertUserLimit(user.id,'maxCreatedChannels',Number((await tx.get('SELECT COUNT(*) AS n FROM channels WHERE created_by=?',[user.id])).n),tx);
+  await assertUserLimit(ctx.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS n FROM channels WHERE group_id=?',[groupId])).n),tx);
   await tx.run('INSERT INTO channels(id,group_id,category_id,name,type,position,created_by,permissions_synced,created_at,updated_at) VALUES (?,?,?,?,?,0,?,1,?,?)',[id,groupId,category?.id||null,String(name||user.username+' voice').slice(0,64),'voice',user.id,now,now]);
   await tx.run('INSERT INTO builtin_bot_temp_channels(channel_id,group_id,owner_id,created_at,empty_since) VALUES (?,?,?,?,?)',[id,groupId,user.id,now,now]);
  });

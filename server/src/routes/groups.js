@@ -2234,8 +2234,8 @@ groupsRouter.post(
       if(getDb().dialect==='postgres'){
         for(const userId of [...new Set([req.user.id,context.group.owner_id])].sort())await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[userId]);
       }
-      await assertUserLimit(req.user.id,'maxCreatedChannels',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE created_by=?',[req.user.id])).count));
-      await assertUserLimit(context.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE group_id=?',[groupId])).count));
+      await assertUserLimit(req.user.id,'maxCreatedChannels',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE created_by=?',[req.user.id])).count),tx);
+      await assertUserLimit(context.group.owner_id,'maxChannelsPerGroup',Number((await tx.get('SELECT COUNT(*) AS count FROM channels WHERE group_id=?',[groupId])).count),tx);
     await tx.run(
       `INSERT INTO channels
        (id, group_id, category_id, name, topic, type, position, is_private,

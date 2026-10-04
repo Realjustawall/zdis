@@ -77,9 +77,9 @@ export async function createGroup({ name, description = null, ownerId, accentCol
     if(db.dialect==='postgres')await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE',[ownerId]);
     const owned=await tx.get('SELECT COUNT(*) AS count FROM chat_groups WHERE owner_id=?',[ownerId]);
     const joined=await tx.get('SELECT COUNT(*) AS count FROM group_members WHERE user_id=?',[ownerId]);
-    await assertUserLimit(ownerId,'maxOwnedGroups',Number(owned.count));
-    await assertUserLimit(ownerId,'maxJoinedGroups',Number(joined.count));
-    await assertUserLimit(ownerId,'maxChannelsPerGroup',2);
+    await assertUserLimit(ownerId,'maxOwnedGroups',Number(owned.count),tx);
+    await assertUserLimit(ownerId,'maxJoinedGroups',Number(joined.count),tx);
+    await assertUserLimit(ownerId,'maxChannelsPerGroup',2,tx);
     await tx.run(
       `INSERT INTO chat_groups (id, name, slug, description, accent_color, owner_id, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -265,7 +265,7 @@ export async function addMember({ groupId, userId, role = 'member', invitedBy = 
     if(db.dialect==='postgres')await tx.get('SELECT id FROM chat_groups WHERE id=? FOR UPDATE',[groupId]);
     const {checkBotJoin}=await import('./botProtection.js');
     await checkBotJoin(tx,groupId,userId);
-    await assertUserLimit(userId,'maxJoinedGroups',Number((await tx.get('SELECT COUNT(*) AS count FROM group_members WHERE user_id=?',[userId])).count));
+    await assertUserLimit(userId,'maxJoinedGroups',Number((await tx.get('SELECT COUNT(*) AS count FROM group_members WHERE user_id=?',[userId])).count),tx);
     await tx.run('INSERT INTO group_members (group_id,user_id,role,invited_by,joined_at) VALUES(?,?,?,?,?)',[groupId,userId,role,invitedBy,Date.now()]);
   });
   await invalidateGroup(groupId);

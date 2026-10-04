@@ -80,9 +80,9 @@ function encode(key, value) {
   return String(value);
 }
 
-export async function getSettings() {
+export async function getSettings(db = getDb()) {
   return cache.wrap(CACHE_KEY, 60, async () => {
-    const rows = await getDb().all('SELECT key, value FROM settings');
+    const rows = await db.all('SELECT key, value FROM settings');
     const merged = { ...DEFAULT_SETTINGS };
     for (const row of rows) {
       if (row.key in DEFAULT_SETTINGS) merged[row.key] = decode(row.key, row.value);

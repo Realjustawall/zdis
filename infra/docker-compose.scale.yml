@@ -16,6 +16,7 @@ x-app: &app
     SEED_ADMIN_USERNAME: scaleadmin
     SEED_ADMIN_PASSWORD: "${SCALE_ADMIN_PASSWORD:?set SCALE_ADMIN_PASSWORD}"
     DATABASE_URL: "postgres://zdis:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/zdis"
+    DATABASE_DRIVER: postgres
     REQUIRE_POSTGRES: "true"
     REDIS_URL: redis://redis:6379
     REQUIRE_REDIS: "true"
@@ -66,10 +67,15 @@ services:
 
   worker:
     <<: *app
-    command: ["npm", "run", "worker", "--workspace", "server"]
+    command: ["node", "--disable-warning=ExperimentalWarning", "--import", "./server/src/lib/telemetry.js", "server/src/scripts/worker.js"]
     environment:
       <<: *app-env
       WORKER_METRICS_PORT: 9464
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9464/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   postgres:
     image: postgres:16-alpine

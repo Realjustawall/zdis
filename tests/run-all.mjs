@@ -57,6 +57,7 @@ function run(file, env = isolatedEnv) {
   });
 }
 
+await run('tests/deployment.test.mjs');
 await run(testFiles[0]);
 await run(testFiles[1]);
 await run(testFiles[2]);

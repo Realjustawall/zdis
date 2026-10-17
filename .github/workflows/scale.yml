@@ -1,6 +1,13 @@
 name: Scale and failover
 
 on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - 'Dockerfile'
+      - 'server/src/db/**'
+      - 'package-lock.json'
+      - '.github/workflows/scale.yml'
   workflow_dispatch:
     inputs:
       connections:

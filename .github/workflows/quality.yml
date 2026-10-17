@@ -191,6 +191,7 @@ jobs:
           --health-retries 20
 
     env:
+      DATABASE_DRIVER: postgres
       DATABASE_URL: postgres://ZDIS:integration-password@127.0.0.1:5432/ZDIS_test
       REDIS_URL: redis://127.0.0.1:6379
       REQUIRE_POSTGRES: 'true'
@@ -247,3 +248,51 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+
+  browser-sfu:
+    name: Playwright LiveKit media E2E
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TEST_E2E_PORT: '18081'
+      LIVEKIT_URL: ws://127.0.0.1:7880
+      LIVEKIT_API_URL: http://127.0.0.1:7880
+      LIVEKIT_API_KEY: ci-key
+      LIVEKIT_API_SECRET: ci-only-livekit-secret-with-thirty-two-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start isolated LiveKit media server
+        run: |
+          docker run -d --name zdis-ci-livekit --network host \
+            livekit/livekit-server:v1.13.7 --dev --bind 127.0.0.1 \
+            --node-ip 127.0.0.1 --keys "$LIVEKIT_API_KEY: $LIVEKIT_API_SECRET"
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:7880 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs zdis-ci-livekit
+          exit 1
+      - run: npm run build
+      - name: Verify live SFU tracks and publication permissions
+        run: npx playwright test direct-voice-sfu.spec.ts voice-permissions-sfu.spec.ts voice-ui-sfu.spec.ts --workers=1
+      - name: Capture SFU diagnostics
+        if: always()
+        run: docker logs zdis-ci-livekit > livekit-ci.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-sfu-report
+          path: |
+            playwright-report/
+            test-results/
+            livekit-ci.log
+          retention-days: 14
+      - name: Stop isolated media server
+        if: always()
+        run: docker rm -f zdis-ci-livekit || true

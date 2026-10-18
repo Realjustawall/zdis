@@ -1,6 +1,15 @@
 name: Scale and failover
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'infra/**'
+      - 'Dockerfile'
+      - 'server/src/db/**'
+      - 'package-lock.json'
+      - '.github/workflows/scale.yml'
   workflow_dispatch:
     inputs:
       connections:
@@ -62,7 +71,7 @@ jobs:
           load_pid=$!
           ramp_seconds=$(( (LOAD_CONNECTIONS + LOAD_RAMP_PER_SECOND - 1) / LOAD_RAMP_PER_SECOND ))
           sleep $((ramp_seconds + 20))
-          if [[ "${{ inputs.run_node_chaos || 'true' }}" == "true" ]]; then
+          if [[ "${{ github.event_name != 'workflow_dispatch' || inputs.run_node_chaos }}" == "true" ]]; then
             docker compose -f infra/docker-compose.scale.yml stop app-1
             sleep 20
             docker compose -f infra/docker-compose.scale.yml start app-1

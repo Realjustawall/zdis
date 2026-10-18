@@ -15,6 +15,7 @@ x-app-environment: &app-environment
   SEED_ADMIN_USERNAME: "${SEED_ADMIN_USERNAME:-admin}"
   SEED_ADMIN_PASSWORD: "${SEED_ADMIN_PASSWORD:?set SEED_ADMIN_PASSWORD}"
   DATABASE_URL: "postgres://zdis:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@pgbouncer:5432/zdis"
+  DATABASE_DRIVER: postgres
   REQUIRE_POSTGRES: "true"
   REDIS_URL: "redis://redis:6379"
   REQUIRE_REDIS: "true"
@@ -102,7 +103,7 @@ services:
 
   worker:
     <<: *app
-    command: ["npm", "run", "worker", "--workspace", "server"]
+    command: ["node", "--disable-warning=ExperimentalWarning", "--import", "./server/src/lib/telemetry.js", "server/src/scripts/worker.js"]
     environment:
       <<: *app-environment
       OTEL_SERVICE_NAME: zdis-worker

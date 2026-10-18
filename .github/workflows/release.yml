@@ -1,0 +1,91 @@
+name: Publish verified platform releases
+
+on:
+  workflow_run:
+    workflows: [Quality]
+    branches: [main]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-platform-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Resolve the tested version
+        id: version
+        shell: bash
+        run: |
+          version=$(node -p "require('./package.json').version")
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Require Scale and CodeQL on the exact tested commit
+        if: steps.version.outputs.needed == 'true'
+        shell: bash
+        run: |
+          for workflow in scale.yml codeql.yml; do
+            passed=false
+            for attempt in $(seq 1 90); do
+              state=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs?head_sha=$SOURCE_SHA&event=push&per_page=10" \
+                --jq '.workflow_runs[0] | if . == null then "missing" elif .status == "completed" then .conclusion else .status end')
+              case "$state" in
+                success) passed=true; break ;;
+                failure|cancelled|timed_out|action_required|startup_failure|skipped)
+                  echo "$workflow validation did not pass: $state" >&2
+                  exit 1 ;;
+              esac
+              sleep 10
+            done
+            if [[ "$passed" != true ]]; then
+              echo "Timed out waiting for $workflow; no release was published." >&2
+              exit 1
+            fi
+          done
+      - name: Download native Ubuntu and Windows build outputs
+        if: steps.version.outputs.needed == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.workflow_run.id }}
+          pattern: release-candidate-*
+          merge-multiple: true
+          path: release-assets
+      - name: Publish both verified archives and checksums
+        if: steps.version.outputs.needed == 'true'
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          ubuntu="zdis-$TAG-ubuntu.tar.gz"
+          windows="zdis-$TAG-windows.zip"
+          test -s "release-assets/$ubuntu"
+          test -s "release-assets/$windows"
+          (cd release-assets && sha256sum "$ubuntu" "$windows" > SHA256SUMS.txt)
+          gh release create "$TAG" "release-assets/$ubuntu" "release-assets/$windows" \
+            release-assets/SHA256SUMS.txt --target "$SOURCE_SHA" \
+            --title "ZDis $TAG — Ubuntu and Windows" --notes-file docs/RELEASE-NOTES.md

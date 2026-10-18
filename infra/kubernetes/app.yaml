@@ -8,6 +8,7 @@ data:
   PORT: "4000"
   TRUST_PROXY: "true"
   SECURE_COOKIES: "true"
+  DATABASE_DRIVER: postgres
   REQUIRE_POSTGRES: "true"
   REQUIRE_REDIS: "true"
   REDIS_CLUSTER_NODES: redis-cluster-0.redis-cluster-headless:6379,redis-cluster-1.redis-cluster-headless:6379,redis-cluster-2.redis-cluster-headless:6379
@@ -172,7 +173,7 @@ spec:
       containers:
         - name: worker
           image: ghcr.io/your-org/zdis:1.0.0
-          command: ["npm", "run", "worker", "--workspace", "server"]
+          command: ["node", "--disable-warning=ExperimentalWarning", "--import", "./server/src/lib/telemetry.js", "server/src/scripts/worker.js"]
           envFrom:
             - configMapRef:
                 name: zdis-config

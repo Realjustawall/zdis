@@ -11,6 +11,10 @@ const useExternalDatabase = Boolean(inheritedDatabase);
 // Blank explicit paths also prevent dotenv from loading production paths.
 const isolatedEnv = {
   ...process.env, SQLITE_FILE: '', UPLOAD_DIR: '', DATA_DIR: dataDir,
+  // Bootstrap fixture processes and the HTTP server share this database.
+  // They must use the same signing keys for audit entries and identities.
+  APP_SECRET: 'test-only-secret-that-is-longer-than-thirty-two-characters',
+  AUDIT_SIGNING_KEY: 'test-only-audit-key-that-is-longer-than-thirty-two-characters',
   DATABASE_DRIVER: useExternalDatabase ? 'postgres' : 'sqlite',
   DATABASE_URL: inheritedDatabase, PGHOST: '', PGUSER: '',
   REQUIRE_POSTGRES: useExternalDatabase ? 'true' : 'false',
@@ -57,6 +61,8 @@ function run(file, env = isolatedEnv) {
   });
 }
 
+await run('tests/deployment.test.mjs');
+await run('tests/bootstrap-concurrency.test.mjs');
 await run(testFiles[0]);
 await run(testFiles[1]);
 await run(testFiles[2]);

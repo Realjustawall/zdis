@@ -12,6 +12,7 @@ import { readObjectBuffer } from './storage.js';
 import { storeUpload } from './uploads.js';
 import { audit } from './audit.js';
 import { logger } from '../lib/logger.js';
+import { withBootstrapLock } from './bootstrapLock.js';
 import { badRequest, forbidden, conflict, notFound } from '../lib/errors.js';
 import { BOT_DEFAULTS, BOT_VARIABLES, renderBotTemplate, escapeSvg, matchBotRule, levelForXp, safeSelfRole } from './botRules.js';
 
@@ -20,7 +21,7 @@ const recentMessages = new Map();
 let installPromise;
 export async function ensureBuiltinBots() {
   if(installPromise)return installPromise;
-  installPromise=(async()=>{
+  installPromise=withBootstrapLock(async()=>{
     const db=getDb(), users={};
     for(const kind of ['welcomer','moderator']) {
       let row=await db.get('SELECT user_id FROM builtin_bot_accounts WHERE kind=?',[kind]);
@@ -36,7 +37,7 @@ export async function ensureBuiltinBots() {
       await invalidateUser(row.user_id);users[kind]=row.user_id;
     }
     return users;
-  })();
+  });
   try{return await installPromise;}catch(error){installPromise=null;throw error;}
 }
 export async function botSettings(groupId) {

@@ -34,6 +34,23 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run test:windows
+      - name: Test release packaging
+        run: python -m unittest discover -s tests -p package_release_test.py -v
+      - name: Build and verify platform release archive
+        shell: bash
+        run: |
+          platform=ubuntu
+          extension=tar.gz
+          if [[ "$RUNNER_OS" == Windows ]]; then platform=windows; extension=zip; fi
+          version=$(node -p "require('./package.json').version")
+          python scripts/package-release.py --platform "$platform" \
+            --output "$RUNNER_TEMP/release/zdis-v$version-$platform.$extension"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-${{ runner.os }}
+          path: ${{ runner.temp }}/release/*
+          if-no-files-found: error
+          retention-days: 14
 
   infrastructure-validation:
     name: Kubernetes, Compose and Terraform validation
@@ -269,9 +286,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Start isolated LiveKit media server
         run: |
+          # Permission tests intentionally do not grant camera/microphone access.
+          # Advertise the runner's reachable interface, not a loopback ICE address.
+          node_ip=$(hostname -I | awk '{print $1}')
+          test -n "$node_ip"
           docker run -d --name zdis-ci-livekit --network host \
-            livekit/livekit-server:v1.13.7 --dev --bind 127.0.0.1 \
-            --node-ip 127.0.0.1 --keys "$LIVEKIT_API_KEY: $LIVEKIT_API_SECRET"
+            livekit/livekit-server:v1.13.7 --dev --bind 0.0.0.0 \
+            --node-ip "$node_ip" --keys "$LIVEKIT_API_KEY: $LIVEKIT_API_SECRET"
           for attempt in $(seq 1 60); do
             if curl -fsS http://127.0.0.1:7880 >/dev/null; then exit 0; fi
             sleep 1
@@ -280,7 +301,7 @@ jobs:
           exit 1
       - run: npm run build
       - name: Verify live SFU tracks and publication permissions
-        run: npx playwright test direct-voice-sfu.spec.ts voice-permissions-sfu.spec.ts voice-ui-sfu.spec.ts --workers=1
+        run: npx playwright test direct-voice-sfu.spec.ts voice-permissions-sfu.spec.ts voice-ui-sfu.spec.ts --workers=1 --retries=0
       - name: Capture SFU diagnostics
         if: always()
         run: docker logs zdis-ci-livekit > livekit-ci.log 2>&1 || true

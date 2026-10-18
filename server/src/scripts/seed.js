@@ -6,6 +6,7 @@ import { createUser, findUserByEmail, countUsers, updateUser } from '../services
 import { suggestPassword } from '../lib/password.js';
 import { audit } from '../services/audit.js';
 import { ensureBadgeCatalogue, grantBadge } from '../services/badges.js';
+import { withBootstrapLock } from '../services/bootstrapLock.js';
 
 /**
  * First-run bootstrap. Creates the administrator account named in the brief so
@@ -16,6 +17,10 @@ import { ensureBadgeCatalogue, grantBadge } from '../services/badges.js';
  * random one and print it once; it is never written to disk in plaintext.
  */
 export async function ensureSeedAdmin() {
+  return withBootstrapLock(ensureSeedAdminUnlocked);
+}
+
+async function ensureSeedAdminUnlocked() {
   const email = config.seedAdminEmail;
   const existing = await findUserByEmail(email);
 

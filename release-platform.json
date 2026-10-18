@@ -3,5 +3,6 @@
   "platform": "ubuntu",
   "databaseDefault": "sqlite",
   "nodeMinimum": "24",
-  "validationReport": "docs/release-validation-2026-10-04.json"
+  "validationReport": "docs/RELEASE-VALIDATION.md",
+  "version": "1.0.1"
 }

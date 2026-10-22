@@ -1,0 +1,10 @@
+{
+  "family": "Vazirmatn",
+  "version": "33.003",
+  "license": "OFL-1.1",
+  "source": "https://github.com/rastikerdar/vazirmatn",
+  "source_ttf_sha256": "b69fd4c680b8f3f225feabcc655a2c585d97627b8f5f5c0f9985e894069f3a56",
+  "method": "HarfBuzz-shaped glyph outlines; no external font needed by SVG assets",
+  "persian_cmap": "پ چ ژ گ ک ی آ ؤ ئ ۰۱۲۳۴۵۶۷۸۹",
+  "missing_glyphs": []
+}

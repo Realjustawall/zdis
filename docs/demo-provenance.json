@@ -1,0 +1,29 @@
+{
+  "source_commit": "78c295df85e1c0cb3d270e1195841302ea0d997f",
+  "captures": [
+    {
+      "path": "docs/assets/screenshots/en/01-community.webp",
+      "language": "en",
+      "capture_method": "Live local server + real browser",
+      "source_png_sha256": "ceb3113606a044eaa66c656212026d23d8acbcf6ffe6034bdf2afd1b69477589"
+    },
+    {
+      "path": "docs/assets/screenshots/en/02-appearance.webp",
+      "language": "en",
+      "capture_method": "Live local server + real browser",
+      "source_png_sha256": "10fe790519489337501b31fd85686b9664bff1eeaf2e18f2b9cfeabf5680f86b"
+    },
+    {
+      "path": "docs/assets/screenshots/fa/01-community.webp",
+      "language": "fa",
+      "capture_method": "Live local server + real browser",
+      "source_png_sha256": "2ef16310f6266cdf85dac499c314e53e20ac2c51a24b1714d2bb6b662b1abdd2"
+    },
+    {
+      "path": "docs/assets/screenshots/fa/02-appearance.webp",
+      "language": "fa",
+      "capture_method": "Live local server + real browser",
+      "source_png_sha256": "b563b2a4b8ccaabe44bdf28c448330f5f81a6637531ce8e35510d8270642e2df"
+    }
+  ]
+}

@@ -5,7 +5,7 @@
 **Self-hosted communication for creators and teams: channels, direct messages, voice/video, file sharing and administrator-managed accounts.**
 
 <img alt="Version" src="https://img.shields.io/badge/version-v1.0.1-7765ff?style=flat-square" />
-<img alt="Platform" src="https://img.shields.io/badge/platform-Self-hosted%20web-354158?style=flat-square" />
+<img alt="Platform" src="https://img.shields.io/badge/platform-Self--hosted%20web-354158?style=flat-square" />
 <a href="https://github.com/Realjustawall/zdis/actions/workflows/quality.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/Realjustawall/zdis/quality.yml?branch=main&amp;label=CI&amp;style=flat-square" /></a>
 
 <a href="https://github.com/Realjustawall/zdis/releases/latest"><img src="https://img.shields.io/badge/Download-7765ff?style=flat-square&labelColor=161b22" alt="Download" /></a>

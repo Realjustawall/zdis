@@ -5,7 +5,7 @@
 **پلتفرم ارتباطی خودمیزبان برای سازندگان محتوا و تیم‌ها؛ با کانال، پیام خصوصی، تماس صوتی و تصویری، اشتراک فایل و حساب‌های تحت مدیریت مدیر.**
 
 <img alt="Version" src="https://img.shields.io/badge/version-v1.0.1-7765ff?style=flat-square" />
-<img alt="Platform" src="https://img.shields.io/badge/platform-Self-hosted%20web-354158?style=flat-square" />
+<img alt="Platform" src="https://img.shields.io/badge/platform-Self--hosted%20web-354158?style=flat-square" />
 <a href="https://github.com/Realjustawall/zdis/actions/workflows/quality.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/Realjustawall/zdis/quality.yml?branch=main&amp;label=CI&amp;style=flat-square" /></a>
 
 <a href="https://github.com/Realjustawall/zdis/releases/latest"><img src="https://img.shields.io/badge/%D8%AF%D8%B1%DB%8C%D8%A7%D9%81%D8%AA-7765ff?style=flat-square&labelColor=161b22" alt="دریافت" /></a>

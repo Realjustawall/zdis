@@ -50,8 +50,12 @@ def build(origin, output, signing, root):
         metadata['build']['appId'] = f'com.zdis.server.s{server_id}'
         metadata['build']['productName'] = f'ZDis {server_id}'
         package.write_text(json.dumps(metadata, indent=2))
+        uid = os.getuid() or 10001
+        gid = os.getgid() if os.getuid() else 10001
         for platform in ('android','windows'):
-            run(['docker','build','-t',f'zdis-{platform}-builder','-f',work/f'native/docker/{platform}.Dockerfile',work])
+            run(['docker','build','--build-arg',f'ZDIS_BUILDER_UID={uid}',
+                 '--build-arg',f'ZDIS_BUILDER_GID={gid}',
+                 '-t',f'zdis-{platform}-builder','-f',work/f'native/docker/{platform}.Dockerfile',work])
         staged = Path(temp)/'artifacts'
         staged.mkdir()
         # Keep persistent signing keys private to the installer owner. Containers
@@ -59,8 +63,6 @@ def build(origin, output, signing, root):
         # including when the server installer itself is invoked as root.
         session_keys = Path(temp)/'signing'
         shutil.copytree(keys, session_keys)
-        uid = os.getuid() or 10001
-        gid = os.getgid() if os.getuid() else 10001
         if os.getuid() == 0:
             for folder in (work, staged, session_keys):
                 os.chown(folder, uid, gid)

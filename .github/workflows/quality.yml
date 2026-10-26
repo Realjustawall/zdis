@@ -214,8 +214,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Production dependency audit
-        run: npm audit --omit=dev --audit-level=high
+      - name: Production and build-tool dependency audit
+        run: npm audit --audit-level=high
       - name: Generate CycloneDX SBOM
         run: npm sbom --sbom-format cyclonedx > sbom.cdx.json
       - name: Scan repository, IaC and secrets

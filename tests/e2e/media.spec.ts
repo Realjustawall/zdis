@@ -18,7 +18,7 @@ async function post(context: BrowserContext, endpoint: string, data: unknown, cs
 async function setup(browser: Browser, baseURL: string) {
   const contexts: BrowserContext[] = [];
   const newContext = async () => {
-    const context = await browser.newContext({ baseURL, permissions: ['microphone', 'camera'], viewport: { width: 1280, height: 900 } });
+    const context = await browser.newContext({ baseURL, permissions: ['microphone', 'camera', 'local-network-access'], viewport: { width: 1280, height: 900 } });
     contexts.push(context);
     await context.addInitScript(() => {
       localStorage.setItem('zdis.locale', 'en');
@@ -28,9 +28,16 @@ async function setup(browser: Browser, baseURL: string) {
       window.RTCPeerConnection = class extends Native {
         constructor(config?: RTCConfiguration) { super(config); state.mediaPeers.push(this); }
       };
-      const original = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
-      navigator.mediaDevices.getDisplayMedia = async (options) => {
-        const stream = await original(options); state.mediaCaptures.push(stream); return stream;
+      navigator.mediaDevices.getDisplayMedia = async () => {
+        // A distinctive animated source lets the receiving browser prove that
+        // it displays screen pixels, rather than just another camera track.
+        const canvas = document.createElement('canvas'); canvas.width = 960; canvas.height = 540;
+        const ctx = canvas.getContext('2d')!;
+        const draw = () => { ctx.fillStyle = '#1c31ea'; ctx.fillRect(0,0,960,540); ctx.fillStyle = '#fff'; ctx.fillText('Screen '+Date.now(),20,30); };
+        draw(); const timer = setInterval(draw,50);
+        const stream = canvas.captureStream(20);
+        stream.getVideoTracks()[0].addEventListener('ended', () => clearInterval(timer));
+        state.mediaCaptures.push(stream); return stream;
       };
     });
     return context;
@@ -86,14 +93,22 @@ test('voice media renegotiates in both directions and displays screen over an ac
     const [a, b] = pages;
     await a.getByTitle('Share your screen', { exact: true }).click();
     await expect(a.getByTitle('Stop sharing', { exact: true })).toBeVisible();
-    const screenId = await a.evaluate(() => (window as unknown as {mediaCaptures: MediaStream[]}).mediaCaptures.at(-1)!.getVideoTracks()[0].id);
     const remoteVideo = b.locator('.voice-tile').filter({ hasText: s.users[0].user.displayName }).locator('video');
-    await expect.poll(() => remoteVideo.evaluate(v => (v.srcObject as MediaStream)?.getVideoTracks()[0]?.id), { timeout: 15_000 }).toBe(screenId);
+    // Receiver track IDs are independent of sender IDs (WebRTC section 5.3).
+    const screenPixel = () => remoteVideo.evaluate((v: HTMLVideoElement) => {
+      if (!v.videoWidth || !v.videoHeight) return false;
+      const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(v,Math.floor(v.videoWidth/2),Math.floor(v.videoHeight/2),1,1,0,0,1,1);
+      const [r,g,b] = ctx.getImageData(0,0,1,1).data;
+      return Math.abs(r-28)<20 && Math.abs(g-49)<20 && Math.abs(b-234)<20;
+    });
+    await expect.poll(screenPixel, { timeout: 15_000 }).toBe(true);
     await expect.poll(() => remoteVideo.evaluate(v => v.videoWidth)).toBeGreaterThan(0);
     const time = await remoteVideo.evaluate(v => v.currentTime);
     await expect.poll(() => remoteVideo.evaluate(v => v.currentTime)).toBeGreaterThan(time);
     await a.getByTitle('Stop sharing', { exact: true }).click();
-    await expect.poll(() => remoteVideo.evaluate(v => (v.srcObject as MediaStream)?.getVideoTracks()[0]?.id), { timeout: 15_000 }).not.toBe(screenId);
+    await expect.poll(screenPixel, { timeout: 15_000 }).toBe(false);
     await expect.poll(() => remoteVideo.evaluate(v => v.videoWidth)).toBeGreaterThan(0);
     for (const p of pages) await p.getByRole('button', { name: 'Disconnect', exact: true }).click();
   } finally { for (const c of s.contexts) await c.close(); }

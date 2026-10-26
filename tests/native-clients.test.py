@@ -82,7 +82,10 @@ class NativeClientTests(unittest.TestCase):
             containers = [args for args, _ in calls if args[:2] == ['docker', 'run']]
             self.assertTrue(containers)
             for args in containers:
-                self.assertNotEqual(args[args.index('--user')+1].split(':')[0], '0')
+                uid, gid = args[args.index('--user')+1].split(':')
+                self.assertNotEqual(uid, '0')
+                images = [image for image, _ in calls if image[:2] == ['docker', 'build']]
+                self.assertTrue(all(f'ZDIS_BUILDER_UID={uid}' in image and f'ZDIS_BUILDER_GID={gid}' in image for image in images))
                 self.assertFalse(any(str(temp/'signing') in arg for arg in args))
             self.assertTrue(all((p.stat().st_mode & 0o077) == 0 for p in (temp/'signing').glob('*/*')))
 

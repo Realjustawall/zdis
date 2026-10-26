@@ -79,6 +79,7 @@ await run('tests/user-access.test.mjs', sqliteUnitEnv);
 await run('tests/voice-games.test.mjs');
 await run('tests/voice-activities.test.mjs');
 await run('tests/voice-listener.test.mjs');
+await run('tests/chat-snapshot-race.test.mjs');
 
 const serverEnv = {
   ...isolatedEnv,

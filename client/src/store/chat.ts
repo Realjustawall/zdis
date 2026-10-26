@@ -157,6 +157,7 @@ export const useChat = create<ChatState>((set, get) => ({
   async loadMessages(target, opts = {}) {
     const key = targetKey(target);
     if (get().loadingMessages[key]) return;
+    const beforeRequest = new Map((get().messages[key] ?? []).map(message => [message.id, message]));
     set((state) => ({ loadingMessages: { ...state.loadingMessages, [key]: true } }));
 
     try {
@@ -167,7 +168,14 @@ export const useChat = create<ChatState>((set, get) => ({
 
       set((state) => {
         const existing = state.messages[key] ?? [];
-        const merged = opts.before ? [...data.messages, ...existing] : data.messages;
+        // A response can describe a snapshot taken before a socket event that
+        // has already reached the store. Preserve those newer local changes.
+        const changed = existing.filter(message => beforeRequest.get(message.id) !== message
+          || message.deliveryStatus === 'sending' || message.deliveryStatus === 'failed');
+        const present = new Set(existing.map(message => message.id));
+        const removed = new Set([...state.deletedMessageIds, ...[...beforeRequest.keys()].filter(id => !present.has(id))]);
+        const merged = (opts.before ? [...existing, ...data.messages] : [...changed, ...data.messages])
+          .filter(message => !removed.has(message.id));
         return {
           messages: { ...state.messages, [key]: dedupe(merged) },
           hasMore: { ...state.hasMore, [key]: data.hasMore },

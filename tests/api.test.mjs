@@ -126,7 +126,7 @@ await check('CSRF token is required for writes', async () => {
 
 // ---- admin: create accounts
 let youtuber, editor, outsider;
-await check('admin creates a youtuber account', async () => {
+await check('legacy creator input creates an ordinary account', async () => {
   const r = await admin.post('/api/admin/users', {
     email: `creator-${suffix}@example.com`,
     username: `creator${suffix}`,
@@ -136,7 +136,7 @@ await check('admin creates a youtuber account', async () => {
     mustChangePassword: false,
   });
   youtuber = r.body.user;
-  assert(youtuber.role === 'youtuber', 'role mismatch');
+  assert(youtuber.role === 'member', 'role mismatch');
 });
 
 await check('admin creates two member accounts', async () => {
@@ -149,6 +149,14 @@ await check('admin creates two member accounts', async () => {
     displayName: 'Random Person', password: 'Outside-Pass#26', role: 'member', mustChangePassword: false,
   });
   editor = a.body.user; outsider = b.body.user;
+});
+
+await check('concurrent account creation returns one success and one conflict', async () => {
+  const body = { email: `race-${suffix}@example.com`, username: `race${suffix}`,
+    displayName: 'Concurrent account', password: 'Concurrent-Pass#2026', role: 'member' };
+  const results = await Promise.all([admin.post('/api/admin/users', body, { allowFail: true }),
+    admin.post('/api/admin/users', body, { allowFail: true })]);
+  assert(results.map(result => result.status).sort().join(',') === '201,409', 'Duplicate creation did not return 201/409');
 });
 
 await check('weak password is rejected by policy', async () => {
@@ -186,7 +194,7 @@ await check('created accounts can log in', async () => {
   const a = await creator.login(`creator-${suffix}@example.com`, 'Yt-Creator#2026');
   const b = await ed.login(`editor-${suffix}@example.com`, 'Editor-Pass#2026');
   const c = await out.login(`outsider-${suffix}@example.com`, 'Outside-Pass#26');
-  assert(a.role === 'youtuber' && b.role === 'member' && c.role === 'member', 'roles wrong');
+  assert(a.role === 'member' && b.role === 'member' && c.role === 'member', 'roles wrong');
 });
 
 await check('message speaker visibility is stored per user', async () => {

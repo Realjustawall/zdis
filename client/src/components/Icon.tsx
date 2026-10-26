@@ -10,6 +10,7 @@ export type IconName =
   | 'camera'
   | 'chart'
   | 'check'
+  | 'chevronDown'
   | 'close'
   | 'code'
   | 'compass'
@@ -73,6 +74,7 @@ const paths: Record<IconName, string> = {
   camera: 'M14.5 5 16 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3l1.5-2h5ZM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
   chart: 'M4 19V9m6 10V5m6 14v-7m4 7H2',
   check: 'm5 12 4 4L19 6',
+  chevronDown: 'm6 9 6 6 6-6',
   close: 'M6 6l12 12M18 6 6 18',
   code: 'm8 9-4 3 4 3m8-6 4 3-4 3m-3-9-2 12',
   compass: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm3.8-13.8-2.1 5.5-5.5 2.1 2.1-5.5 5.5-2.1Z',

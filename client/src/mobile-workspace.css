@@ -1,0 +1,236 @@
+/* Mobile geometry has one owner. Desktop styling stays in styles.css.
+   Navigation enters from inline-end; the server list enters from inline-start.
+   User-requested side navigation also applies to pickers and confirmation pages. */
+.mobile-settings-back, .mobile-close-arrow { display: none; }
+.mobile-account, .mobile-alerts, .mobile-home-shortcut { display: none; }
+
+@keyframes page-from-end {
+  from { transform: translateX(var(--page-enter, 100%)); }
+  to { transform: none; }
+}
+@keyframes page-from-start {
+  from { transform: translateX(var(--page-return, -100%)); }
+  to { transform: none; }
+}
+
+@media (max-width: 780px) {
+  :root { --page-enter: 100%; --page-return: -100%; --mobile-dock-height: 72px; }
+  :root[dir='rtl'] { --page-enter: -100%; --page-return: 100%; }
+  :root[data-theme='dark']:not([data-custom-theme='true']) {
+    --bg-rail: #1e1f22; --bg-sidebar: #2b2d31; --bg-main: #313338;
+    --bg-raised: #383a40; --bg-input: #383a40; --bg-active: #404249;
+    --bg-hover: #35373c; --text: #f2f3f5; --text-muted: #b5bac1;
+    --text-faint: #949ba4; --accent: #5865f2; --border: #ffffff0d;
+  }
+  :root[data-theme='dark']:not([data-custom-theme='true']) .app { --accent: #5865f2; --accent-hover: #4752c4; --accent-soft: #5865f21f; }
+  html, body, #root { min-width: 0; max-width: 100%; }
+  body { font-size: 15px; }
+  *, *::before, *::after { box-sizing: border-box; }
+  .app, .admin, .modal { --mobile-dock-height: 72px; }
+  .app .rail, .app .mobile-server-rail, .app .sidebar,
+  .app .main, .app .members, .admin, .admin-nav, .admin-main {
+    background-image: none; backdrop-filter: none; filter: none; box-shadow: none;
+  }
+  .app .main, .app .sidebar, .app .members {
+    animation: page-from-end 200ms cubic-bezier(.2,.8,.2,1) both;
+  }
+  .app .sidebar { animation-name: page-from-start; border-radius: 0; }
+  .app .rail, .app .mobile-server-rail { animation: none; }
+  .app .mobile-server-rail, .app .sidebar {
+    inset-block-end: calc(72px + env(safe-area-inset-bottom));
+  }
+  .app .rail {
+    height: calc(72px + env(safe-area-inset-bottom));
+    padding: 0; border: 0; background: var(--bg-rail);
+  }
+  .app .mobile-dock {
+    display: flex; align-items: center; gap: 4px; padding: 6px 10px;
+    height: 72px; background: var(--bg-rail); direction: inherit;
+  }
+  .mobile-account, .mobile-alerts, .mobile-home-shortcut {
+    display: flex; align-items: center; justify-content: center; flex: none;
+    min-height: 48px; color: var(--text); border: 0; border-radius: 12px;
+    box-shadow: none; background: transparent; position: relative;
+  }
+  .mobile-home-shortcut { width: 44px; }
+  .mobile-account { flex: 1; min-width: 0; justify-content: flex-start; padding: 5px 8px; gap: 10px; background: var(--bg-sidebar); }
+  .mobile-account-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; text-align: start; gap: 2px; }
+  .mobile-account-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; }
+  .mobile-account-copy small { color: var(--text-muted); font-size: 11px; }
+  .mobile-alerts { width: 44px; border-radius: 50%; }
+  .app.mobile-content-view > .main { inset-block-end: calc(72px + env(safe-area-inset-bottom)); }
+  .app .mobile-server-rail .rail-item { border-radius: 16px; box-shadow: none; animation: none; }
+  .app .mobile-server-rail .rail-item::after { display: none; }
+  .app .sidebar-head { min-height: 60px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .app .sidebar-head h2 { font-size: 19px; line-height: 1.5; min-width: 0; overflow-wrap: anywhere; }
+  .app .sidebar-body { padding: 8px 6px 16px; }
+  .app .nav-item, .app .channel-nav-row, .app .member-row { background-image: none; box-shadow: none; }
+  html[dir] .app .sidebar-body .nav-item.active { background: var(--bg-active); color: var(--text); }
+  .app .sidebar-body .channel-nav-row .nav-item { padding-inline-end: 48px; text-align: start; }
+  .app .sidebar-body .channel-nav-row .nav-item .label { text-align: start; }
+  .app .nav-item::before, .app .nav-item::after { display: none; }
+  .app .nav-item .label, .app .member-row > :last-child { min-width: 0; }
+  .app .main-head { min-height: 56px; padding: 6px 10px; gap: 6px; }
+  .app .main-head .title { font-size: 16px; gap: 6px; }
+  .app .main-head .title > .ui-icon, .app .main-head .title > span:first-child {
+    background: none; border: 0; box-shadow: none; border-radius: 0; color: var(--text-muted);
+  }
+  .app .message { border-radius: 0; border: 0; padding-inline: 16px; gap: 12px; background-image: none; box-shadow: none; }
+  .app .message .author { font-size: 15px; }
+  .app .channel-intro { padding: 24px 16px 8px; margin: 0; min-height: 0; text-align: start; border: 0; }
+  .app .channel-intro-icon { width: 64px; height: 64px; margin: 0 0 16px; border-radius: 50%; background: var(--bg-active); border: 0; }
+  .app .channel-intro h2 { font-size: 26px; line-height: 1.35; letter-spacing: 0; margin: 0 0 8px; overflow-wrap: anywhere; }
+  .app .channel-intro p { font-size: 14px; line-height: 1.6; margin: 0; }
+  .app .composer, .app .composer-wrap { transform: none; filter: none; animation: none; }
+  .app .composer { min-height: 48px; border-radius: 24px; margin: 4px 8px 8px; }
+  .app .composer textarea { font-size: 15px; line-height: 1.5; }
+  .app .composer.mobile-tools-open { flex-wrap: nowrap; }
+  .app .composer.mobile-tools-open > textarea { flex-basis: 0; }
+  .app .composer.mobile-tools-open > .composer-btn:not(.composer-more):not(.composer-emoji):not(.send) { display: none; }
+  .app .composer > .composer-btn.composer-recording { display: flex !important; min-width: 52px; font-size: 11px; }
+  .voice-listener-status { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; color: var(--text-muted); font-size: 12px; overflow-wrap: anywhere; }
+  .voice-stage .voice-join-controls { flex-wrap: wrap; gap: 8px; }
+  .voice-stage .voice-join-controls .btn { flex: 1 1 150px; min-width: 0; white-space: normal; }
+  .friends-head { flex-wrap: wrap; min-width: 0; }
+  .friends-tabs { display: flex; flex-wrap: wrap; flex: 1 1 100%; min-width: 0; gap: 6px; }
+  .friends-tabs > button { flex: 1 1 auto; min-width: 0; white-space: normal; }
+  .friends-refresh { position: static; }
+  .mobile-popover-modal .emoji-grid button:hover { transform: none; }
+
+  /* All dialogs are full-height pages. There is no bottom-sheet geometry. */
+  .modal-backdrop {
+    padding: 0; display: flex; align-items: stretch; justify-content: flex-end;
+    height: var(--visual-viewport-height, 100dvh); width: 100%;
+    background: #0008; backdrop-filter: none; animation: none;
+  }
+  .modal, .modal.wide, .modal:not(.server-settings-modal), .modal.wide:not(.server-settings-modal), .modal.server-settings-modal {
+    width: 100%; max-width: 100%; min-width: 0;
+    height: 100%; max-height: 100%; margin: 0;
+    padding: 0; border: 0; border-radius: 0; background: var(--bg-main);
+    background-image: none; box-shadow: none; filter: none;
+    animation: page-from-end 200ms cubic-bezier(.2,.8,.2,1) both;
+  }
+  .modal::before, .modal::after { display: none; }
+  .modal .modal-head {
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    min-height: 58px; align-items: center; gap: 12px; border-bottom: 1px solid var(--border);
+    background: var(--bg-main); border-radius: 0; box-shadow: none;
+  }
+  .modal .modal-head > div { min-width: 0; flex: 1; }
+  .modal .modal-head h3 { font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
+  .modal .modal-head p { font-size: 12px; overflow-wrap: anywhere; white-space: normal; text-wrap: wrap; }
+  .modal .modal-head .close { order: -1; flex: 0 0 36px; width: 36px; height: 36px; min-width: 36px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text); }
+  .mobile-close-arrow { display: block; }
+  .desktop-close-icon { display: none; }
+  [dir='rtl'] .mobile-close-arrow, [dir='rtl'] .mobile-settings-back > svg { transform: rotate(180deg); }
+  .modal .modal-body { padding: 16px; min-height: 0; min-width: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .modal .modal-foot { padding: 12px 16px max(12px, env(safe-area-inset-bottom)); flex-wrap: wrap; background: var(--bg-sidebar); border-radius: 0; }
+  .modal .modal-foot .btn { flex: 1; min-width: 0; white-space: normal; }
+  .modal :is(input:not([type='checkbox']):not([type='radio']), textarea, select) { min-width: 0; max-width: 100%; }
+  .modal :is(h1,h2,h3,h4,p,small,label,.alert,.badge) { overflow-wrap: anywhere; }
+  .modal :is(.row,.col,.field,.card,.panel,.form-group) { min-width: 0; max-width: 100%; }
+  .modal .row { flex-wrap: wrap; }
+  .modal .btn, .admin .btn { background-image: none; box-shadow: none; border-radius: 8px; }
+  .modal .btn.primary { background: #5865f2; }
+  .modal .btn::after, .admin .btn::after { display: none; }
+
+  /* Settings use a readable list, then a separate page with a back button. */
+  .mobile-settings-back { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--text-muted); margin-bottom: 14px; font-size: 14px; }
+  .account-modal .account-tabs { display: flex; flex-direction: column; gap: 0; padding: 0; border: 0; border-radius: 8px; background: var(--bg-sidebar); }
+  .account-modal .account-tab { width: 100%; min-height: 52px; justify-content: flex-start; font-size: 15px; border-bottom: 1px solid var(--border); border-radius: 0; background: none; box-shadow: none; padding: 12px 16px; }
+  .account-modal .account-tab::after { content: '›'; margin-inline-start: auto; color: var(--text-faint); }
+  [dir='rtl'] .account-tab::after { content: '‹'; }
+  .account-modal:not(.mobile-detail-open) .account-detail { display: none; }
+  .account-modal.mobile-detail-open .account-app-controls, .account-modal.mobile-detail-open .account-tabs { display: none; }
+  .account-modal .account-detail { animation: page-from-end 200ms ease-out both; }
+  html[dir] .account-modal .profile-identity { background: var(--bg-sidebar); border-color: var(--border); box-shadow: none; }
+  .modal.server-settings-modal > .modal-body { padding: 0; }
+  .server-settings-shell { display: block; min-height: 0; height: 100%; overflow: auto; }
+  .server-settings-nav { display: flex; flex-direction: column; height: auto; min-width: 0; width: 100%; padding: 12px 16px; gap: 0; overflow: visible; background: var(--bg-main); border: 0; }
+  .server-settings-server, .server-settings-nav-label { display: flex; }
+  .server-settings-nav-label { padding: 18px 12px 8px; font-size: 12px; color: var(--text-muted); }
+  .server-settings-nav > button { width: 100%; min-width: 0; min-height: 52px; padding: 12px; gap: 12px; justify-content: flex-start; border-radius: 0; background: var(--bg-sidebar); box-shadow: none; }
+  .server-settings-nav > button > span { display: block; font-size: 15px; }
+  .server-settings-nav > button.active { background: var(--bg-sidebar); box-shadow: none; color: var(--text); }
+  .server-settings-nav > button::before { display: none; }
+  .server-settings-nav > button::after { content: '›'; margin-inline-start: auto; }
+  [dir='rtl'] .server-settings-nav > button::after { content: '‹'; }
+  .server-settings-modal:not(.mobile-detail-open) .server-settings-content { display: none; }
+  .server-settings-modal.mobile-detail-open .server-settings-nav { display: none; }
+  .server-settings-content { width: 100%; min-width: 0; padding: 12px 16px 28px; overflow: visible; animation: page-from-end 200ms ease-out both; }
+  .server-settings-content > *, .server-settings-content > * > *, .server-settings-hero, .settings-page-heading { animation: none; min-width: 0; }
+  .server-settings-hero { background: var(--bg-sidebar); border-radius: 8px; box-shadow: none; }
+  .server-settings-hero::after { display: none; }
+  .settings-page-heading h2 { font-size: 22px; }
+  .admin.admin-fa { display: block; height: var(--visual-viewport-height, 100dvh); min-height: 0; padding: 0; overflow: hidden; background: var(--bg-main); }
+  .admin.admin-fa .admin-nav { width: 100%; height: 100%; display: flex; flex-direction: column; overflow-y: auto; padding: 16px; gap: 4px; background: var(--bg-main); }
+  .admin .admin-brand, .admin .admin-nav-label, .admin .admin-nav-theme, .admin .admin-nav .back { display: flex; }
+  .admin.admin-fa .admin-nav .nav-item { width: 100%; min-width: 0; min-height: 54px; justify-content: flex-start; padding: 10px 12px; background: var(--bg-sidebar); border-radius: 6px; animation: none; }
+  .admin.admin-fa .admin-nav .nav-item .label { display: flex; flex: 1; min-width: 0; }
+  .admin.admin-fa .admin-nav .nav-item .glyph { background: none; box-shadow: none; }
+  .admin:not(.mobile-detail-open) .admin-main { display: none; }
+  .admin.mobile-detail-open .admin-nav { display: none; }
+  .admin.admin-fa .admin-main { width: 100%; height: 100%; overflow-y: auto; padding: 0 16px 32px; animation: page-from-end 200ms ease-out both; }
+  .admin-topbar { position: sticky; top: 0; z-index: 5; margin: 0 -16px 16px; padding: 12px 16px; min-width: 0; background: var(--bg-main); }
+  .admin-topbar > div { min-width: 0; }
+  .admin-topbar h1 { font-size: 19px; }
+  .admin-topbar p { font-size: 11px; }
+  .admin-top-actions { flex-wrap: nowrap; flex: none; gap: 6px; }
+  .admin-top-actions .theme-compact-wrap { display: none; }
+  .admin-topbar > div:first-child { flex: 1; }
+  .admin-topbar > div:first-child p { white-space: normal; overflow-wrap: anywhere; }
+  .admin-hero, .admin .stat-card, .admin .panel { background: var(--bg-sidebar); background-image: none; box-shadow: none; border-radius: 8px; animation: none; min-width: 0; }
+  .admin-hero::before, .admin-hero::after, .admin .panel::before, .admin .stat-card::after { display: none; }
+  .admin .stat-grid-premium { grid-template-columns: repeat(2,minmax(0,1fr)); }
+
+  /* Menus and media tools occupy a side page, independent of trigger position. */
+  .app .group-quick-menu, .app .emoji-popover, .app .poll-popover, .app .code-composer-popover,
+  .app .voice-options, .app .voice-activity-surface {
+    position: fixed; inset: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    width: 100% !important; max-width: 100%; height: auto; max-height: none; margin: 0;
+    border: 0; border-radius: 0; padding: 16px; overflow-y: auto;
+    background: var(--bg-main); box-shadow: none; z-index: 500;
+    animation: page-from-end 200ms ease-out both; filter: none; transform: none;
+  }
+  .app .group-quick-menu { display: flex; flex-direction: column; padding-top: 64px; }
+  .app .group-quick-menu button { min-height: 52px; flex: none; font-size: 15px; }
+  .group-menu-dismiss { display: none; }
+  .app .group-quick-menu .group-menu-dismiss { display: flex; position: absolute; top: 8px; inset-inline-start: 12px; padding: 10px; width: auto; min-height: 44px; }
+  .app .emoji-picker .emoji-grid { grid-template-columns: repeat(7,minmax(0,1fr)); padding-inline: 0; }
+  .app .emoji-picker-head { position: sticky; top: 0; background: var(--bg-main); padding: 0 0 16px; }
+  .app .emoji-picker-head button { width: 40px; height: 40px; }
+  .app .emoji-picker .emoji-grid button { height: 42px; }
+  .table-wrap { min-width: 0; max-width: 100%; overflow-x: auto; }
+  .modal table, .admin table { width: 100%; }
+  .modal .grid-2, .modal .grid-3, .admin-split, .role-editor-basics { grid-template-columns: minmax(0,1fr); }
+  .bot-tabs { flex-wrap: wrap; overflow: visible; }
+  .bot-tabs > button { flex: 1 1 100px; min-width: 0; white-space: normal; }
+  .admin .row, .server-settings-content .row { flex-wrap: wrap; }
+  .modal :is(img,video), .admin :is(img,video) { max-width: 100%; }
+  .mobile-popover-modal .modal-body > :is(.emoji-popover,.poll-popover,.code-composer-popover,.group-quick-menu,.voice-options) {
+    position: static; inset: auto; width: 100%; max-width: 100%; max-height: none;
+    height: auto; border: 0; padding: 0; margin: 0; border-radius: 0;
+    background: transparent; box-shadow: none; animation: none; transform: none;
+  }
+  .mobile-popover-modal :is(.emoji-picker-head,.poll-popover-head,.code-composer-popover > .mobile-settings-back,.media-picker > header,.voice-options-heading) { display: none; }
+  .mobile-popover-modal .emoji-grid { grid-template-columns: repeat(7,minmax(0,1fr)); max-height: none; overflow: visible; padding: 0; }
+  .mobile-popover-modal .emoji-grid button { min-width: 0; height: auto; aspect-ratio: 1; padding: 0; }
+  .mobile-popover-modal .group-quick-menu { display: flex; flex-direction: column; gap: 6px; }
+  .mobile-popover-modal .group-quick-menu > button { min-height: 52px; font-size: 15px; }
+  .mobile-popover-modal .group-quick-menu .group-menu-dismiss { display: none; }
+  .message-tools-list { display: flex; flex-direction: column; gap: 6px; }
+  .message-tools-list .picker-row { min-height: 54px; gap: 16px; border: 0; border-radius: 8px; background: var(--bg-sidebar); }
+  .member-table-toolbar { flex-wrap: wrap; }
+  .member-table-toolbar .input { flex: 1 1 180px; min-width: 0; max-width: none; }
+  .member-table-toolbar .muted { flex: 0 0 auto; white-space: normal; }
+  .admin-switch span::after { left: auto; right: auto; inset-inline-start: 2px; }
+  .auth-card, .auth-shell.register .auth-card { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+  .auth-card .row { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 780px) {
+  .auth-form, .auth-fields, .auth-card, .auth-showcase { animation: none !important; }
+  .app .main, .app .sidebar, .app .members, .modal, .modal.server-settings-modal,
+  .app .group-quick-menu, .app .emoji-popover, .app .poll-popover, .app .code-composer-popover,
+  .account-detail, .server-settings-content, .admin.admin-fa .admin-main { animation: none !important; }
+}

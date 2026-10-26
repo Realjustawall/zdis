@@ -63,22 +63,9 @@ async function loadStoredIdentity(userId: string): Promise<StoredIdentity | null
         transaction.oncomplete = () => { db.close(); resolve(request.result); };
         return;
       }
-      // Versions before per-account key isolation used one `current` record.
-      // Move it to the first account that opens the upgraded client so that
-      // existing ciphertext remains decryptable without sharing the key with
-      // every later login in this browser.
-      const legacy = store.get('current');
-      legacy.onerror = () => reject(legacy.error);
-      legacy.onsuccess = () => {
-        if (legacy.result) {
-          store.put({ ...legacy.result, id });
-          store.delete('current');
-        }
-        transaction.oncomplete = () => {
-          db.close();
-          resolve(legacy.result ? { ...legacy.result, id } : null);
-        };
-      };
+      // An unowned legacy `current` record cannot safely be assigned to this
+      // account. Leave it untouched for explicit recovery, never auto-adopt it.
+      transaction.oncomplete = () => { db.close(); resolve(null); };
     };
     transaction.onerror = () => { db.close(); reject(transaction.error); };
   });
@@ -131,8 +118,8 @@ async function localIdentity(userId: string) {
         if (imported) return imported;
       }
       if (existing) return existing;
-      const encryption = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
-      const signing = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+      const encryption = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+      const signing = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
       const identity: StoredIdentity = { id: `user:${userId}`, encryptionPrivate: encryption.privateKey,
         encryptionPublic: encryption.publicKey, signingPrivate: signing.privateKey, signingPublic: signing.publicKey };
       await saveStoredIdentity(identity);

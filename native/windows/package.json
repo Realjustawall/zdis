@@ -1,0 +1,32 @@
+{
+  "name": "zdis-server-client",
+  "version": "1.0.1",
+  "description": "ZDis dedicated server desktop client",
+  "author": "ZDis",
+  "main": "main.cjs",
+  "private": true,
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.zdis.desktop",
+    "productName": "ZDis",
+    "files": [
+      "main.cjs",
+      "server.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false
+    },
+    "artifactName": "ZDis-Setup.exe",
+    "forceCodeSigning": true
+  }
+}

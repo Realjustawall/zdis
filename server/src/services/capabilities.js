@@ -1,12 +1,9 @@
-import { listBadgeIds } from './badges.js';
 import { getSettings } from './settings.js';
 import { getDb } from '../db/index.js';
 import { forbidden } from '../lib/errors.js';
 
-/**
- * What a person may do, derived from their badges. Nothing outside this file
- * should test a badge id directly — ask a question here instead, so the rules
- * live in one place.
+/** Platform privileges use the explicit admin/member account role.
+ * Group-scoped roles are evaluated separately by permissions.js.
  */
 export const CAPABILITIES = {
   /** Full run of the admin panel. */
@@ -20,28 +17,9 @@ export const CAPABILITIES = {
 };
 
 export async function capabilitiesOf(user) {
-  const badges = await listBadgeIds(user.id);
+  // Platform privileges come only from the account role. Badges are cosmetic.
   const set = new Set();
-
-  if (badges.includes('admin')) {
-    set.add(CAPABILITIES.ADMIN);
-    set.add(CAPABILITIES.MODERATE);
-    set.add(CAPABILITIES.DEBUG);
-    set.add(CAPABILITIES.STREAM);
-  }
-  if (badges.includes('staff')) set.add(CAPABILITIES.MODERATE);
-  if (badges.includes('developer')) set.add(CAPABILITIES.DEBUG);
-  if (badges.includes('streamer')) set.add(CAPABILITIES.STREAM);
-
-  const custom = await getDb().all(
-    `SELECT rc.capability FROM user_custom_roles ur
-     JOIN custom_role_capabilities rc ON rc.role_id = ur.role_id
-     WHERE ur.user_id = ?`,
-    [user.id],
-  );
-  for (const row of custom) {
-    if (Object.values(CAPABILITIES).includes(row.capability)) set.add(row.capability);
-  }
+  if (user.role === 'admin') for (const capability of Object.values(CAPABILITIES)) set.add(capability);
 
   return set;
 }

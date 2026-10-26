@@ -86,6 +86,7 @@ function Shell({ appName }: { appName: string }) {
   const connected = useRealtime((state) => state.connected);
   const on = useRealtime((state) => state.on);
   const socket = useRealtime((state) => state.socket);
+  const presence = useRealtime((state) => state.presence);
 
   // Keep per-message array updates out of the application shell. Without this
   // selector every send/receive rerendered the rail, sidebars and active view.
@@ -117,6 +118,13 @@ function Shell({ appName }: { appName: string }) {
     ).length,
   );
 
+  const [mobileLayout, setMobileLayout] = useState(() => window.matchMedia('(max-width: 780px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 780px)');
+    const resize = () => setMobileLayout(query.matches);
+    query.addEventListener('change', resize);
+    return () => query.removeEventListener('change', resize);
+  }, []);
   const [view, setView] = useState<'home' | 'group' | 'admin' | 'directory' | 'friends' | 'network'>('home');
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [selfOpen, setSelfOpen] = useState(false);
@@ -125,37 +133,21 @@ function Shell({ appName }: { appName: string }) {
   const [joinOpen, setJoinOpen] = useState(Boolean(initialInvite));
   const [createOpen, setCreateOpen] = useState(false);
   const [discoverOpen, setDiscoverOpen] = useState(false);
-  const [membersOpen, setMembersOpen] = useState(true);
+  const [membersOpen, setMembersOpen] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [mobileServersOpen, setMobileServersOpen] = useState(false);
-  const mobileSheetRef = useRef<HTMLElement>(null);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const [themeStudioOpen, setThemeStudioOpen] = useState(false);
 
   useEffect(() => {
-    if (!mobileServersOpen) return;
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const focusables = () => Array.from(mobileSheetRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input, [tabindex="0"]') ?? []).filter((element) => element.getClientRects().length);
-    focusables()[0]?.focus();
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileServersOpen(false);
-      if (event.key === 'Tab') {
-        const elements = focusables();
-        const first = elements[0];
-        const last = elements[elements.length - 1];
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-      }
+    const back = (event: Event) => {
+      if (event.defaultPrevented || document.querySelector('[aria-modal="true"]')) return;
+      if (membersOpen) { event.preventDefault(); setMembersOpen(false); }
+      else if (['admin', 'friends', 'directory', 'network'].includes(view)) { event.preventDefault(); setView('home'); setShowSidebar(true); }
+      else if (!showSidebar) { event.preventDefault(); setShowSidebar(true); }
     };
-    const desktopQuery = window.matchMedia('(min-width: 781px)');
-    const onDesktop = () => { if (desktopQuery.matches) setMobileServersOpen(false); };
-    desktopQuery.addEventListener('change', onDesktop);
-    document.addEventListener('keydown', onEscape);
-    return () => {
-      document.removeEventListener('keydown', onEscape);
-      desktopQuery.removeEventListener('change', onDesktop);
-      previousFocus?.focus();
-    };
-  }, [mobileServersOpen]);
+    window.addEventListener('native:back', back);
+    return () => window.removeEventListener('native:back', back);
+  }, [showSidebar, view, membersOpen]);
 
   const mustChangePassword = user.mustChangePassword;
 
@@ -276,7 +268,12 @@ function Shell({ appName }: { appName: string }) {
 
   // ---------------------------------------------------------------- state
 
-  const activeGroup = activeGroupId ? chat.groupDetail[activeGroupId] : null;
+  const activeGroup = useMemo(() => {
+    const detail = activeGroupId ? chat.groupDetail[activeGroupId] : null;
+    return detail ? { ...detail, members: detail.members.map(member => ({
+      ...member, presence: presence[member.id] ?? member.presence,
+    })) } : null;
+  }, [activeGroupId, chat.groupDetail, presence]);
 
   const openGroup = useCallback(
     async (groupId: string) => {
@@ -411,10 +408,26 @@ function Shell({ appName }: { appName: string }) {
 
   return (
     <div
-      className={`app${showMembersPanel ? ' with-members' : ''}${showSidebar ? ' show-sidebar' : ''}`}
+      className={`app${showMembersPanel ? ' with-members' : ''}${showSidebar ? ' show-sidebar' : ''}${['friends','directory','network'].includes(view) ? ' mobile-content-view' : ''}`}
+      onTouchStart={(event) => {
+        const touch = event.touches[0];
+        swipeStart.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
+      }}
+      onTouchEnd={(event) => {
+        const start = swipeStart.current;
+        swipeStart.current = null;
+        if (!mobileLayout || !start || event.changedTouches.length !== 1 || document.querySelector('[aria-modal="true"]')) return;
+        const end = event.changedTouches[0];
+        const dx = (end.clientX - start.x) * (fa ? -1 : 1);
+        if (Math.abs(end.clientY - start.y) > 45) return;
+        const edge = fa ? innerWidth - start.x : start.x;
+        if (!showSidebar && edge < 36 && dx > 65) { setMembersOpen(false); setShowSidebar(true); }
+        else if (showSidebar && target && dx < -65) setShowSidebar(false);
+      }}
     >
       {/* --------------------------------------------------------- rail */}
       <nav className="rail">
+        {!mobileLayout ? <>
         <button
           className={`rail-item${view === 'home' || view === 'directory' ? ' active' : ''}`}
           onClick={() => {
@@ -440,7 +453,7 @@ function Shell({ appName }: { appName: string }) {
               key={group.id}
               className={`rail-item${activeGroupId === group.id && view === 'group' ? ' active' : ''}${unread > 0 ? ' has-unread' : ''}`}
               onClick={() => void openGroup(group.id)}
-              title={group.name}
+              data-no-auto-translate title={group.name}
               style={
                 activeGroupId === group.id && view === 'group'
                   ? undefined
@@ -466,7 +479,7 @@ function Shell({ appName }: { appName: string }) {
         <button className="rail-item" onClick={() => setJoinOpen(true)} title={t('nav.joinGroup')}>
           <Icon name="link" size={19} />
         </button>
-        <button className="rail-item" onClick={() => setDiscoverOpen(true)} title="Discover servers">
+        <button className="rail-item" onClick={() => setDiscoverOpen(true)} title={fa ? 'کشف گروه‌ها' : 'Discover servers'}>
           <Icon name="discover" size={20} />
         </button>
 
@@ -489,117 +502,39 @@ function Shell({ appName }: { appName: string }) {
           </button>
         ) : null}
 
+        </> : null}
         <div className="mobile-dock">
-          <button
-            className={`mobile-dock-item${view === 'home' && !notificationsOpen ? ' active' : ''}`}
-            onClick={() => { setView('home'); setShowSidebar(true); setNotificationsOpen(false); }}
-            aria-label={fa ? 'پیام‌ها' : 'Messages'}
-          >
-            <Icon name="message" size={21} />
-            <span>{fa ? 'پیام‌ها' : 'Messages'}</span>
+          <button className="mobile-home-shortcut" aria-label={fa ? 'پیام‌ها' : 'Messages'}
+            onClick={() => { setView('home'); setShowSidebar(true); setNotificationsOpen(false); }}>
+            <Icon name="message" size={24} />
           </button>
-          <button
-            className={`mobile-dock-item${view === 'group' ? ' active' : ''}`}
-            onClick={() => setMobileServersOpen(true)}
-            aria-label={fa ? 'گروه‌ها' : 'Servers'}
-          >
-            <Icon name="users" size={21} />
-            <span>{fa ? 'گروه‌ها' : 'Servers'}</span>
+          <button className="mobile-account" aria-label={fa ? 'حساب کاربری' : 'Your account'} onClick={() => setSelfOpen(true)}>
+            <Avatar name={user.displayName} id={user.id} src={user.avatarUrl} size={40} presence={presence[user.id] ?? user.presence} />
+            <span className="mobile-account-copy"><strong data-no-auto-translate>{user.displayName}</strong><small>{t(`presence.${presence[user.id] ?? user.presence ?? 'online'}`)}</small></span>
+            <Icon name="chevronDown" size={16} />
           </button>
-          <button
-            className="mobile-dock-item"
-            onClick={() => setDiscoverOpen(true)}
-            aria-label={fa ? 'کشف گروه‌ها' : 'Discover'}
-          >
-            <Icon name="compass" size={21} />
-            <span>{fa ? 'کشف' : 'Discover'}</span>
-          </button>
-          <button
-            className={`mobile-dock-item${notificationsOpen ? ' active' : ''}`}
-            onClick={() => setNotificationsOpen((open) => !open)}
-            aria-label={fa ? 'اعلان‌ها' : 'Notifications'}
-          >
-            <Icon name="bell" size={21} />
-            <span>{fa ? 'اعلان‌ها' : 'Alerts'}</span>
-          </button>
-          <button
-            className={`mobile-dock-item${selfOpen ? ' active' : ''}`}
-            onClick={() => setSelfOpen(true)}
-            aria-label={fa ? 'حساب کاربری' : 'Your account'}
-          >
-            <Avatar name={user.displayName} id={user.id} size={23} />
-            <span>{fa ? 'شما' : 'You'}</span>
+          <button className="mobile-alerts" onClick={() => setNotificationsOpen(true)} aria-label={fa ? 'اعلان‌ها' : 'Notifications'}>
+            <Icon name="bell" size={22} />
+            {homeNotifications > 0 ? <span className="rail-badge">{Math.min(99, homeNotifications)}</span> : null}
           </button>
         </div>
       </nav>
 
-      {mobileServersOpen ? (
-        <div className="mobile-sheet-backdrop" onClick={() => setMobileServersOpen(false)}>
-          <section
-            className="mobile-server-sheet"
-            ref={mobileSheetRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mobile-server-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mobile-sheet-grabber" />
-            <header className="mobile-sheet-header">
-              <div>
-                <h2 id="mobile-server-title">{fa ? 'گروه‌های شما' : 'Your servers'}</h2>
-                <p>{fa ? 'برای دیدن کانال‌ها یک گروه را انتخاب کنید.' : 'Choose a server to browse its channels.'}</p>
-              </div>
-              <button className="head-btn" onClick={() => setMobileServersOpen(false)} aria-label={fa ? 'بستن' : 'Close'}>
-                <Icon name="close" size={19} />
-              </button>
-            </header>
-            <div className="mobile-server-actions">
-              {canCreateGroup ? (
-                <button onClick={() => { setMobileServersOpen(false); setCreateOpen(true); }}>
-                  <Icon name="add" size={17} /> {fa ? 'ساخت گروه' : 'Create server'}
-                </button>
-              ) : null}
-              <button onClick={() => { setMobileServersOpen(false); setJoinOpen(true); }}>
-                <Icon name="link" size={17} /> {fa ? 'پیوستن با دعوت' : 'Join with invite'}
-              </button>
-            </div>
-            <div className="mobile-server-list">
-              {chat.groups.map((group) => {
-                const unread = groupUnread(group.id);
-                return (
-                  <button
-                    key={group.id}
-                    className={`mobile-server-option${activeGroupId === group.id ? ' active' : ''}`}
-                    onClick={() => { setMobileServersOpen(false); void openGroup(group.id); }}
-                  >
-                    <span className="mobile-server-avatar" style={{ background: group.accentColor ?? undefined }}>
-                      {group.iconUrl ? <img src={group.iconUrl} alt="" /> : group.name.slice(0, 2).toUpperCase()}
-                    </span>
-                    <span className="mobile-server-name">{group.name}</span>
-                    {unread > 0 ? <span className="mobile-server-unread">{unread > 99 ? '99+' : unread}</span> : null}
-                    <Icon name="arrowLeft" size={16} className="mobile-server-chevron" />
-                  </button>
-                );
-              })}
-              {!chat.groups.length ? (
-                <div className="mobile-server-empty">
-                  <Icon name="users" size={25} />
-                  <span>{fa ? 'هنوز عضو گروهی نیستید.' : 'You have not joined a server yet.'}</span>
-                </div>
-              ) : null}
-            </div>
-            <div className="mobile-sheet-utilities">
-              <ThemeSwitcher compact onOpenStudio={() => { setMobileServersOpen(false); setThemeStudioOpen(true); }} />
-              <LanguageSwitcher compact />
-              {user.role === 'admin' || user.badges.some((badge) => badge.id === 'staff') ? (
-                <button className="mobile-utility-button" onClick={() => { setMobileServersOpen(false); setView('admin'); }}>
-                  <Icon name="shield" size={17} /> {fa ? 'مدیریت' : 'Admin'}
-                </button>
-              ) : null}
-            </div>
-          </section>
-        </div>
-      ) : null}
+      {mobileLayout ? <nav className="mobile-server-rail" aria-label={fa ? 'سرورها' : 'Servers'}>
+        <button className={`rail-item${view !== 'group' ? ' active' : ''}`} aria-label={t('nav.directMessages')}
+          onClick={() => { setView('home'); setShowSidebar(true); }}><Icon name="message" size={24} /></button>
+        <div className="rail-sep" />
+        {chat.groups.map(group => <button key={group.id} data-no-auto-translate title={group.name}
+          className={`rail-item${activeGroupId === group.id && view === 'group' ? ' active' : ''}`}
+          onClick={() => void openGroup(group.id)}>
+          {group.iconUrl ? <img src={group.iconUrl} alt="" /> : group.name.slice(0, 2).toUpperCase()}
+          {groupUnread(group.id) > 0 ? <span className="rail-badge">{Math.min(99, groupUnread(group.id))}</span> : null}
+        </button>)}
+        {canCreateGroup ? <button className="rail-item rail-add" title={t('nav.createGroup')} onClick={() => setCreateOpen(true)}><Icon name="add" size={24} /></button> : null}
+        <button className="rail-item" title={t('nav.joinGroup')} onClick={() => setJoinOpen(true)}><Icon name="link" size={22} /></button>
+        <button className="rail-item" title={fa ? 'کشف گروه‌ها' : 'Discover servers'} onClick={() => setDiscoverOpen(true)}><Icon name="compass" size={22} /></button>
+        <button className="rail-item" title={t('nav.admin')} hidden={user.role !== 'admin'} onClick={() => setView('admin')}><Icon name="shield" size={22} /></button>
+      </nav> : null}
 
       {/* ------------------------------------------------------ sidebar */}
       {view === 'group' && activeGroup ? (
@@ -659,7 +594,8 @@ function Shell({ appName }: { appName: string }) {
 
       {/* ------------------------------------------------------ members */}
       {showMembersPanel && activeGroup ? (
-        <aside className="members">
+        <aside className="members" aria-label={fa ? 'اعضا' : 'Members'}>
+          <button className="btn mobile-members-close" onClick={() => setMembersOpen(false)}>{fa ? 'بستن' : 'Close'}</button>
           <div className="section-label">{fa ? 'آنلاین' : 'Online'} — {onlineCount(activeGroup.members)}</div>
           {activeGroup.members
             .filter((member) => member.presence !== 'offline')
@@ -750,10 +686,10 @@ function MemberRow({ member, offline }: { member: PublicUser & { memberRole?: st
       />
       <span className="info">
         <span className="name" style={{ color: member.bannerColor ?? undefined }}>
-          {member.displayName}
+          <span data-no-auto-translate>{member.displayName}</span>
           <BadgeList badges={member.badges.filter(b=>['bot','verified_bot','official'].includes(b.id))} compact />
         </span>
-        <span className="sub">{member.customStatus ?? `@${member.username}`}</span>
+        <span className="sub"><span data-no-auto-translate>{member.customStatus ?? `@${member.username}`}</span></span>
       </span>
       {member.memberRole && member.memberRole !== 'member' ? (
         <span className="badge" style={{ fontSize: 9 }}>
@@ -786,8 +722,8 @@ function SidebarFooter({
         presence={connected ? user.presence : 'offline'}
       />
       <div className="who">
-        <div className="name">{user.displayName}</div>
-        <div className="sub">{connected ? `@${user.username}` : t('status.reconnecting')}</div>
+        <div className="name"><span data-no-auto-translate>{user.displayName}</span></div>
+        <div className="sub"><span data-no-auto-translate>{connected ? `@${user.username}` : t('status.reconnecting')}</span></div>
       </div>
       <button className="head-btn" onClick={onOpenSelf} title={t('nav.account')}>
         <Icon name="settings" size={17} />
@@ -1063,6 +999,8 @@ function JoinGroupModal({
 }
 
 function DiscoverModal({ onClose, onJoined }: { onClose: () => void; onJoined: (group: Group) => void }) {
+  const { locale } = useI18n();
+  const fa = locale === 'fa';
   const [groups, setGroups] = useState<Group[]>([]);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(true);
@@ -1077,7 +1015,7 @@ function DiscoverModal({ onClose, onJoined }: { onClose: () => void; onJoined: (
   };
   useEffect(() => { void load(); }, []);
   return (
-    <Modal title="Discover servers" description="Verified public communities approved by the platform administrator." onClose={onClose} wide>
+    <Modal title={fa ? 'کشف گروه‌ها' : 'Discover servers'} description="Verified public communities approved by the platform administrator." onClose={onClose} wide>
       <div className="row">
         <input className="input" value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name or description" />

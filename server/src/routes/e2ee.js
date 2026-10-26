@@ -7,7 +7,7 @@ import { getDb } from '../db/index.js';
 import { getConversationMembers } from '../services/conversations.js';
 import { getSettings } from '../services/settings.js';
 import { audit } from '../services/audit.js';
-import { getE2eeBootstrap, provisionE2eeIdentities } from '../services/e2eeKeys.js';
+import { getE2eeBootstrap } from '../services/e2eeKeys.js';
 
 export const e2eeRouter = express.Router();
 e2eeRouter.use(requireAuth);
@@ -48,7 +48,6 @@ e2eeRouter.get('/conversations/:id/participants', asyncRoute(async (req, res) =>
   const id = parse(idSchema, req.params.id);
   if (!(await isConversationMember(id, req.user.id))) throw notFound('Conversation not found.');
   const members = await getConversationMembers(id);
-  await provisionE2eeIdentities(members.map((member) => member.id));
   const rows = await getDb().all(`SELECT user_id, public_key, key_version, updated_at FROM e2ee_identities
     WHERE user_id IN (${members.map(() => '?').join(', ')})`, members.map((member) => member.id));
   const identities = new Map(rows.map((row) => [row.user_id, row]));

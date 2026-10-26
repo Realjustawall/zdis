@@ -298,11 +298,11 @@ export function DirectMessageActions({ conversation }: { conversation: Conversat
               size={54}
             />
             <div>
-              <strong>{other?.displayName ?? conversation.name ?? (fa ? 'گروه خصوصی' : 'Group DM')}</strong>
+              <strong><span data-no-auto-translate>{other?.displayName ?? conversation.name ?? (fa ? 'گروه خصوصی' : 'Group DM')}</span></strong>
               <span>
-                {other
+                <span data-no-auto-translate>{other
                   ? `@${other.username}`
-                  : (fa ? `${conversation.members.length} عضو` : `${conversation.members.length} members`)}
+                  : (fa ? `${conversation.members.length} عضو` : `${conversation.members.length} members`)}</span>
               </span>
             </div>
           </div>

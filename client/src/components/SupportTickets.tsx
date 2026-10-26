@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { ResponsivePopover } from './ui';
 import { api } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 import { useRealtime } from '../store/realtime';
 
 type Ticket = { id: string; channel_id: string; status: string; username: string; created_at: number };
-export function SupportTickets({ groupId }: { groupId: string }) {
+export function SupportTickets({ groupId, menuItem = false }: { groupId: string; menuItem?: boolean }) {
   const { locale } = useI18n(), fa = locale === 'fa';
   const socket = useRealtime(state => state.socket);
   const [enabled, setEnabled] = useState(false), [open, setOpen] = useState(false);
@@ -25,10 +26,10 @@ export function SupportTickets({ groupId }: { groupId: string }) {
   }
   if (!enabled) return null;
   return <>
-    <button type="button" className="composer-btn" aria-label={fa ? 'تیکت پشتیبانی' : 'Support tickets'} title={fa ? 'تیکت پشتیبانی' : 'Support tickets'} onClick={() => {
+    <button type="button" className={menuItem ? 'picker-row' : 'composer-btn'} aria-label={fa ? 'تیکت پشتیبانی' : 'Support tickets'} title={fa ? 'تیکت پشتیبانی' : 'Support tickets'} onClick={() => {
       setOpen(value => !value); setError(''); void load().catch(e => setError(e.message));
-    }}>🎫</button>
-    {open ? <div className="media-picker emoji-popover" role="dialog" aria-label={fa ? 'تیکت پشتیبانی' : 'Support tickets'}>
+    }}>🎫{menuItem ? (fa ? 'تیکت پشتیبانی' : 'Support tickets') : null}</button>
+    {open ? <ResponsivePopover title={fa ? 'تیکت پشتیبانی' : 'Support tickets'} onClose={() => setOpen(false)}><div className="media-picker emoji-popover" role="dialog" aria-label={fa ? 'تیکت پشتیبانی' : 'Support tickets'}>
       <header><strong>{fa ? 'پشتیبانی' : 'Support tickets'}</strong><button onClick={() => setOpen(false)} aria-label="Close support tickets">×</button></header>
       <form onSubmit={event => {
         event.preventDefault(); setBusy(true); setError('');
@@ -48,6 +49,6 @@ export function SupportTickets({ groupId }: { groupId: string }) {
         }}>{fa ? 'بستن تیکت' : 'Close ticket'}</button> : null}
       </article>)}</div>
       {error ? <p role="alert">{error}</p> : null}
-    </div> : null}
+    </div></ResponsivePopover> : null}
   </>;
 }

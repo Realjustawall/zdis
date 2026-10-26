@@ -1,3 +1,4 @@
+import { translateUiText } from '../lib/localize';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../lib/api';
 import { toast } from '../store/toast';
@@ -206,7 +207,7 @@ function ForumThread({
           <button
             className="btn small"
             onClick={async () => {
-              const username = window.prompt('Invite a server member by username:');
+              const username = window.prompt(translateUiText('Invite a server member by username:'));
               if (!username?.trim()) return;
               try {
                 await api.post(`/api/forums/${channelId}/posts/${post.id}/members`, {

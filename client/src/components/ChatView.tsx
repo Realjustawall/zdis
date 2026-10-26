@@ -1,3 +1,4 @@
+import { translateUiText } from '../lib/localize';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MessageItem } from './MessageItem';
 import { Composer, type EncryptedAttachmentMeta } from './Composer';
@@ -397,7 +398,7 @@ export function ChatView({
   }
 
   async function closeCurrentPoll() {
-    if (!pollAnalyticsMessage || !window.confirm(fa ? 'این نظرسنجی اکنون بسته شود؟' : 'Close this poll now?')) return;
+    if (!pollAnalyticsMessage || !window.confirm(translateUiText(fa ? 'این نظرسنجی اکنون بسته شود؟' : 'Close this poll now?'))) return;
     try {
       const data = await api.post<{ message: Message }>(
         `${targetPath(target)}/messages/${pollAnalyticsMessage.id}/poll/close`,
@@ -568,7 +569,7 @@ export function ChatView({
       <div className="main-head">
         <div className="title">
           <span className="glyph channel-glyph"><ChannelGlyph glyph={glyph} /></span>
-          <span>{title}</span>
+          <span data-no-auto-translate>{title}</span>
         </div>
         {topic ? <div className="topic">{topic}</div> : null}
         <div className="spacer" />
@@ -680,7 +681,7 @@ export function ChatView({
         ) : messages?.length ? (
           <div className="channel-intro">
             <div className="channel-intro-icon"><ChannelGlyph glyph={glyph} size={28} /></div>
-            <h2>{title}</h2>
+            <h2 data-no-auto-translate>{title}</h2>
             <p>{fa ? 'این آغاز گفتگو است.' : 'This is the beginning of the conversation.'}</p>
           </div>
         ) : null}
@@ -752,7 +753,7 @@ export function ChatView({
                 onOpenThread={(msg) => void openThread(msg)}
                 onPollVote={(msg, optionId) => void vote(msg, optionId)}
                 onReport={(msg, decryptedEvidence) => {
-                  const details = window.prompt('Describe why this message should be reviewed (optional):');
+                  const details = window.prompt(translateUiText('Describe why this message should be reviewed (optional):'));
                   if (details === null) return;
                   void api
                     .post(`${targetPath(target)}/messages/${msg.id}/report`, {
@@ -767,12 +768,12 @@ export function ChatView({
                 }}
                 onReportUser={(userId) => {
                   const allowedReasons = ['spam', 'harassment', 'hate', 'sexual', 'violence', 'malware', 'impersonation', 'other'] as const;
-                  const reason = window.prompt('Reason: spam, harassment, hate, sexual, violence, malware, impersonation, or other', 'harassment');
+                  const reason = window.prompt(translateUiText('Reason: spam, harassment, hate, sexual, violence, malware, impersonation, or other'), 'harassment');
                   if (!reason || !allowedReasons.includes(reason as typeof allowedReasons[number])) {
                     if (reason) toast.error(fa ? 'دلیل گزارش معتبر نیست.' : 'Choose a valid report reason.');
                     return;
                   }
-                  const details = window.prompt('Additional details (optional):', '') ?? null;
+                  const details = window.prompt(translateUiText('Additional details (optional):'), '') ?? null;
                   void api.post(`/api/users/${userId}/report`, { reason, details: (details ?? '').trim() || null })
                     .then(() => toast.success(fa ? 'گزارش کاربر ثبت شد.' : 'User report submitted.'))
                     .catch((error) => toast.error(error instanceof ApiError ? error.message : 'Could not report user.'));

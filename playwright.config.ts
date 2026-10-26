@@ -24,7 +24,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run test:e2e:server',
     url: 'http://127.0.0.1:' + port + '/api/ready',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: process.env.TEST_E2E_ISOLATED !== '1' && !process.env.CI,
     timeout: 30_000,
   },
 });

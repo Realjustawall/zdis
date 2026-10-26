@@ -10,3 +10,7 @@ if [[ ! -f .env ]]; then cp ubuntu/.env.ubuntu.example .env; chmod 600 .env; fi
 npm ci
 npm run build
 printf '%s\n' 'ZDIS is ready. Run bash ubuntu/start.sh. The first startup generates an administrator password.'
+
+if [[ -n "${ZDIS_CLIENT_SERVER_URL:-}" ]]; then
+  python3 scripts/build-server-clients.py --url "$ZDIS_CLIENT_SERVER_URL" --output "$root/server/data/clients"
+fi

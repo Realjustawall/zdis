@@ -1,3 +1,4 @@
+import { translateUiText } from '../lib/localize';
 import { create } from 'zustand';
 
 export interface Toast {
@@ -17,6 +18,7 @@ let nextId = 1;
 export const useToasts = create<ToastState>((set, get) => ({
   toasts: [],
   push(kind, message) {
+    message = translateUiText(message);
     const id = nextId++;
     set((state) => ({ toasts: [...state.toasts, { id, kind, message }] }));
     setTimeout(() => get().dismiss(id), kind === 'error' ? 7000 : 4000);

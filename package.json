@@ -20,7 +20,7 @@
     "test:realtime": "node tests/realtime.test.mjs",
     "test:network": "node tests/network.test.mjs",
     "test:e2e:server": "node tests/start-e2e.mjs",
-    "test:e2e": "npm run build && playwright test",
+    "test:e2e": "npm run build && node tests/run-browser.mjs",
     "test:load": "node tests/load/realtime-load.mjs",
     "test:load:smoke": "node tests/load/smoke.mjs",
     "test:failover": "node tests/load/kubernetes-failover.mjs",

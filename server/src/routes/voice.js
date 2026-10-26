@@ -21,6 +21,7 @@ import { audit } from '../services/audit.js';
 import { emitToChannel } from '../realtime/index.js';
 
 export const voiceRouter = express.Router();
+const notifyControl = channelId => emitToChannel(channelId, 'voice:control', { channelId });
 
 // Speech-to-text workers post signed transcript segments here. This endpoint
 // intentionally uses a service secret instead of a browser session.
@@ -251,6 +252,7 @@ voiceRouter.patch(
         channelId,
       ],
     );
+    notifyControl(channelId);
     return res.json({ room: toCallRoom(await ensureCallRoom(channelId, req.user.id)) });
   }),
 );
@@ -272,6 +274,7 @@ voiceRouter.post(
                      decided_at = NULL, decided_by = NULL`,
       [channelId, req.user.id, Date.now()],
     );
+    notifyControl(channelId);
     return res.status(202).json({ approved: false, pending: true });
   }),
 );
@@ -289,6 +292,7 @@ voiceRouter.patch(
       [body.approved ? 'approved' : 'denied', Date.now(), req.user.id, channelId, userId],
     );
     if (!result.changes) throw notFound('Lobby request not found.');
+    notifyControl(channelId);
     return res.json({ approved: body.approved });
   }),
 );
@@ -310,6 +314,7 @@ voiceRouter.put(
                      updated_at = excluded.updated_at`,
       [channelId, req.user.id, body.recording, body.transcript, Date.now()],
     );
+    notifyControl(channelId);
     return res.json({ consent: body });
   }),
 );
@@ -423,6 +428,7 @@ voiceRouter.post(
          updated_at = excluded.updated_at`,
       [channelId, req.user.id, requested ? Date.now() : null, req.user.id, Date.now()],
     );
+    notifyControl(channelId);
     return res.json({ requested });
   }),
 );
@@ -454,6 +460,7 @@ voiceRouter.patch(
         canPublishData: true,
       })
       .catch(() => {});
+    notifyControl(channelId);
     return res.json({ role });
   }),
 );
@@ -505,6 +512,7 @@ voiceRouter.post(
         canPublishData: true,
       });
     }
+    notifyControl(channelId);
     return res.json({ ok: true });
   }),
 );
@@ -567,6 +575,7 @@ voiceRouter.post(
       targetId: channelId,
       meta: { recordingId: id, egressId: info.egressId },
     });
+    notifyControl(channelId);
     return res.status(201).json({ recording: toRecording(await getRecording(id)) });
   }),
 );
@@ -584,6 +593,7 @@ voiceRouter.delete(
       "UPDATE call_recordings SET status = 'stopping', ended_at = ? WHERE id = ?",
       [Date.now(), recordingId],
     );
+    notifyControl(channelId);
     return res.json({ ok: true });
   }),
 );

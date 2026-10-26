@@ -1,3 +1,7 @@
+import { translateUiText } from '../lib/localize';
+import { ThemeStudio } from './ThemeStudio';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { useEffect, useRef, useState } from 'react';
 import { Avatar, Modal, Alert, ErrorList, RoleBadge, BadgeList } from './ui';
 import { useSession } from '../store/session';
@@ -24,10 +28,18 @@ export function SelfPanel({ onClose }: { onClose: () => void }) {
   const { t, locale } = useI18n();
   const fa = locale === 'fa';
 
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [themeStudioOpen, setThemeStudioOpen] = useState(false);
   const [tab, setTab] = useState<'profile' | 'security' | 'audio' | 'notifications' | 'sessions'>('profile');
 
   return (
-    <Modal title={t('account.title')} onClose={onClose} wide>
+    <Modal title={t('account.title')} onClose={onClose} onBack={() => detailOpen ? setDetailOpen(false) : onClose()} wide className={`account-modal${detailOpen ? ' mobile-detail-open' : ''}`}>
+      <div className="account-app-controls row wrap">
+        <ThemeSwitcher />
+        <button className="btn" title={t('theme.customize')} onClick={() => setThemeStudioOpen(true)}><Icon name="palette" size={18} /></button>
+        <LanguageSwitcher />
+        <button className="btn danger" onClick={() => void useSession.getState().logout()}>{t('nav.logout')}</button>
+      </div>
       <div className="account-tabs" role="tablist" aria-label={t('account.title')}>
         {(['profile', 'security', 'audio', 'notifications', 'sessions'] as const).map((item) => (
           <button
@@ -36,7 +48,7 @@ export function SelfPanel({ onClose }: { onClose: () => void }) {
             role="tab"
             aria-selected={tab === item}
             className={`account-tab${tab === item ? ' active' : ''}`}
-            onClick={() => setTab(item)}
+            onClick={() => { setTab(item); setDetailOpen(true); }}
           >
             <Icon
               name={
@@ -65,6 +77,8 @@ export function SelfPanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
+      <div className="account-detail" key={tab}>
+      <button className="mobile-settings-back" onClick={() => setDetailOpen(false)}><Icon name="arrowLeft" size={20} />{fa ? 'تنظیمات حساب' : 'Account settings'}</button>
       {tab === 'profile' ? (
         <ProfileTab user={user} updateProfile={updateProfile} setPresence={setPresence} />
       ) : null}
@@ -72,7 +86,9 @@ export function SelfPanel({ onClose }: { onClose: () => void }) {
       {tab === 'audio' ? <AudioPreferencesTab /> : null}
       {tab === 'notifications' ? <NotificationPreferencesTab /> : null}
       {tab === 'sessions' ? <SessionsTab /> : null}
+      </div>
       <div style={{ height: 16 }} />
+      {themeStudioOpen ? <ThemeStudio onClose={() => setThemeStudioOpen(false)} /> : null}
     </Modal>
   );
 }
@@ -173,9 +189,9 @@ function ProfileTab({
           }}
         />
         <div>
-          <strong style={{ fontSize: 17 }}>{displayName || user.username}</strong>
+          <strong style={{ fontSize: 17 }}><span data-no-auto-translate>{displayName || user.username}</span></strong>
           <div className="faint small">
-            @{user.username} · {user.email}
+            @<span data-no-auto-translate>{user.username}</span> · <span data-no-auto-translate>{user.email}</span>
           </div>
           <div className="row wrap" style={{ gap: 6, marginTop: 6 }}>
             <RoleBadge role={user.role} />
@@ -219,12 +235,12 @@ function ProfileTab({
           <button
             className="btn small"
             onClick={async () => {
-              const name = window.prompt('What are you doing?', 'Working on ZDIS');
+              const name = window.prompt(translateUiText('What are you doing?'), 'Working on ZDIS');
               if (!name) return;
               await api.put('/api/users/me/activity', {
                 type: 'custom',
                 name,
-                details: window.prompt('Activity details:', '') || null,
+                details: window.prompt(translateUiText('Activity details:'), '') || null,
               });
             }}
           >
@@ -426,9 +442,9 @@ function SecurityTab({
           <button
             className="btn danger"
             onClick={async () => {
-              const password = window.prompt(fa ? 'برای غیرفعال‌سازی، رمز عبور را تأیید کنید:' : 'Confirm your password to turn 2FA off:');
+              const password = window.prompt(translateUiText(fa ? 'برای غیرفعال‌سازی، رمز عبور را تأیید کنید:' : 'Confirm your password to turn 2FA off:'));
               if (!password) return;
-              const code = window.prompt(fa ? 'کد ۶ رقمی فعلی را وارد کنید:' : 'Enter a current 6-digit code:');
+              const code = window.prompt(translateUiText(fa ? 'کد ۶ رقمی فعلی را وارد کنید:' : 'Enter a current 6-digit code:'));
               if (!code) return;
               try {
                 const data = await api.post<{ user: typeof user }>('/api/auth/totp/disable', {
@@ -546,9 +562,9 @@ function SecurityTab({
             <button
               className="btn small"
               onClick={async () => {
-                const password = window.prompt(fa ? 'رمز عبور را تأیید کنید:' : 'Confirm your password:');
+                const password = window.prompt(translateUiText(fa ? 'رمز عبور را تأیید کنید:' : 'Confirm your password:'));
                 if (!password) return;
-                const token = window.prompt(fa ? 'کد ۶ رقمی فعلی را وارد کنید:' : 'Enter a current 6-digit authenticator code:');
+                const token = window.prompt(translateUiText(fa ? 'کد ۶ رقمی فعلی را وارد کنید:' : 'Enter a current 6-digit authenticator code:'));
                 if (!token) return;
                 try {
                   const data = await api.post<{ recoveryCodes: string[] }>(

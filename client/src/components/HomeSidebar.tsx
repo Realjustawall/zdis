@@ -96,6 +96,11 @@ export function HomeSidebar({
       </div>
 
       <div className="sidebar-body">
+        <details className="client-downloads">
+          <summary>{fa ? 'نصب برنامهٔ این سرور' : 'Install server apps'}</summary>
+          <a className="nav-item" href="/downloads/ZDis.apk" download>Android APK</a>
+          <a className="nav-item" href="/downloads/ZDis-Setup.exe" download>Windows Setup</a>
+        </details>
         <button
           className={`nav-item home-friends-link${friendsOpen ? ' active' : ''}`}
           onClick={onOpenFriends}
@@ -157,7 +162,7 @@ export function HomeSidebar({
                 />
               )}
               <span className="label">
-                {titleFor(conversation)}
+                <span data-no-auto-translate>{titleFor(conversation)}</span>
                 {conversation.lastMessage ? (
                   <span
                     className="faint"
@@ -280,8 +285,8 @@ export function PeoplePicker({
                 presence={person.presence}
               />
               <span className="info">
-                <span className="name">{person.displayName}</span>
-                <span className="sub">@{person.username}</span>
+                <span className="name"><span data-no-auto-translate>{person.displayName}</span></span>
+                <span className="sub">@<span data-no-auto-translate>{person.username}</span></span>
               </span>
               {person.role !== 'member' ? (
                 <span className={`badge ${person.role}`}>{person.role === 'youtuber' ? 'YouTuber' : person.role}</span>
@@ -360,7 +365,7 @@ function GroupDmModal({
         <div className="row wrap" style={{ marginBottom: 10 }}>
           {selected.map((person) => (
             <span className="pending-chip" key={person.id}>
-              <span className="name">{person.displayName}</span>
+              <span className="name"><span data-no-auto-translate>{person.displayName}</span></span>
               <button onClick={() => setSelected((current) => current.filter((p) => p.id !== person.id))}>
                 ✕
               </button>
@@ -391,8 +396,8 @@ function GroupDmModal({
           >
             <Avatar name={person.displayName} id={person.id} color={person.bannerColor} size={30} />
             <span className="info">
-              <span className="name">{person.displayName}</span>
-              <span className="sub">@{person.username}</span>
+              <span className="name"><span data-no-auto-translate>{person.displayName}</span></span>
+              <span className="sub">@<span data-no-auto-translate>{person.username}</span></span>
             </span>
             {selectedIds.has(person.id) ? <span className="badge moderator">{fa ? 'انتخاب‌شده' : 'picked'}</span> : null}
           </button>

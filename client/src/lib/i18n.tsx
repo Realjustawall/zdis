@@ -1,18 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { storageGet, storageSet } from './storage';
+import { languagePacks, translateUiText } from './localize';
 
 export type Locale = string;
 const STORAGE_KEY = 'zdis.locale';
-const languageModules = import.meta.glob<Record<string, string>>('../language/*.json', {
-  eager: true,
-  import: 'default',
-});
-const languagePacks: Record<Locale, Record<string, string>> = Object.fromEntries(
-  Object.entries(languageModules).map(([file, messages]) => [
-    file.split('/').pop()?.replace(/\.json$/i, '') ?? '',
-    messages,
-  ]).filter(([locale]) => Boolean(locale)),
-);
 export const availableLanguages = Object.freeze(Object.keys(languagePacks).sort((a, b) => a.localeCompare(b)));
 
 export function languageName(locale: Locale): string {
@@ -32,370 +23,6 @@ export function isRtlLanguage(locale: Locale): boolean {
   return /^(?:ar|arc|ckb|dv|fa|he|ku|nqo|ps|sd|syr|ug|ur|yi)(?:-|$)/i.test(locale);
 }
 
-const DOM_FA: Record<string, string> = {
-  'Server Settings': 'تنظیمات گروه',
-  'Server settings': 'تنظیمات گروه',
-  'Group settings': 'تنظیمات گروه',
-  'Overview': 'نمای کلی',
-  'Roles': 'نقش‌ها',
-  'Server Roles': 'نقش‌های گروه',
-  'Onboarding': 'آغاز به کار',
-  'Members': 'اعضا',
-  'Channels': 'کانال‌ها',
-  'Expressions': 'شکلک‌ها و صداها',
-  'Apps & Commands': 'برنامه‌ها و فرمان‌ها',
-  'Community': 'اجتماع',
-  'Safety & Moderation': 'ایمنی و مدیریت',
-  'Server Insights': 'آمار گروه',
-  'Danger zone': 'منطقه خطر',
-  'Delete Server': 'حذف گروه',
-  'Create Channel': 'ساخت کانال',
-  'Create Category': 'ساخت دسته',
-  'Create Role': 'ساخت نقش',
-  'New role': 'نقش جدید',
-  'New category': 'دسته جدید',
-  'Add category': 'افزودن دسته',
-  'Category name': 'نام دسته',
-  'Channel name': 'نام کانال',
-  'Server name': 'نام گروه',
-  'Server icon': 'تصویر گروه',
-  'Server accent color': 'رنگ اصلی گروه',
-  'Description': 'توضیحات',
-  'Role name': 'نام نقش',
-  'Role color': 'رنگ نقش',
-  'Search permissions': 'جست‌وجوی مجوزها',
-  'Search members': 'جست‌وجوی اعضا',
-  'Search accounts…': 'جست‌وجوی حساب‌ها…',
-  'Manage': 'مدیریت',
-  'Permissions': 'مجوزها',
-  'Permission': 'مجوز',
-  'Rename': 'تغییر نام',
-  'Delete': 'حذف',
-  'Delete category': 'حذف دسته',
-  'Sync': 'همگام‌سازی',
-  'Category': 'دسته',
-  'Channel': 'کانال',
-  'Member': 'عضو',
-  'Role': 'نقش',
-  'Owner': 'مالک',
-  'Administrator': 'مدیر کل',
-  'Moderator': 'ناظر',
-  'Allow': 'مجاز',
-  'Deny': 'ممنوع',
-  'Neutral': 'خنثی',
-  'Inherited': 'ارث‌بری‌شده',
-  'Save': 'ذخیره',
-  'Save changes': 'ذخیره تغییرات',
-  'Saving…': 'در حال ذخیره…',
-  'Cancel': 'انصراف',
-  'Close': 'بستن',
-  'Remove': 'حذف',
-  'Remove Override': 'حذف بازنویسی',
-  'Create': 'ساخت',
-  'Creating…': 'در حال ساخت…',
-  'Edit': 'ویرایش',
-  'Done': 'انجام شد',
-  'Add': 'افزودن',
-  'Invite': 'دعوت',
-  'Invite people': 'دعوت افراد',
-  'Create invite': 'ساخت دعوت‌نامه',
-  'Copy': 'کپی',
-  'Copied': 'کپی شد',
-  'General': 'عمومی',
-  'Membership': 'عضویت',
-  'Text': 'متنی',
-  'Voice': 'صوتی',
-  'Events': 'رویدادها',
-  'Apps': 'برنامه‌ها',
-  'Appearance': 'ظاهر',
-  'Display': 'نمایش',
-  'Links': 'پیوندها',
-  'Rules': 'قوانین',
-  'Audit Log': 'گزارش فعالیت',
-  'Bans': 'مسدودی‌ها',
-  'Webhooks': 'وب‌هوک‌ها',
-  'Commands': 'فرمان‌ها',
-  'Soundboard': 'صفحه صدا',
-  'Stickers': 'استیکرها',
-  'Sounds': 'صداها',
-  'Actions are hierarchy checked and recorded in the audit log.': 'عملیات بر اساس سلسله‌مراتب بررسی و در گزارش فعالیت ثبت می‌شوند.',
-  'Add people to this group': 'افزودن افراد به این گروه',
-  'Administrator is enabled': 'دسترسی مدیر کل فعال است',
-  'Allow anyone to @mention this role': 'اجازه اشاره به این نقش برای همه',
-  'Announcement': 'اطلاعیه',
-  'Announcement follows': 'دنبال‌کردن اطلاعیه‌ها',
-  'Application command permissions': 'مجوزهای فرمان برنامه‌ها',
-  'Assigned to every member': 'اختصاص‌یافته به همه اعضا',
-  'AutoMod actions & server audit': 'عملیات مدیریت خودکار و گزارش گروه',
-  'Ban Member': 'مسدودکردن عضو',
-  'Can be mentioned': 'قابل اشاره',
-  'Category permissions': 'مجوزهای دسته',
-  'Channel type': 'نوع کانال',
-  'Choose the onboarding roles that describe you.': 'نقش‌هایی را انتخاب کنید که شما را بهتر توصیف می‌کنند.',
-  'Command': 'فرمان',
-  'Complete Discord permission model': 'سامانه کامل مجوزهای دیسکورد',
-  'Create event': 'ساخت رویداد',
-  'Create subscription tier': 'ساخت سطح اشتراک',
-  'Creator monetization': 'درآمدزایی سازنده',
-  'Default access for all members before the overrides below.': 'دسترسی پیش‌فرض همه اعضا پیش از بازنویسی‌های زیر.',
-  'Delete Role': 'حذف نقش',
-  'Display role members separately': 'نمایش جداگانه اعضای نقش',
-  'Displayed separately': 'نمایش جداگانه',
-  'Emoji': 'شکلک',
-  'Emoji, e.g. 🛡️': 'شکلک، برای نمونه 🛡️',
-  'Expires after (hours)': 'انقضا پس از (ساعت)',
-  'Follow announcement channel': 'دنبال‌کردن کانال اطلاعیه',
-  'Forum': 'انجمن',
-  'Gradient color': 'رنگ گرادیان',
-  'Hoisted': 'نمایش جداگانه',
-  'Holographic accent': 'رنگ هولوگرافیک',
-  'Kick Member': 'اخراج عضو',
-  'Managed': 'مدیریت‌شده',
-  'Managed by an integration': 'مدیریت‌شده توسط یک اتصال',
-  'Maximum uses': 'حداکثر استفاده',
-  'Members can add or remove this role for themselves.': 'اعضا می‌توانند این نقش را برای خود اضافه یا حذف کنند.',
-  'Members can notify everyone assigned to this role.': 'اعضا می‌توانند به همه دارندگان این نقش اعلان بفرستند.',
-  'Moderation': 'مدیریت',
-  'Moderation & AutoMod': 'مدیریت و مدیریت خودکار',
-  'Name': 'نام',
-  'Never': 'هرگز',
-  'New channel': 'کانال جدید',
-  'No application commands are installed in this server.': 'هیچ فرمان برنامه‌ای در این گروه نصب نشده است.',
-  'No category': 'بدون دسته',
-  'Off': 'خاموش',
-  'Only people you invite to it can see this channel.': 'فقط افرادی که دعوت می‌کنید می‌توانند این کانال را ببینند.',
-  'Platform extension': 'قابلیت افزوده سامانه',
-  'Private channel': 'کانال خصوصی',
-  'Reason (optional)': 'دلیل (اختیاری)',
-  'Remove Timeout': 'برداشتن محدودیت زمانی',
-  'Remove override': 'حذف بازنویسی',
-  'Role icon': 'نماد نقش',
-  'Role image icon': 'تصویر نقش',
-  'Role or member': 'نقش یا عضو',
-  'Server insights': 'آمار گروه',
-  'Server nickname': 'نام مستعار گروه',
-  'Server-owned file': 'فایل متعلق به گروه',
-  'Show in onboarding role picker': 'نمایش در انتخاب‌گر نقش آغاز به کار',
-  'Show members with this role in a separate member-list group.': 'اعضای این نقش را در بخش جداگانه فهرست اعضا نمایش می‌دهد.',
-  'Shown in onboarding': 'نمایش در آغاز به کار',
-  'Slowmode': 'حالت آهسته',
-  'Stage': 'صحنه',
-  'Sticker': 'استیکر',
-  'This role bypasses every permission and channel override. Assign it with extreme care.': 'این نقش همه مجوزها و بازنویسی‌های کانال را نادیده می‌گیرد؛ آن را با احتیاط کامل واگذار کنید.',
-  'This server has no custom assets yet.': 'این گروه هنوز فایل سفارشی ندارد.',
-  'Timeout': 'محدودیت زمانی',
-  'Topic / description': 'موضوع یا توضیحات',
-  'Type': 'نوع',
-  'Unban': 'رفع مسدودی',
-  'Unfollow': 'لغو دنبال‌کردن',
-  'Unlimited': 'نامحدود',
-  'What is this channel for?': 'این کانال برای چه کاری است؟',
-  'Who can access this channel?': 'چه کسانی به این کانال دسترسی دارند؟',
-  'Activities': 'فعالیت‌ها',
-  'Activity status': 'وضعیت فعالیت',
-  'Add public creator profiles. An administrator may verify them.': 'پروفایل عمومی سازندگان را اضافه کنید؛ مدیر سامانه می‌تواند آن‌ها را تأیید کند.',
-  'Allow direct messages': 'اجازه پیام خصوصی',
-  'Allow file uploads': 'اجازه بارگذاری فایل',
-  'Allow group direct messages': 'اجازه پیام خصوصی گروهی',
-  'An accepted request creates a shared group automatically.': 'پذیرش درخواست به‌صورت خودکار یک گروه مشترک می‌سازد.',
-  'Approve': 'تأیید',
-  'Audio': 'صدا',
-  'Blocked terms': 'عبارت‌های مسدود',
-  'Camera on': 'دوربین روشن',
-  'Choose account…': 'انتخاب حساب…',
-  'Collaborations': 'همکاری‌ها',
-  'Connect with another account without opening a group.': 'بدون ساخت گروه به یک حساب دیگر متصل شوید.',
-  'Control public signup and every prominent text on the authentication page.': 'ثبت‌نام عمومی و متن‌های اصلی صفحه ورود را کنترل کنید.',
-  'Copy main platform invite link': 'کپی پیوند اصلی دعوت سامانه',
-  'Create forum post': 'ساخت پست انجمن',
-  'Database:': 'پایگاه داده:',
-  'Deafened': 'ناشنوا',
-  'Delete message': 'حذف پیام',
-  'Developer runtime': 'محیط اجرای توسعه‌دهنده',
-  'Discover servers': 'یافتن گروه‌ها',
-  'Discovery': 'فهرست عمومی',
-  'Display name': 'نام نمایشی',
-  'Documents (PDF, ZIP, text)': 'سندها (PDF، ZIP و متن)',
-  'Duplicate-message limit per 30 seconds': 'محدودیت پیام تکراری در هر ۳۰ ثانیه',
-  'Edit window (minutes)': 'مهلت ویرایش (دقیقه)',
-  'Email': 'ایمیل',
-  'Enable public registration': 'فعال‌کردن ثبت‌نام عمومی',
-  'File uploads': 'بارگذاری فایل',
-  'First name': 'نام',
-  'Friends': 'دوستان',
-  'Friends, collaborations, roster and public profiles': 'دوستان، همکاری‌ها، فهرست افراد و پروفایل‌های عمومی',
-  'Full screen': 'تمام‌صفحه',
-  'Handle': 'شناسه',
-  'Hold Space to speak': 'برای صحبت کلید فاصله را نگه دارید',
-  'IP': 'نشانی IP',
-  'Identity': 'هویت',
-  'Images': 'تصاویر',
-  'Jobهای شکست‌خورده پس از پایان Retry': 'کارهای ناموفق پس از پایان تلاش مجدد',
-  'Join': 'پیوستن',
-  'Last name': 'نام خانوادگی',
-  'Linked profiles': 'پروفایل‌های متصل',
-  'Login and registration': 'ورود و ثبت‌نام',
-  'Maximum file size (MB)': 'حداکثر حجم فایل (مگابایت)',
-  'Member accounts can create groups': 'حساب اعضا می‌توانند گروه بسازند',
-  'Members decide which additional streamer may invite or label them.': 'اعضا تعیین می‌کنند کدام سازنده دیگر می‌تواند آن‌ها را دعوت یا برچسب‌گذاری کند.',
-  'Message of the day': 'پیام روز',
-  'Message thread': 'رشته پیام',
-  'Messaging': 'پیام‌رسانی',
-  'Muted': 'بی‌صدا',
-  'Network': 'شبکه',
-  'Nickname': 'نام مستعار',
-  'No appeals are waiting.': 'هیچ درخواست تجدیدنظری در انتظار نیست.',
-  'No discoverable servers found.': 'گروه عمومی پیدا نشد.',
-  'No posts yet': 'هنوز پستی وجود ندارد',
-  'Nothing is pinned here yet.': 'هنوز پیامی اینجا سنجاق نشده است.',
-  'Nothing is scheduled here.': 'هیچ پیامی زمان‌بندی نشده است.',
-  'One term per line or comma-separated. Leave empty to disable.': 'در هر خط یک عبارت یا عبارت‌ها را با ویرگول جدا کنید؛ برای غیرفعال‌سازی خالی بگذارید.',
-  'Only invited server members and moderators can see or reply.': 'فقط اعضای دعوت‌شده و مدیران می‌توانند مشاهده یا پاسخ دهند.',
-  'Open appeals': 'درخواست‌های تجدیدنظر باز',
-  'Pending': 'در انتظار',
-  'Phone': 'تلفن',
-  'Pinned messages': 'پیام‌های سنجاق‌شده',
-  'Platform Control Plane': 'مرکز کنترل سامانه',
-  'Platform logo URL': 'نشانی لوگوی سامانه',
-  'Priority Speaker': 'گوینده اولویت‌دار',
-  'Private': 'خصوصی',
-  'Provision roster account': 'ساخت حساب فهرست افراد',
-  'Push to Talk · Space': 'فشار برای صحبت · فاصله',
-  'Reject': 'رد',
-  'Reply in thread…': 'پاسخ در رشته…',
-  'Reply to this post…': 'پاسخ به این پست…',
-  'Require password change on first sign-in': 'الزام تغییر رمز در نخستین ورود',
-  'Retry': 'تلاش دوباره',
-  'Roster access': 'دسترسی فهرست افراد',
-  'Saved messages': 'پیام‌های ذخیره‌شده',
-  'Scheduled messages': 'پیام‌های زمان‌بندی‌شده',
-  'Search by name or description': 'جست‌وجو با نام یا توضیحات',
-  'Security': 'امنیت',
-  'Sharing screen': 'اشتراک صفحه',
-  'Shown as a banner to everyone. Leave blank to hide it.': 'به‌صورت بنر به همه نمایش داده می‌شود؛ برای پنهان‌کردن خالی بگذارید.',
-  'Stage controls': 'کنترل‌های صحنه',
-  'Tags (comma separated)': 'برچسب‌ها (جداشده با ویرگول)',
-  'Temporary password': 'رمز عبور موقت',
-  'The name people see in the interface.': 'نامی که افراد در رابط کاربری می‌بینند.',
-  'Title': 'عنوان',
-  'Toggle size': 'تغییر اندازه',
-  'Uptime:': 'زمان فعالیت:',
-  'Username': 'نام کاربری',
-  'Verified': 'تأییدشده',
-  'Video': 'ویدیو',
-  'Waiting room': 'اتاق انتظار',
-  'Who may talk to whom, and who may start a group.': 'مشخص کنید چه کسانی می‌توانند با هم گفتگو کنند یا گروه بسازند.',
-  'You have no saved messages.': 'پیام ذخیره‌شده‌ای ندارید.',
-  'YouTuber accounts can create groups': 'حساب سازندگان می‌توانند گروه بسازند',
-  'Your roster': 'فهرست افراد شما',
-  'Group deleted.': 'گروه حذف شد.',
-  'Channel created.': 'کانال ساخته شد.',
-  'Channel settings updated.': 'تنظیمات کانال به‌روزرسانی شد.',
-  'Channel permissions synced with its category.': 'مجوزهای کانال با دسته همگام شد.',
-  'Channel deleted.': 'کانال حذف شد.',
-  'Invite created.': 'دعوت‌نامه ساخته شد.',
-  'Invite link copied.': 'پیوند دعوت کپی شد.',
-  'Category created.': 'دسته ساخته شد.',
-  'Category renamed.': 'نام دسته تغییر کرد.',
-  'Role updated.': 'نقش به‌روزرسانی شد.',
-  'Role created.': 'نقش ساخته شد.',
-  'Role deleted.': 'نقش حذف شد.',
-  'Channel permissions updated.': 'مجوزهای کانال به‌روزرسانی شد.',
-  'Channel override removed.': 'بازنویسی کانال حذف شد.',
-  'Member updated.': 'عضو به‌روزرسانی شد.',
-  'Member timed out.': 'عضو به‌طور موقت محدود شد.',
-  'Timeout removed.': 'محدودیت زمانی برداشته شد.',
-  'Member banned.': 'عضو مسدود شد.',
-  'Member kicked.': 'عضو اخراج شد.',
-  'Application command access updated.': 'دسترسی فرمان برنامه به‌روزرسانی شد.',
-  'Channel renamed.': 'نام کانال تغییر کرد.',
-  'Could not save.': 'ذخیره انجام نشد.',
-  'Could not create the channel.': 'ساخت کانال انجام نشد.',
-  'Could not create the category.': 'ساخت دسته انجام نشد.',
-  'Could not create the invite.': 'ساخت دعوت‌نامه انجام نشد.',
-  'Could not save the role.': 'ذخیره نقش انجام نشد.',
-  'Could not delete the role.': 'حذف نقش انجام نشد.',
-  'Could not load channel permissions.': 'بارگذاری مجوزهای کانال انجام نشد.',
-  'Could not save channel permissions.': 'ذخیره مجوزهای کانال انجام نشد.',
-  'Could not remove the override.': 'حذف بازنویسی انجام نشد.',
-  'Could not update the member.': 'به‌روزرسانی عضو انجام نشد.',
-  'Could not sync permissions.': 'همگام‌سازی مجوزها انجام نشد.',
-  'Could not rename the channel.': 'تغییر نام کانال انجام نشد.',
-  'Could not delete the channel.': 'حذف کانال انجام نشد.',
-  'That file type is not supported.': 'این نوع فایل پشتیبانی نمی‌شود.',
-  'File scanning is temporarily unavailable. Try again later.': 'بررسی امنیتی فایل موقتاً در دسترس نیست؛ کمی بعد دوباره تلاش کنید.',
-  'File uploads are disabled by the administrator.': 'بارگذاری فایل توسط مدیر غیرفعال شده است.',
-  'No file received.': 'فایلی دریافت نشد.',
-  'File is empty.': 'فایل خالی است.',
-  'Something went wrong.': 'خطایی رخ داد.',
-  'Uploaded server icon not found.': 'تصویر بارگذاری‌شده گروه پیدا نشد.',
-  'Server icons must be image files.': 'تصویر گروه باید یک فایل تصویری باشد.',
-  'Server icons must be 8 MB or smaller.': 'حجم تصویر گروه باید حداکثر ۸ مگابایت باشد.',
-  'Create Poll': 'ساخت نظرسنجی',
-  'Record voice message': 'ضبط پیام صوتی',
-  'Stop voice recording': 'توقف ضبط صدا',
-  'Send code': 'ارسال کد',
-  'Plain text': 'متن ساده',
-  'Copy code': 'کپی کد',
-  'Message': 'پیام',
-  'Reply': 'پاسخ',
-  'Search': 'جست‌وجو',
-  'No results': 'نتیجه‌ای پیدا نشد',
-  'No custom roles yet. Members currently use the default @everyone access.':
-    'هنوز نقش سفارشی ساخته نشده است. اعضا از دسترسی پیش‌فرض همگانی استفاده می‌کنند.',
-  'Create roles, set the hierarchy, and configure all server-wide Discord permissions.':
-    'نقش‌ها را بسازید، ترتیب آن‌ها را مشخص کنید و همه مجوزهای گروه را تنظیم کنید.',
-  'Channels placed here can synchronize the category’s permission overwrites.':
-    'کانال‌های این دسته می‌توانند بازنویسی مجوزهای دسته را همگام‌سازی کنند.',
-  'Your effective permissions': 'مجوزهای مؤثر شما',
-  'App permissions are restricted': 'مجوزهای برنامه محدود است',
-  'Server Insights is restricted': 'دسترسی به آمار گروه محدود است',
-  'Safety settings are restricted': 'تنظیمات ایمنی محدود است',
-  'You need Manage Roles to configure application command access.':
-    'برای تنظیم دسترسی فرمان برنامه‌ها به مجوز مدیریت نقش‌ها نیاز دارید.',
-  'You need the View Server Insights permission to access analytics.':
-    'برای مشاهده آمار به مجوز مشاهده آمار گروه نیاز دارید.',
-  'A moderation permission is required to view this area.':
-    'برای مشاهده این بخش به یکی از مجوزهای مدیریتی نیاز دارید.',
-};
-
-function translateDomText(value: string, locale: Locale): string {
-  const leading = value.match(/^\s*/)?.[0] ?? '';
-  const trailing = value.match(/\s*$/)?.[0] ?? '';
-  const core = value.trim();
-  if (!core) return value;
-  const catalog = languagePacks[locale] as Record<string, string>;
-  const catalogValue = catalog[`text.${core}`];
-  let translated = catalogValue && catalogValue !== core ? catalogValue : undefined;
-  if (!translated && locale === 'fa') translated = DOM_FA[core];
-  if (!translated && locale === 'fa') {
-    const patterns: Array<[RegExp, (...parts: string[]) => string]> = [
-      [/^Members · (\d+)$/, (count) => `اعضا · ${count}`],
-      [/^Channels · (\d+)$/, (count) => `کانال‌ها · ${count}`],
-      [/^Members — (\d+)$/, (count) => `اعضا — ${count}`],
-      [/^Channels — (\d+)$/, (count) => `کانال‌ها — ${count}`],
-      [/^(\d+) shown$/, (count) => `${count} مورد نمایش داده شده`],
-      [/^(\d+) members?$/, (count) => `${count} عضو`],
-      [/^(\d+) permissions?$/, (count) => `${count} مجوز`],
-      [/^File exceeds the (\d+) MB limit\.$/, (size) => `حجم فایل بیشتر از سقف ${size} مگابایت است.`],
-      [/^(image|video|audio|document) uploads are disabled by the administrator\.$/, (kind) => `بارگذاری ${({ image: 'تصویر', video: 'ویدیو', audio: 'صدا', document: 'سند' } as Record<string, string>)[kind] ?? kind} توسط مدیر غیرفعال شده است.`],
-      [/^Could not upload (.+)\.$/, (name) => `بارگذاری ${name} انجام نشد.`],
-      [/^(.+) was added\.$/, (name) => `${name} اضافه شد.`],
-      [/^(.+) added to this server\.$/, (kind) => `${DOM_FA[kind] ?? kind} به گروه اضافه شد.`],
-      [/^(.+) channel permissions$/, (category) => `مجوزهای کانال ${DOM_FA[category] ?? category}`],
-      [/^New (.+) name$/, (kind) => `نام جدید ${DOM_FA[kind.toLowerCase()] ?? kind}`],
-    ];
-    for (const [pattern, replacement] of patterns) {
-      const match = pattern.exec(core);
-      if (match) {
-        translated = replacement(...match.slice(1));
-        break;
-      }
-    }
-  }
-  return translated ? `${leading}${translated}${trailing}` : value;
-}
-
 function translateDomTree(root: Node, locale: Locale) {
   const visit = (node: Node) => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -407,15 +34,15 @@ function translateDomTree(root: Node, locale: Locale) {
         )
       ) return;
       const value = node.nodeValue ?? '';
-      const translated = translateDomText(value, locale);
+      const translated = translateUiText(value, locale);
       if (translated !== value) node.nodeValue = translated;
       return;
     }
-    if (!(node instanceof Element)) return;
+    if (!(node instanceof Element) || node.closest('[data-no-auto-translate], script, style')) return;
     for (const attribute of ['placeholder', 'title', 'aria-label']) {
       const value = node.getAttribute(attribute);
       if (!value) continue;
-      const translated = translateDomText(value, locale);
+      const translated = translateUiText(value, locale);
       if (translated !== value) node.setAttribute(attribute, translated);
     }
     for (const child of node.childNodes) visit(child);
@@ -553,7 +180,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     translateDomTree(document.body, locale);
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.type === 'attributes') {
+        if (mutation.type === 'attributes' || mutation.type === 'characterData') {
           translateDomTree(mutation.target, locale);
         }
         for (const node of mutation.addedNodes) translateDomTree(node, locale);
@@ -562,6 +189,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     observer.observe(document.body, {
       subtree: true,
       childList: true,
+      characterData: true,
       attributes: true,
       attributeFilter: ['placeholder', 'title', 'aria-label'],
     });

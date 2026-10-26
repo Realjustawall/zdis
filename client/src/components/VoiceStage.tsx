@@ -1,5 +1,6 @@
+import { translateUiText } from '../lib/localize';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar } from './ui';
+import { Avatar, ResponsivePopover } from './ui';
 import { useVoice } from '../store/voice';
 import { useMediaPlayback } from '../lib/useMediaPlayback';
 import { useRealtime } from '../store/realtime';
@@ -71,6 +72,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
   const { locale } = useI18n();
   const fa = locale === 'fa';
   const user = useSession((state) => state.user)!;
+  const socket = useRealtime(state => state.socket);
   const participants =
     useRealtime((state) => state.voice[channel.id]) ?? EMPTY_PARTICIPANTS;
   const {
@@ -83,6 +85,8 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
     cameraOn,
     screenSharing,
     stageAudience,
+    listenOnly,
+    microphoneBusy,
     speaking,
     connecting,
     joinedAt,
@@ -152,10 +156,15 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
     setActivitiesOpen(false);
     setAudioSettingsOpen(false);
     void refreshControl();
-    const timer = window.setInterval(() => void refreshControl(), 5000);
-    return () => window.clearInterval(timer);
+    const realtime = useRealtime.getState();
+    const offs = [
+      realtime.on('voice:control', ((payload: {channelId: string}) => { if (payload.channelId === channel.id) void refreshControl(); }) as never),
+      realtime.on('ready', (() => void refreshControl()) as never),
+      realtime.on('group:member-updated', ((payload: {groupId: string}) => { if (payload.groupId === channel.groupId) void refreshControl(); }) as never),
+    ];
+    return () => offs.forEach(off => off());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channel.id]);
+  }, [channel.id, socket]);
 
   useEffect(() => {
     let active = true;
@@ -419,7 +428,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
             <div className="col" style={{ gap: 6 }}>
               {requestedSpeakers.map((member) => (
                 <div className="row" key={member.userId} style={{ gap: 8 }}>
-                  <span>{member.displayName} requested to speak</span>
+                  <span><span data-no-auto-translate>{member.displayName}</span> requested to speak</span>
                   <span className="spacer" />
                   <button className="btn primary small" onClick={() => void setStageRole(member.userId, 'speaker')}>
                     Invite
@@ -435,7 +444,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
             <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
               {stageSpeakers.map((member) => (
                 <button className="btn small" key={member.userId} onClick={() => void setStageRole(member.userId, 'audience')}>
-                  Move {member.displayName} to audience
+                  Move <span data-no-auto-translate>{member.displayName}</span> to audience
                 </button>
               ))}
             </div>
@@ -473,7 +482,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
         <button
           className="btn small"
           onClick={async () => {
-            const next = window.prompt('Voice channel status (leave blank to clear):', channelStatus ?? '');
+            const next = window.prompt(translateUiText('Voice channel status (leave blank to clear):'), channelStatus ?? '');
             if (next === null) return;
             try {
               const data = await api.patch<{ status: string | null }>(
@@ -499,7 +508,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
     <button className={`head-btn${chatOpen ? ' on' : ''}`} onClick={onToggleChat} title="Channel chat" aria-label="Channel chat" aria-pressed={chatOpen}><Icon name="message" size={21} /></button>
     <button className={`head-btn${optionsOpen ? ' on' : ''}`} onClick={() => setOptionsOpen(value => !value)} title="Call options" aria-label="Call options" aria-expanded={optionsOpen}><Icon name="settings" size={21} /></button>
   </div>;
-  const options = optionsOpen ? <div className="voice-options"><div className="voice-options-heading"><strong>Call options</strong><button className="head-btn" onClick={() => setOptionsOpen(false)} aria-label="Close call options"><Icon name="close" size={18} /></button></div>{callControls || <p className="faint">Join the channel to access call options.</p>}        {control?.permissions.prioritySpeaker ? (
+  const options = optionsOpen ? <ResponsivePopover title={fa ? 'گزینه‌های تماس' : 'Call options'} onClose={() => setOptionsOpen(false)}><div className="voice-options"><div className="voice-options-heading"><strong>Call options</strong><button className="head-btn" onClick={() => setOptionsOpen(false)} aria-label="Close call options"><Icon name="close" size={18} /></button></div>{callControls || <p className="faint">Join the channel to access call options.</p>}        {control?.permissions.prioritySpeaker ? (
           <button
             className={`voice-btn${ownPriority ? ' active' : ''}`}
             onClick={() =>
@@ -510,7 +519,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
             <Icon name="announcement" size={19} />
           </button>
         ) : null}
-</div> : null;
+</div></ResponsivePopover> : null;
 
   if (!inThisChannel) {
     return (
@@ -550,6 +559,7 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
             {connecting ? <span className="spinner tiny" /> : <Icon name={channel.type === 'stage' ? 'headphones' : 'microphone'} size={17} />}
             {connecting ? (fa ? 'در حال اتصال…' : 'Connecting…') : channel.type === 'stage' ? (fa ? 'پیوستن به شنوندگان' : 'Join audience') : (fa ? 'ورود به ویس' : 'Join voice')}
           </button>
+          {channel.type !== 'stage' ? <button className="btn voice-listen-only" onClick={() => void join(channel.id, {listenOnly: true})} disabled={connecting}><Icon name="headphones" size={18} />{fa ? 'پیوستن به‌عنوان شنونده' : 'Join as listener'}</button> : null}
           {channel.type !== 'stage' ? (
             <button className="btn" onClick={() => void join(channel.id, { withVideo: true })} disabled={connecting}>
               <Icon name="video" size={17} /> {fa ? 'ورود با دوربین' : 'Join with camera'}
@@ -628,14 +638,15 @@ export function VoiceStage({ channel, members, chatOpen, onToggleChat }: Props) 
       </div>
 
       {activitiesOpen ? <VoiceActivities activity={activity} members={members} canStart={Boolean(control?.permissions.useEmbeddedActivities)} isHost={isHost} onChange={next => { if (currentChannel.current === channel.id) updateActivity(next); }} onClose={() => setActivitiesOpen(false)} /> : null}
+      {listenOnly ? <div className="voice-listener-status" role="status"><Icon name="headphones" size={16} />{fa ? 'حالت شنونده؛ میکروفن خاموش است' : 'Listening only; microphone is off'}</div> : null}
       <div className="voice-controls" role="group" aria-label="Call controls">
         {control && !control.permissions.useVoiceActivity && !stageAudience ? (
           <span className="badge" title="Hold Space to speak">Push to Talk · Space</span>
         ) : null}
         <button
           className={`voice-btn${muted ? ' off' : ''}`}
-          onClick={toggleMute}
-          disabled={stageAudience}
+          onClick={() => void toggleMute()}
+          disabled={stageAudience || microphoneBusy}
           title={muted ? 'Unmute' : 'Mute'}
           aria-pressed={muted}
         >

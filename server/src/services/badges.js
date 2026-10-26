@@ -159,9 +159,8 @@ export async function invalidateBadges(userId) {
  */
 export async function syncRoleColumn(userId) {
   const ids = await listBadgeIds(userId);
-  // `youtuber` is the stable API/database role used by the existing client.
-  // The more general `streamer` badge is the source of the capability.
-  const role = ids.includes('admin') ? 'admin' : ids.includes('streamer') ? 'youtuber' : 'member';
+  // Only the administrator badge has an account-role counterpart.
+  const role = ids.includes('admin') ? 'admin' : 'member';
   await getDb().run('UPDATE users SET role = ?, updated_at = ? WHERE id = ?', [
     role,
     Date.now(),

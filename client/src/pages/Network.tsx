@@ -465,7 +465,7 @@ function NetworkRows({ rows, emptyText }: { rows: Row[]; emptyText: string }) {
               size={34}
             />
             <div className="who">
-              <div className="name">{row.person?.displayName ?? 'Deleted account'}</div>
+              <div className="name"><span data-no-auto-translate>{row.person?.displayName ?? 'Deleted account'}</span></div>
               <div className="sub">{row.detail}</div>
               {row.person ? <RoleBadge role={row.person.role} /> : null}
               <BadgeList badges={row.person?.badges} />

@@ -145,7 +145,7 @@ function MessageItemInner({
         {message.replyTo ? (
           <div className="reply-context" dir="auto" onClick={() => onJumpTo?.(message.replyTo!.id)}>
             <span className="spine" />
-            <bdi className="who" dir="auto">@{message.replyTo.displayName}</bdi>
+            <bdi data-no-auto-translate className="who" dir="auto">@{message.replyTo.displayName}</bdi>
             <span className="snippet">
               <MessagePreview
                 content={message.replyTo.preview}
@@ -169,7 +169,7 @@ function MessageItemInner({
               style={{ color: message.author?.bannerColor ?? undefined }}
               onClick={() => onOpenProfile?.(message.authorId)}
             >
-              {message.author?.displayName ?? (fa ? 'کاربر حذف‌شده' : 'Deleted user')}
+              <span data-no-auto-translate>{message.author?.displayName ?? (fa ? 'کاربر حذف‌شده' : 'Deleted user')}</span>
             </bdi>
             <BadgeList badges={message.author?.badges?.filter(b=>['bot','verified_bot','official','staff','developer','community_moderator'].includes(b.id))} compact />
             <span className="time" dir="ltr" title={formatFullTimestamp(message.createdAt)}>

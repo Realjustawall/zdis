@@ -183,7 +183,7 @@ export function registerVoiceHandlers(socket, io) {
           channelId,
           conversationId,
           fromUserId: userId,
-          video: state.video,
+          video: Boolean(payload?.requestedVideo ?? state.video),
           startedAt: state.joinedAt,
         });
       }

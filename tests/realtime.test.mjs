@@ -95,7 +95,49 @@ await check('authenticated socket connects', async () => {
   hostSock = host.client.socket();
   guestSock = guest.client.socket();
   strangerSock = stranger.client.socket();
-  await Promise.all([connected(hostSock), connected(guestSock), connected(strangerSock)]);
+  const snapshots = await Promise.all([connected(hostSock), connected(guestSock), connected(strangerSock)]);
+  assert(snapshots.every(snapshot => snapshot.presence?.[snapshot.userId] === 'online'), 'Ready snapshot is missing live presence');
+});
+
+await check('activity updates are live and ready snapshots recover missed changes', async () => {
+  const activityEvent = waitFor(guestSock, 'presence:activity');
+  await host.client.req('PUT', '/api/users/me/activity', {type: 'playing', name: 'Realtime recovery QA'});
+  const pushed = await activityEvent;
+  assert(pushed.userId === host.user.id && pushed.activity.name === 'Realtime recovery QA', 'activity did not arrive live');
+  const reopened = guest.client.socket();
+  try {
+    const snapshot = await connected(reopened);
+    assert(snapshot.activities[host.user.id].name === 'Realtime recovery QA', 'reconnect lost existing activity');
+  } finally { reopened.close(); }
+  await host.client.del('/api/users/me/activity');
+  const cleared = guest.client.socket();
+  try {
+    const snapshot = await connected(cleared);
+    assert(!snapshot.activities[host.user.id], 'reconnect retained a deleted activity');
+  } finally { cleared.close(); }
+  await host.client.req('PUT', '/api/users/me/activity', {type: 'custom', name: 'Expired activity', expiresAt: Date.now() - 1000});
+  const expired = guest.client.socket();
+  try { assert(!(await connected(expired)).activities[host.user.id], 'expired activity leaked into snapshot'); }
+  finally { expired.close(); await host.client.del('/api/users/me/activity'); }
+});
+
+await check('call settings, lobby decisions and consent notify viewers immediately', async () => {
+  await host.client.get(`/api/voice/${voiceChannel.id}`);
+  let pushed = waitFor(guestSock, 'voice:control');
+  await host.client.req('PATCH', `/api/voice/${voiceChannel.id}/settings`, {lobbyEnabled: true});
+  assert((await pushed).channelId === voiceChannel.id, 'settings event missing');
+  pushed = waitFor(hostSock, 'voice:control');
+  await guest.client.post(`/api/voice/${voiceChannel.id}/lobby`, {});
+  await pushed;
+  const control = await host.client.get(`/api/voice/${voiceChannel.id}`);
+  assert(control.body.lobby.some(member => member.userId === guest.user.id || member.user_id === guest.user.id), 'host did not see pending lobby member');
+  pushed = waitFor(guestSock, 'voice:control');
+  await host.client.req('PATCH', `/api/voice/${voiceChannel.id}/lobby/${guest.user.id}`, {approved: true});
+  await pushed;
+  pushed = waitFor(hostSock, 'voice:control');
+  await guest.client.req('PUT', `/api/voice/${voiceChannel.id}/consent`, {recording: true, transcript: true});
+  await pushed;
+  await host.client.req('PATCH', `/api/voice/${voiceChannel.id}/settings`, {lobbyEnabled: false});
 });
 
 await check('socket without a session is rejected', async () => {
@@ -107,6 +149,34 @@ await check('socket without a session is rejected', async () => {
   });
   anon.close();
   function assertSafe(c, m) { if (!c) throw new Error(m); }
+});
+
+await check('cross-origin WebSocket is rejected even with a valid cookie', async () => {
+  const cross = ioClient(BASE, { transports: ['websocket'], reconnection: false,
+    extraHeaders: { cookie: guest.client.cookieHeader(), origin: 'https://untrusted.example' } });
+  try {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('No origin rejection')), 6000);
+      cross.once('connect_error', () => { clearTimeout(timer); resolve(); });
+      cross.once('connect', () => { clearTimeout(timer); reject(new Error('Cross-origin connection accepted')); });
+    });
+  } finally { cross.close(); }
+});
+
+await check('temporary-password account cannot bypass password rotation over WebSocket', async () => {
+  const email = `rotate-${suffix}@example.com`;
+  await admin.post('/api/admin/users', { email, username: `rotate${suffix}`, displayName: 'Rotate',
+    password: 'Rotate-Pass#2026', role: 'member', mustChangePassword: true });
+  const temporary = new Client('temporary');
+  await temporary.login(email, 'Rotate-Pass#2026');
+  const socket = temporary.socket();
+  try {
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('No password rotation rejection')), 6000);
+      socket.once('connect_error', () => { clearTimeout(timer); resolve(); });
+      socket.once('connect', () => { clearTimeout(timer); reject(new Error('Temporary password bypassed rotation')); });
+    });
+  } finally { socket.close(); }
 });
 
 await check('new message reaches group members live', async () => {
@@ -255,7 +325,7 @@ await check('starting a DM call rings the other conversation member', async () =
   const roomId = `dm:${directConversationId}`;
   const incoming = waitFor(guestSock, 'voice:incoming');
   const ack = await new Promise((resolve) =>
-    hostSock.emit('voice:join', { channelId: roomId, video: true }, resolve));
+    hostSock.emit('voice:join', { channelId: roomId, video: false, requestedVideo: true }, resolve));
   assert(ack.ok === true, `DM call refused: ${ack.error}`);
   const call = await incoming;
   assert(call.conversationId === directConversationId, 'wrong conversation rang');
@@ -324,6 +394,15 @@ await check('admin disabling an account drops its sockets', async () => {
   });
   await admin.req('PATCH', `/api/admin/users/${stranger.user.id}`, { isActive: false });
   await closed;
+});
+
+await check('logged-out socket cannot change presence or refresh rooms', async () => {
+  const closed = waitFor(guestSock, 'disconnect');
+  await guest.client.post('/api/auth/logout', {});
+  guestSock.emit('presence:set', { presence: 'dnd' });
+  await closed;
+  assert(!guestSock.connected, 'Revoked socket remained connected');
+  assert(hostSock.connected, 'Revoking guest also disconnected an unrelated session');
 });
 
 for (const s of [hostSock, guestSock, strangerSock]) s?.close();

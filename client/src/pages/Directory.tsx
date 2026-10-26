@@ -81,18 +81,18 @@ export function Directory({ onOpenConversation }: { onOpenConversation: (c: Conv
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="row" style={{ gap: 6 }}>
                       <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {person.displayName}
+                        <span data-no-auto-translate>{person.displayName}</span>
                       </strong>
                       <BadgeList badges={person.badges} compact />
                     </div>
-                    <div className="faint small">@{person.username}</div>
+                    <div className="faint small">@<span data-no-auto-translate>{person.username}</span></div>
                     <div style={{ marginTop: 5 }}>
                       <RoleBadge role={person.role} />
                       <BadgeList badges={person.badges} />
                     </div>
                     {person.customStatus ? (
                       <div className="muted small" style={{ marginTop: 4 }}>
-                        {person.customStatus}
+                        <span data-no-auto-translate>{person.customStatus}</span>
                       </div>
                     ) : null}
                     <div className="faint small" style={{ marginTop: 4 }}>

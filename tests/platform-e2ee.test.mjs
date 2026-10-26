@@ -89,15 +89,9 @@ const create = async (prefix, password) => (await admin.post('/api/admin/users',
 const aliceUser = await create('cryptoa', 'Crypto-Alice#2026'); const bobUser = await create('cryptob', 'Crypto-Bob#2026');
 await alice.login(aliceUser.email, 'Crypto-Alice#2026'); await bob.login(bobUser.email, 'Crypto-Bob#2026');
 
-await check('new accounts receive recoverable bootstrap identities before joining a DM', async () => {
-  const aliceBootstrap = await alice.get('/api/e2ee/identity/bootstrap');
-  const bobBootstrap = await bob.get('/api/e2ee/identity/bootstrap');
-  assert(aliceBootstrap.body.identity?.privateKey?.encryption?.d, 'Alice bootstrap private key is missing');
-  assert(bobBootstrap.body.identity?.privateKey?.signing?.d, 'Bob bootstrap signing key is missing');
-  assert(
-    aliceBootstrap.body.identity.publicKey.encryption.x === aliceBootstrap.body.identity.privateKey.encryption.x,
-    'Alice escrow key does not match the published identity',
-  );
+await check('new accounts do not store private identities on the server', async () => {
+  assert((await alice.get('/api/e2ee/identity/bootstrap')).body.identity === null, 'Server generated Alice private key');
+  assert((await bob.get('/api/e2ee/identity/bootstrap')).body.identity === null, 'Server generated Bob private key');
 });
 
 await check('admin platform status, analytics and feature flags are reachable', async () => {

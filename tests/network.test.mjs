@@ -79,8 +79,8 @@ async function createAccount(role, name) {
   return { user: result.body.user, self, client };
 }
 
-const streamerA = await createAccount('youtuber', 'neta');
-const streamerB = await createAccount('youtuber', 'netb');
+const streamerA = await createAccount('admin', 'neta');
+const streamerB = await createAccount('admin', 'netb');
 const staff = await createAccount('member', 'netstaff');
 let rosterUser;
 let groupA;
@@ -88,8 +88,8 @@ let groupB;
 let inviteB;
 let accessId;
 
-await check('legacy roles are backfilled into capability badges', async () => {
-  assert(streamerA.self.badges.some((badge) => badge.id === 'streamer'), 'streamer badge missing');
+await check('administrator identity is represented by its matching badge', async () => {
+  assert(streamerA.self.badges.some((badge) => badge.id === 'admin'), 'administrator badge missing');
   const catalogue = await streamerA.client.get('/api/network/badges');
   assert(catalogue.body.badges.some((badge) => badge.id === 'editor'), 'catalogue missing editor');
 });
@@ -260,12 +260,11 @@ await check('accepted collaboration creates a shared group', async () => {
   assert(detail.body.group.memberRole === 'admin', 'partner did not receive group admin role');
 });
 
-await check('staff badge grants platform moderation without admin settings access', async () => {
-  await admin.put(`/api/admin/users/${staff.user.id}/badges`, { badgeIds: ['staff'] });
-  const group = await staff.client.get(`/api/groups/${groupA.id}`);
-  assert(group.body.permissions.deleteAnyMessage, 'staff moderation permission missing');
+await check('retired staff badge cannot grant platform privileges', async () => {
+  const denied = await admin.put(`/api/admin/users/${staff.user.id}/badges`, { badgeIds: ['staff'] }, { allowFail: true });
+  assert(denied.status === 400, 'Retired privilege badge was accepted');
   const adminDenied = await staff.client.get('/api/admin/settings', { allowFail: true });
-  assert(adminDenied.status === 403, `staff reached admin settings: ${adminDenied.status}`);
+  assert(adminDenied.status === 403, 'Ordinary account reached admin settings');
 });
 
 console.log(results.join('\n'));

@@ -42,5 +42,5 @@ export function MessagePreview({
     return () => { active = false; };
   }, [authorId, content, conversationId, currentUserId, encrypted, encryptedContent, fallback]);
 
-  return <>{toPlainPreview(preview, limit)}</>;
+  return <span data-no-auto-translate>{toPlainPreview(preview, limit)}</span>;
 }

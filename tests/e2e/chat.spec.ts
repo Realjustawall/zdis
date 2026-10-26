@@ -23,23 +23,23 @@ test.beforeEach(async ({ page }) => {
 
 async function openAdmin(page: import('@playwright/test').Page) {
   if (test.info().project.name === 'mobile-chromium') {
-    await page.getByRole('button', { name: 'Servers', exact: true }).click();
-    await page.getByRole('button', { name: 'Admin', exact: true }).click();
+    await page.locator('.mobile-server-rail').getByTitle('Administration', { exact: true }).click();
   } else await page.getByTitle('Administration').click();
 }
 
 async function openCreateGroup(page: import('@playwright/test').Page) {
   if (test.info().project.name === 'mobile-chromium') {
-    await page.getByRole('button', { name: 'Servers', exact: true }).click();
-    await page.getByRole('button', { name: 'Create server', exact: true }).click();
+    await page.locator('.mobile-server-rail').getByTitle('Create a group', { exact: true }).click();
   } else await page.getByTitle('Create a group').click();
 }
 
 test('administrator can inspect runtime and accounts', async ({ page }) => {
   await openAdmin(page);
+  if (test.info().project.name === 'mobile-chromium') await page.locator('.admin-nav').getByRole('button', { name: 'داشبورد', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'داشبورد' })).toBeVisible();
   await expect(page.getByText('پایگاه‌داده', { exact: true })).toBeVisible();
 
+  if (test.info().project.name === 'mobile-chromium') await page.locator('.admin-mobile-back').click();
   await page.getByRole('button', { name: /کاربران/ }).click();
   await expect(page.getByRole('heading', { name: 'مدیریت متمرکز کاربران' })).toBeVisible();
   await expect(page.getByText('office@intesho.com')).toBeVisible();
@@ -60,7 +60,8 @@ test('administrator can create an account through the browser', async ({ page },
 
 test('admin theme and operations center are functional', async ({ page }) => {
   await openAdmin(page);
-  await page.getByLabel(/Change theme/).click();
+  if (test.info().project.name === 'mobile-chromium') await page.locator('.admin-nav-theme').getByRole('button', { name: 'Light', exact: true }).click();
+  else await page.getByLabel(/Change theme/).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
 
   await page.getByRole('button', { name: /عملیات و سلامت/ }).click();
@@ -84,7 +85,7 @@ test('notification inbox and preference controls are reachable', async ({ page }
 
 test('offers the expanded dark theme collection', async ({ page }) => {
   if (test.info().project.name === 'mobile-chromium') {
-    await page.getByRole('button', { name: 'Servers', exact: true }).click();
+    await page.getByRole('button', { name: 'Your account', exact: true }).click();
     await page.getByRole('dialog').getByTitle('Customize appearance').click();
   } else await page.getByTitle('Customize appearance').click();
   await expect(page.getByRole('heading', { name: 'Appearance & themes' })).toBeVisible();

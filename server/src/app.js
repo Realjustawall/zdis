@@ -257,6 +257,18 @@ export function createApp() {
   app.use('/api/admin', requirePasswordCurrent, adminRouter);
   app.use('/api', requirePasswordCurrent, messagesRouter);
 
+  // Public installation artifacts contain only applications and a public certificate.
+  // Fixed filenames prevent path traversal and accidental signing-key downloads.
+  const clientDownloads = new Set(['ZDis.apk', 'ZDis-Setup.exe', 'ZDis-Server-Certificate.crt', 'manifest.json']);
+  app.get('/downloads/:name', (req, res, next) => {
+    if (!clientDownloads.has(req.params.name)) return res.status(404).end();
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.download(path.join(config.dataDir, 'clients', req.params.name), req.params.name, error => {
+      if (error && !res.headersSent) { if (error.code === 'ENOENT') res.status(404).end(); else next(error); }
+    });
+  });
+
   // Serve the built SPA when it exists, so production is a single process.
   const clientDist = path.join(ROOT, 'client', 'dist');
   if (fs.existsSync(clientDist)) {

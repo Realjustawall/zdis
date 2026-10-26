@@ -5,7 +5,7 @@ test('Admin saves account media permissions and quotas and manages a custom badg
  const username='uiaccess'+Date.now();const created=await context.request.post('/api/admin/users',{headers,data:{username,email:username+'@example.test',displayName:'UI Access',password:'UIAccess!7283920',role:'member',mustChangePassword:false}});expect(created.status()).toBe(201);const {user}=await created.json();let badgeId:string|undefined;
  try{
   await page.goto('/');
-  if(info.project.name==='mobile-chromium'){await page.getByRole('button',{name:'Servers',exact:true}).click();await page.getByRole('button',{name:'Admin',exact:true}).click();}
+  if(info.project.name==='mobile-chromium'){await page.locator('.mobile-server-rail').getByTitle('Administration',{exact:true}).click();}
   else await page.getByTitle('Administration',{exact:true}).click();
   await page.getByRole('button',{name:'تنظیمات',exact:true}).click();
   const panel=page.locator('section').filter({has:page.getByRole('heading',{name:'دسترسی افراد، سقف‌ها و بج‌های اختصاصی',exact:true})});

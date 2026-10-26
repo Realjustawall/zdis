@@ -4,7 +4,6 @@ import { badRequest, notFound, forbidden } from '../lib/errors.js';
 import { toPublicUser } from './users.js';
 import { isBlocked } from './permissions.js';
 import { getSettings } from './settings.js';
-import { provisionE2eeIdentities } from './e2eeKeys.js';
 
 /**
  * Direct messages. A 1:1 DM is keyed on the sorted pair of user ids so the
@@ -86,7 +85,6 @@ export async function openDirectMessage(userId, otherUserId) {
   if (!other) throw notFound('User not found.');
   if (!other.is_active) throw badRequest('That account is disabled.');
   if (await isBlocked(userId, otherUserId)) throw forbidden('You cannot message this user.');
-  await provisionE2eeIdentities([userId, otherUserId]);
 
   const key = dmKeyFor(userId, otherUserId);
   const existing = await db.get('SELECT * FROM conversations WHERE dm_key = ?', [key]);
@@ -133,7 +131,6 @@ export async function createGroupDm({ creatorId, memberIds, name = null }) {
     unique,
   );
   if (found.length !== unique.length) throw badRequest('One or more selected users are unavailable.');
-  await provisionE2eeIdentities(unique);
 
   const id = newId();
   const now = Date.now();

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
+import './mobile-workspace.css';
 import { initializeTheme } from './lib/theme';
 import { I18nProvider } from './lib/i18n';
 import { initializeNativeShell } from './lib/native';

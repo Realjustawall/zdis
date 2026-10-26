@@ -207,19 +207,12 @@ await admin.patch(`/api/moderation/appeals/${banAppeal.body.appeal.id}`, {
 await new Client('unbanned').login(authorUser.email, 'Enterprise-Author#26');
 await author.login(authorUser.email, 'Enterprise-Author#26');
 
-const role = await admin.post('/api/admin/roles', {
-  name: `Reviewers ${suffix}`,
-  description: 'Custom moderation role',
-  capabilities: ['moderate'],
-});
-await admin.put(`/api/admin/users/${reporterUser.id}/roles/${role.body.role.id}`, { granted: true });
-const assignedRoles = await admin.get(`/api/admin/users/${reporterUser.id}/roles`);
-assert(
-  assignedRoles.body.roles.some((item) => item.id === role.body.role.id && item.granted),
-  'custom RBAC assignment was not visible to the admin panel',
-);
-const delegated = await reporter.get('/api/moderation/reports?status=resolved');
-assert(Array.isArray(delegated.body.reports), 'custom RBAC role did not grant moderation');
+const roleDenied = await admin.post('/api/admin/roles', {
+  name: 'Retired platform role', capabilities: ['moderate'],
+}, { allowFail: true });
+assert(roleDenied.status === 400, 'Alternate platform role was accepted');
+const delegated = await reporter.get('/api/moderation/reports', { allowFail: true });
+assert(delegated.status === 403, 'Ordinary account gained moderation');
 
 const draft = await author.put(`/api/conversations/${conversation.id}/draft`, {
   content: 'A durable cross-device draft.',

@@ -1,10 +1,11 @@
+import { translateUiText } from './localize';
 export class ApiError extends Error {
   status: number;
   code: string;
   details?: { path: string; message: string }[] | string[];
 
   constructor(status: number, code: string, message: string, details?: ApiError['details']) {
-    super(message);
+    super(translateUiText(message));
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
@@ -13,9 +14,9 @@ export class ApiError extends Error {
 
   /** Flattens zod-style details into lines a form can render. */
   get lines(): string[] {
-    if (!this.details) return [this.message];
+    if (!Array.isArray(this.details)) return [this.message];
     return this.details.map((detail) =>
-      typeof detail === 'string' ? detail : `${detail.path}: ${detail.message}`,
+      typeof detail === 'string' ? translateUiText(detail) : `${translateUiText(detail.path)}: ${translateUiText(detail.message)}`,
     );
   }
 }

@@ -1,0 +1,2953 @@
+[
+  {
+    "name": "login",
+    "file": "01-login.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "home",
+    "file": "02-home.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "friends",
+    "file": "03-friends.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "directory",
+    "file": "04-directory.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "network",
+    "file": "05-network.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "notifications",
+    "file": "06-notifications.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "account-menu",
+    "file": "07-account-menu.png",
+    "text": [
+      "English"
+    ],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "profile",
+    "file": "08-profile.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "security",
+    "file": "09-security.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "audio",
+    "file": "10-audio.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "notification-preferences",
+    "file": "11-notification-preferences.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "sessions",
+    "file": "12-sessions.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "appearance",
+    "file": "13-appearance.png",
+    "text": [
+      "English"
+    ],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "channels",
+    "file": "14-channels.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "voice-lobby",
+    "file": "15-voice-lobby.png",
+    "text": [
+      "Voice Lounge"
+    ],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "voice-audio",
+    "file": "16-voice-audio.png",
+    "text": [
+      "Voice Lounge"
+    ],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "voice-options",
+    "file": "17-voice-options.png",
+    "text": [
+      "Voice Lounge"
+    ],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "create-channel",
+    "file": "18-create-channel.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge",
+      "video-ideas"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "channel-settings",
+    "file": "19-channel-settings.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "chat",
+    "file": "20-chat.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "chat-light",
+    "file": "21-chat-light.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "emoji",
+    "file": "22-emoji.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "message-tools",
+    "file": "23-message-tools.png",
+    "text": [
+      "GIF"
+    ],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "code-tool",
+    "file": "24-code-tool.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "poll-tool",
+    "file": "25-poll-tool.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "sticker-tool",
+    "file": "26-sticker-tool.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "members",
+    "file": "27-members.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-menu",
+    "file": "28-server-menu.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-settings-menu",
+    "file": "29-server-settings-menu.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-overview",
+    "file": "30-server-overview.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-roles",
+    "file": "31-server-roles.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-onboarding",
+    "file": "32-server-onboarding.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-members",
+    "file": "33-server-members.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-invites",
+    "file": "34-server-invites.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-channels",
+    "file": "35-server-channels.png",
+    "text": [
+      "announcements",
+      "Voice Lounge"
+    ],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-expressions",
+    "file": "36-server-expressions.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge",
+      "party_parrot"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-apps",
+    "file": "37-server-apps.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-bots",
+    "file": "38-server-bots.png",
+    "text": [
+      "{mention}، به **{server}** خوش آمدی! شما عضو شمارهٔ {memberCount} هستی.",
+      "{username}",
+      "{displayName}",
+      "{mention}",
+      "{userId}",
+      "{avatar}",
+      "{server}",
+      "{memberCount}",
+      "{joinedAt}",
+      "{createdAt}",
+      "خدانگهدار {displayName}؛ از همراهی تو در {server} سپاسگزاریم."
+    ],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "bot-moderation",
+    "file": "39-bot-moderation.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "مالک و اعضای دارای مجوز مدیریت معاف‌اند. راهنمای فرمان‌ها: /bothelp"
+    ],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "bot-actions",
+    "file": "40-bot-actions.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "bot-levels",
+    "file": "41-bot-levels.png",
+    "text": [
+      "/tempvoice · /templink · /profile · /credits · /daily · /rep · /colors",
+      "/rank · /top"
+    ],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "bot-embeds",
+    "file": "42-bot-embeds.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "bot-tickets",
+    "file": "43-bot-tickets.png",
+    "text": [
+      "اعضا می‌توانند از منوی GIF و استیکر تیکت باز کنند."
+    ],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-community",
+    "file": "44-server-community.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-safety",
+    "file": "45-server-safety.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-insights",
+    "file": "46-server-insights.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "server-danger",
+    "file": "47-server-danger.png",
+    "text": [],
+    "attributes": [
+      "ویرایش #announcements",
+      "ویرایش Voice Lounge"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-menu",
+    "file": "48-admin-menu.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-overview",
+    "file": "49-admin-overview.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-users",
+    "file": "50-admin-users.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-create-user",
+    "file": "51-admin-create-user.png",
+    "text": [],
+    "attributes": [
+      "sam",
+      "sam@example.com"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-edit-user",
+    "file": "52-admin-edit-user.png",
+    "text": [
+      "ویرایش Moderator Bot",
+      "YouTube",
+      "Twitch",
+      "Kick",
+      "Instagram",
+      "TikTok"
+    ],
+    "attributes": [
+      "ویرایش Moderator Bot"
+    ],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-groups",
+    "file": "53-admin-groups.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-moderation",
+    "file": "54-admin-moderation.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-integrations",
+    "file": "55-admin-integrations.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-operations",
+    "file": "56-admin-operations.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-platform",
+    "file": "57-admin-platform.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-settings",
+    "file": "58-admin-settings.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  },
+  {
+    "name": "admin-audit",
+    "file": "59-admin-audit.png",
+    "text": [],
+    "attributes": [],
+    "layoutChecks": [
+      {
+        "width": 320,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 320,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 360,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 412,
+        "direction": "ltr",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "rtl",
+        "issues": []
+      },
+      {
+        "width": 768,
+        "direction": "ltr",
+        "issues": []
+      }
+    ]
+  }
+]

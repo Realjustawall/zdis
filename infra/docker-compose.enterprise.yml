@@ -65,6 +65,7 @@ services:
       - "${HTTP_PORT:-8080}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../data/clients:/srv/zdis-clients:ro
     depends_on:
       app-1:
         condition: service_healthy

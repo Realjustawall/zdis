@@ -1,3 +1,4 @@
+import { translateUiText } from '../lib/localize';
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { api, ApiError } from '../lib/api';
 import { formatBytes } from '../lib/format';
@@ -6,6 +7,7 @@ import { useSession } from '../store/session';
 import type { Attachment, GroupExpression, Message, PublicUser, ServerRole } from '../types';
 import { useI18n } from '../lib/i18n';
 import { Icon } from './Icon';
+import { Modal, ResponsivePopover } from './ui';
 import { MediaPicker } from './MediaPicker';
 import { SupportTickets } from './SupportTickets';
 import { SelfRoles } from './SelfRoles';
@@ -158,6 +160,7 @@ export function Composer({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [mediaOpen,setMediaOpen]=useState<'gif'|'sticker'|null>(null);
   const [emojiQuery, setEmojiQuery] = useState('');
@@ -511,7 +514,7 @@ export function Composer({
   async function schedule() {
     const content = text.trim();
     if (!content && pending.length === 0) return;
-    const minutesInput = window.prompt(fa ? 'پیام چند دقیقه دیگر ارسال شود؟' : 'Send in how many minutes?', '10');
+    const minutesInput = window.prompt(translateUiText(fa ? 'پیام چند دقیقه دیگر ارسال شود؟' : 'Send in how many minutes?'), '10');
     if (minutesInput === null) return;
     const minutes = Number(minutesInput);
     if (!Number.isFinite(minutes) || minutes <= 0) {
@@ -780,7 +783,7 @@ export function Composer({
       ) : null}
 
       <div
-        className={`composer${editing || replyTo || pending.length ? ' has-context' : ''}`}
+        className={`composer${mobileToolsOpen ? ' mobile-tools-open' : ''}${editing || replyTo || pending.length ? ' has-context' : ''}`}
         style={{ position: 'relative' }}
         onPointerDown={(event) => {
           if (event.target instanceof Element && event.target.closest('button')) event.preventDefault();
@@ -789,6 +792,10 @@ export function Composer({
           if (event.target instanceof Element && event.target.closest('button')) event.preventDefault();
         }}
       >
+        <button className="composer-btn composer-more" title={fa ? 'ابزارهای پیام' : 'Message tools'}
+          aria-expanded={mobileToolsOpen} onClick={() => setMobileToolsOpen(open => !open)}>
+          <Icon name={mobileToolsOpen ? 'close' : 'add'} size={22} />
+        </button>
         {uploadsEnabled ? (
           <>
             <input
@@ -808,7 +815,7 @@ export function Composer({
               {uploading ? <span className="spinner tiny" /> : <Icon name="add" size={21} />}
             </button>
             <button
-              className={`composer-btn${recording ? ' danger' : ''}`}
+              className={`composer-btn${recording ? ' danger composer-recording' : ''}`}
               onClick={() => recording ? stopVoiceMessage() : void startVoiceMessage()}
               disabled={busy || uploading}
               title={recording ? 'Stop voice recording' : secureMode ? 'Record an end-to-end encrypted voice message' : 'Record voice message'}
@@ -889,8 +896,25 @@ export function Composer({
         <button className="composer-btn" title={fa?'استیکر':'Stickers'} disabled={busy} onClick={()=>{setMediaOpen(v=>v==='sticker'?null:'sticker');setEmojiOpen(false);setCodeOpen(false);}}><Icon name="tag" size={19}/></button>
         {groupId?<SupportTickets groupId={groupId}/>:null}
         {groupId?<SelfRoles groupId={groupId}/>:null}
-        {mediaOpen?<MediaPicker kind={mediaOpen} expressions={expressions} onPick={token=>insertAtCaret(token,true)} onClose={()=>setMediaOpen(null)}/>:null}
+        {mediaOpen?<ResponsivePopover title={mediaOpen === 'gif' ? 'GIF' : (fa ? 'استیکرها' : 'Stickers')} onClose={() => setMediaOpen(null)}><MediaPicker kind={mediaOpen} expressions={expressions} onPick={token=>insertAtCaret(token,true)} onClose={()=>setMediaOpen(null)}/></ResponsivePopover>:null}
+        {mobileToolsOpen ? <Modal title={fa ? 'ابزارهای پیام' : 'Message tools'} onClose={() => setMobileToolsOpen(false)} className="message-tools-modal">
+          <div className="message-tools-list">
+            {groupId ? <><SupportTickets groupId={groupId} menuItem /><SelfRoles groupId={groupId} menuItem /></> : null}
+            {uploadsEnabled ? <>
+              <button className="picker-row" onClick={() => { setMobileToolsOpen(false); fileRef.current?.click(); }}><Icon name="add" size={22} />{fa ? 'پیوست عکس یا فایل' : 'Attach photo or file'}</button>
+              <button className="picker-row" onClick={() => { setMobileToolsOpen(false); recording ? stopVoiceMessage() : void startVoiceMessage(); }}><Icon name="microphone" size={22} />{recording ? (fa ? 'پایان ضبط' : 'Stop recording') : (fa ? 'پیام صوتی' : 'Voice message')}</button>
+            </> : null}
+            <button className="picker-row" onClick={() => { setMobileToolsOpen(false); setCodeOpen(true); }}><Icon name="code" size={22} />{fa ? 'ارسال قطعه‌کد' : 'Send a code block'}</button>
+            <button className="picker-row" onClick={() => { setMobileToolsOpen(false); setMediaOpen('gif'); }}>GIF</button>
+            <button className="picker-row" onClick={() => { setMobileToolsOpen(false); setMediaOpen('sticker'); }}><Icon name="tag" size={22} />{fa ? 'استیکرها' : 'Stickers'}</button>
+            {!editing ? <>
+              <button className="picker-row" onClick={() => { setMobileToolsOpen(false); setPollQuestion(text.trim()); setPollOpen(true); }}><Icon name="poll" size={22} />{fa ? 'ساخت نظرسنجی' : 'Create poll'}</button>
+              <button className="picker-row" disabled={!text.trim() && pending.length === 0} onClick={() => { setMobileToolsOpen(false); void schedule(); }}><Icon name="calendar" size={22} />{fa ? 'زمان‌بندی پیام' : 'Schedule message'}</button>
+            </> : null}
+          </div>
+        </Modal> : null}
         {emojiOpen ? (
+          <ResponsivePopover title={fa ? 'شکلک‌ها' : 'Emoji'} onClose={() => setEmojiOpen(false)}>
           <div className="emoji-popover emoji-picker" role="dialog" aria-label={fa ? 'انتخاب شکلک' : 'Choose an emoji'}>
             <div className="emoji-picker-head">
               <strong>{fa ? 'شکلک‌ها' : 'Emoji'}</strong>
@@ -980,10 +1004,13 @@ export function Composer({
               </>
             ) : null}
           </div>
-        ) : null}
+                  </ResponsivePopover>
+      ) : null}
 
         {codeOpen ? (
+          <ResponsivePopover title={fa ? 'ارسال قطعه‌کد' : 'Send code'} onClose={() => setCodeOpen(false)}>
           <div className="code-composer-popover">
+            <button className="mobile-settings-back" onClick={() => setCodeOpen(false)}><Icon name="arrowLeft" size={20} />{fa ? 'بازگشت' : 'Back'}</button>
             <div>
               <strong>{fa ? 'ارسال کد' : 'Send code'}</strong>
               <small>
@@ -1009,12 +1036,13 @@ export function Composer({
               ].map(([language, label]) => (
                 <button key={language || 'plain'} type="button" onClick={() => insertCodeBlock(language)}>
                   <Icon name="code" size={15} />
-                  {label}
+                  <span data-no-auto-translate>{label}</span>
                 </button>
               ))}
             </div>
-            <span>{fa ? 'میانبر: Ctrl + Shift + C' : 'Shortcut: Ctrl + Shift + C'}</span>
+            <span>{fa ? 'میانبر: ' : 'Shortcut: '}<kbd data-no-auto-translate>Ctrl + Shift + C</kbd></span>
           </div>
+          </ResponsivePopover>
         ) : null}
 
         {mentionMatches.length > 0 ? (
@@ -1033,7 +1061,7 @@ export function Composer({
               </button>
             ))}
           </div>
-        ) : null}
+      ) : null}
         {text.startsWith('/') && !text.includes(' ') && commands.length > 0 ? (
           <div className="emoji-popover" style={{ left: 0, right: 'auto', width: 320 }}>
             {commands
@@ -1098,6 +1126,7 @@ export function Composer({
         </span>
       </div>
       {pollOpen ? (
+          <ResponsivePopover title={fa ? 'ساخت نظرسنجی' : 'Create poll'} onClose={() => setPollOpen(false)}>
         <div className="poll-popover" role="dialog" aria-label={fa ? 'ساخت نظرسنجی' : 'Create poll'}>
           <div className="poll-popover-head">
             <div className="poll-popover-title"><span><Icon name="poll" size={18} /></span><div><strong>{fa ? 'ساخت نظرسنجی' : 'Create a poll'}</strong><small>{fa ? 'نظر جامعه را سریع دریافت کنید' : 'Get the community’s pulse'}</small></div></div>
@@ -1129,6 +1158,7 @@ export function Composer({
             <button className="btn primary small" onClick={() => void createPoll()} disabled={sending}>{fa ? 'ساخت نظرسنجی' : 'Create poll'}</button>
           </div>
         </div>
+                </ResponsivePopover>
       ) : null}
     </div>
   );

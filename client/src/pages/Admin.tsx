@@ -1,9 +1,12 @@
+import { translateUiText } from '../lib/localize';
+import { useI18n } from '../lib/i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { Avatar, Modal, Confirm, Alert, ErrorList, RoleBadge, Spinner, EmptyState } from '../components/ui';
 import { api, ApiError } from '../lib/api';
 import { formatBytes, formatFullTimestamp, formatRelative } from '../lib/format';
 import { toast } from '../store/toast';
 import { useSession } from '../store/session';
+import { useRealtime } from '../store/realtime';
 import { ThemeSwitcher } from '../components/ThemeSwitcher';
 import { AdminPlatform } from './AdminPlatform';
 import { AdminAnalytics } from './AdminAnalytics';
@@ -70,16 +73,28 @@ const TAB_META: Record<Tab, { label: string; description: string; icon: IconName
 };
 
 export function Admin({ onExit }: { onExit: () => void }) {
+  const { locale } = useI18n();
   const user = useSession((state) => state.user)!;
   const fullAdmin = user.role === 'admin' || user.badges.some((badge) => badge.id === 'admin');
+  const [detailOpen, setDetailOpen] = useState(false);
   const [tab, setTab] = useState<Tab>(fullAdmin ? 'overview' : 'moderation');
 
+  useEffect(() => {
+    const back = (event: Event) => {
+      if (document.querySelector('[aria-modal="true"]')) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (detailOpen) setDetailOpen(false); else onExit();
+    };
+    window.addEventListener('native:back', back, true);
+    return () => window.removeEventListener('native:back', back, true);
+  }, [detailOpen, onExit]);
+
   const tabs: Tab[] = fullAdmin
-    ? ['overview', 'users', 'groups', 'moderation', 'roles', 'integrations', 'operations', 'platform', 'settings', 'audit']
+    ? ['overview', 'users', 'groups', 'moderation', 'integrations', 'operations', 'platform', 'settings', 'audit']
     : ['moderation'];
 
   return (
-    <div className="admin admin-fa" dir="rtl" lang="fa">
+    <div className={`admin admin-fa${detailOpen ? ' mobile-detail-open' : ''}`} dir={locale === 'fa' ? 'rtl' : 'ltr'} lang={locale}>
       <nav className="admin-nav">
         <div className="admin-brand">
           <span className="admin-brand-mark">S</span>
@@ -93,7 +108,7 @@ export function Admin({ onExit }: { onExit: () => void }) {
           <button
             key={id}
             className={`nav-item${tab === id ? ' active' : ''}`}
-            onClick={() => setTab(id)}
+            onClick={() => { setTab(id); setDetailOpen(true); }}
             aria-label={TAB_META[id].label}
             title={TAB_META[id].label}
           >
@@ -121,6 +136,7 @@ export function Admin({ onExit }: { onExit: () => void }) {
             <p>{TAB_META[tab].description}</p>
           </div>
           <div className="admin-top-actions">
+            <button className="head-btn admin-mobile-back" onClick={() => setDetailOpen(false)} title="بخش‌های مدیریت" aria-label="بخش‌های مدیریت"><Icon name="arrowLeft" size={20} /></button>
             <span className="live-chip"><i /> سامانه آنلاین</span>
             <ThemeSwitcher compact />
             <Avatar name={user.displayName} id={user.id} src={user.avatarUrl} size={36} />
@@ -183,7 +199,7 @@ function OverviewTab() {
         <h3>توزیع نقش‌های سازمانی</h3>
         <p className="desc">تعداد حساب‌های فعال در هر سطح دسترسی</p>
         <div className="row wrap">
-          {(['admin', 'youtuber', 'member'] as PlatformRole[]).map((role) => (
+          {(['admin', 'member'] as PlatformRole[]).map((role) => (
             <span key={role} className="row" style={{ gap: 6 }}>
               <RoleBadge role={role} />
               <strong>{data.roles[role] ?? 0}</strong>
@@ -328,6 +344,14 @@ function UsersTab() {
     return () => clearTimeout(timer);
   }, [search, load]);
 
+  const socket = useRealtime(state => state.socket);
+  useEffect(() => {
+    const refresh = () => void load(search);
+    socket?.on('directory:changed', refresh);
+    socket?.on('user:updated', refresh);
+    return () => { socket?.off('directory:changed', refresh); socket?.off('user:updated', refresh); };
+  }, [socket, search, load]);
+
   return (
     <>
       <h2 className="section-title">مدیریت متمرکز کاربران</h2>
@@ -369,9 +393,9 @@ function UsersTab() {
                     <div className="identity">
                       <Avatar name={user.displayName} id={user.id} color={user.bannerColor} size={32} />
                       <div className="who">
-                        <div className="name">{user.displayName}</div>
+                        <div className="name"><span data-no-auto-translate>{user.displayName}</span></div>
                         <div className="sub">
-                          @{user.username} · {user.email}
+                          @<span data-no-auto-translate>{user.username}</span> · <span data-no-auto-translate>{user.email}</span>
                         </div>
                       </div>
                     </div>
@@ -783,7 +807,6 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
           onChange={(event) => set('role', event.target.value as PlatformRole)}
         >
           <option value="member">عضو — حضور در گروه‌های دعوت‌شده</option>
-          <option value="youtuber">سازنده — ساخت گروه و مدیریت تیم</option>
           <option value="admin">مدیر — دسترسی کامل به مرکز فرماندهی</option>
         </select>
       </div>
@@ -850,7 +873,7 @@ function EditUserModal({
       api.get<{ badges: Badge[] }>('/api/admin/badges'),
       api.get<{ linkedAccounts: LinkedAccount[] }>(`/api/network/linked-accounts/${user.id}`),
     ]).then(([badgeData, linkData]) => {
-      setBadgeCatalogue(badgeData.badges.filter((badge) => badge.kind === 'primary'));
+      setBadgeCatalogue(badgeData.badges.filter((badge) => badge.kind === 'primary' && !['staff', 'developer', 'streamer'].includes(badge.id)));
       setLinkedAccounts(linkData.linkedAccounts);
     });
   }, [user.id]);
@@ -935,7 +958,6 @@ function EditUserModal({
           disabled={isSelf}
         >
           <option value="member">عضو</option>
-          <option value="youtuber">سازنده</option>
           <option value="admin">مدیر</option>
         </select>
         {isSelf ? <span className="hint">نمی‌توانید نقش پایه خودتان را تغییر دهید.</span> : null}
@@ -1406,16 +1428,16 @@ function ModerationTab() {
     report: ModerationReport,
     action: 'timeout' | 'ban' | 'untimeout' | 'unban' | 'shadowban' | 'unshadow' | 'slow' | 'unslow',
   ) {
-    const reason = window.prompt(`Reason for ${action}:`, report.reason);
+    const reason = window.prompt(translateUiText(`Reason for ${action}:`), report.reason);
     if (!reason) return;
     const durationMinutes =
       action === 'timeout'
-        ? Number(window.prompt('Timeout duration in minutes:', '60') ?? 0)
+        ? Number(window.prompt(translateUiText('Timeout duration in minutes:'), '60') ?? 0)
         : action === 'slow'
-          ? Number(window.prompt('Slow-mode duration in minutes:', '60') ?? 0)
+          ? Number(window.prompt(translateUiText('Slow-mode duration in minutes:'), '60') ?? 0)
         : null;
     const intervalSeconds =
-      action === 'slow' ? Number(window.prompt('Seconds between messages:', '30') ?? 0) : null;
+      action === 'slow' ? Number(window.prompt(translateUiText('Seconds between messages:'), '30') ?? 0) : null;
     try {
       await api.post(`/api/moderation/users/${report.authorId}/actions`, {
         action,
@@ -1544,7 +1566,7 @@ function ModerationTab() {
                   className={`btn small${decision === 'approved' ? ' primary' : ' danger'}`}
                   key={decision}
                   onClick={async () => {
-                    const note = window.prompt(`Decision note for ${decision}:`);
+                    const note = window.prompt(translateUiText(`Decision note for ${decision}:`));
                     if (!note) return;
                     await api.patch(`/api/moderation/appeals/${appeal.id}`, {
                       status: decision,
@@ -1654,11 +1676,11 @@ function RolesTab() {
                   <button
                     className="btn small"
                     onClick={() => {
-                      const nextName = window.prompt('نام نقش:', role.name);
+                      const nextName = window.prompt(translateUiText('نام نقش:'), role.name);
                       if (!nextName) return;
-                      const nextDescription = window.prompt('توضیح نقش:', role.description ?? '') ?? role.description;
+                      const nextDescription = window.prompt(translateUiText('توضیح نقش:'), role.description ?? '') ?? role.description;
                       const rawCapabilities = window.prompt(
-                        'مجوزها با ویرگول (admin, moderate, debug, stream):',
+                        translateUiText('مجوزها با ویرگول (admin, moderate, debug, stream):'),
                         role.capabilities.join(', '),
                       );
                       if (rawCapabilities === null) return;
@@ -1685,7 +1707,7 @@ function RolesTab() {
                   <button
                     className="btn danger small"
                     onClick={() => {
-                      if (!window.confirm(`نقش «${role.name}» حذف شود؟`)) return;
+                      if (!window.confirm(translateUiText(`نقش «${role.name}» حذف شود؟`))) return;
                       void api
                         .del(`/api/admin/roles/${role.id}`)
                         .then(load)
@@ -1943,7 +1965,7 @@ function IntegrationsTab() {
             <button
               className="btn primary small"
               onClick={() => {
-                const name = window.prompt('نام کلید:', 'اتوماسیون مدیریت');
+                const name = window.prompt(translateUiText('نام کلید:'), 'اتوماسیون مدیریت');
                 if (!name) return;
                 void reveal(api.post('/api/integrations/api-keys', {
                   name,
@@ -1983,7 +2005,7 @@ function IntegrationsTab() {
           <div className="compact-list">
             {bots.map((bot) => (
               <div key={bot.id}>
-                <span><strong>{bot.name}</strong><small>@{bot.username}</small></span>
+                <span><strong>{bot.name}</strong><small>@<span data-no-auto-translate>{bot.username}</span></small></span>
                 <span className={`status-dot-text ${bot.active ? 'ok' : 'down'}`}>{bot.active ? 'فعال' : 'غیرفعال'}</span>
                 {bot.active ? (
                   <>
@@ -2022,8 +2044,8 @@ function IntegrationsTab() {
           <button
             className="btn primary small"
             onClick={() => {
-              const name = window.prompt('نام برنامه:', 'ZDIS');
-              const redirect = name ? window.prompt('Redirect URI:', 'https://example.com/oauth/callback') : null;
+              const name = window.prompt(translateUiText('نام برنامه:'), 'ZDIS');
+              const redirect = name ? window.prompt(translateUiText('Redirect URI:'), 'https://example.com/oauth/callback') : null;
               if (!name || !redirect) return;
               void reveal(
                 api
@@ -2062,8 +2084,8 @@ function IntegrationsTab() {
           <button
             className="btn primary small"
             onClick={async () => {
-              const channelId = window.prompt('شناسه کانال:');
-              const botId = channelId ? window.prompt('شناسه ربات نصب‌شده:') : null;
+              const channelId = window.prompt(translateUiText('شناسه کانال:'));
+              const botId = channelId ? window.prompt(translateUiText('شناسه ربات نصب‌شده:')) : null;
               if (!channelId || !botId) return;
               try {
                 const result = await api.post<{ url: string }>('/api/integrations/incoming', {
@@ -2098,11 +2120,11 @@ function IntegrationsTab() {
           <button
             className="btn primary small"
             onClick={() => {
-              const endpoint = window.prompt('نشانی HTTPS مقصد:');
-              const targetId = endpoint ? window.prompt('شناسه کانال یا گفتگو:') : null;
+              const endpoint = window.prompt(translateUiText('نشانی HTTPS مقصد:'));
+              const targetId = endpoint ? window.prompt(translateUiText('شناسه کانال یا گفتگو:')) : null;
               if (!endpoint || !targetId) return;
-              const targetType = window.confirm('مقصد یک کانال است؟') ? 'channel' : 'conversation';
-              const permissionLevel = window.prompt('سطح مدیریت: manageWebhooks, manageGroup یا owner', 'manageWebhooks');
+              const targetType = window.confirm(translateUiText('مقصد یک کانال است؟')) ? 'channel' : 'conversation';
+              const permissionLevel = window.prompt(translateUiText('سطح مدیریت: manageWebhooks, manageGroup یا owner'), 'manageWebhooks');
               if (!permissionLevel || !['manageWebhooks', 'manageGroup', 'owner'].includes(permissionLevel)) return;
               void reveal(api.post('/api/integrations/webhooks', {
                 name: 'Webhook مدیریت',
@@ -2125,7 +2147,7 @@ function IntegrationsTab() {
               <small>{webhook.permissionLevel ?? 'manageWebhooks'}</small>
               <button className="btn small" onClick={() => void api.post(`/api/integrations/webhooks/${webhook.id}/test`).then(() => toast.success('رویداد آزمایشی در صف قرار گرفت.'))}>تست</button>
               <button className="btn small" onClick={async () => {
-                const endpoint = window.prompt('نشانی HTTPS مقصد جدید:', webhook.endpoint);
+                const endpoint = window.prompt(translateUiText('نشانی HTTPS مقصد جدید:'), webhook.endpoint);
                 if (!endpoint) return;
                 await api.patch(`/api/integrations/webhooks/${webhook.id}`, { endpoint });
                 await load();
@@ -2139,11 +2161,11 @@ function IntegrationsTab() {
                     );
                     const failed = result.deliveries.find((delivery) => delivery.status === 'failed');
                     window.alert(
-                      result.deliveries.slice(0, 10).map((delivery) =>
+                      translateUiText(result.deliveries.slice(0, 10).map((delivery) =>
                         `${delivery.status} · ${delivery.attempts} attempt(s)${delivery.error ? ` · ${delivery.error}` : ''}`,
-                      ).join('\n') || 'No deliveries yet.',
+                      ).join('\n') || 'No deliveries yet.'),
                     );
-                    if (failed && window.confirm('Retry the newest failed delivery?')) {
+                    if (failed && window.confirm(translateUiText('Retry the newest failed delivery?'))) {
                       await api.post(`/api/integrations/webhooks/${webhook.id}/deliveries/${failed.id}/retry`);
                       toast.success('تحویل مجدد در صف قرار گرفت.');
                     }
@@ -2658,7 +2680,7 @@ function AuditTab() {
   }, [loadLogs, filter]);
 
   async function removeLog(log: AuditLog) {
-    const reason = window.prompt('Why should this entry be removed from the admin view? (optional)', 'Administrative cleanup');
+    const reason = window.prompt(translateUiText('Why should this entry be removed from the admin view? (optional)'), 'Administrative cleanup');
     if (reason === null) return;
     try {
       await api.del(`/api/admin/audit/${log.id}`, { reason: reason.trim() || null });

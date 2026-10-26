@@ -2,7 +2,6 @@ import { getDb, likeClause, likeValue } from '../db/index.js';
 import { cache } from '../cache/index.js';
 import { newId } from '../lib/ids.js';
 import { hashPassword, passwordProblems } from '../lib/password.js';
-import { provisionE2eeIdentity } from './e2eeKeys.js';
 import { badRequest, conflict, notFound } from '../lib/errors.js';
 
 const PUBLIC_COLUMNS = `id, username, display_name, role, avatar_url, banner_color, bio,
@@ -258,46 +257,54 @@ export async function createUser({
   const id = newId();
   const passwordHash = await hashPassword(password);
 
-  await db.tx(async (tx) => {
-    await tx.run(
-      `INSERT INTO users (
-         id, email, phone, username, first_name, last_name, nickname,
-         display_name, password_hash, password_changed_at,
-         must_change_password, role, bio, banner_color, presence, is_active,
-         created_by, owner_streamer_id, created_at, updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'offline', 1, ?, ?, ?, ?)`,
-      [
-        id,
-        normalizedEmail,
-        normalizedPhone,
-        normalizedUsername,
-        firstName ? String(firstName).trim() : null,
-        lastName ? String(lastName).trim() : null,
-        nickname ? String(nickname).trim() : null,
-        String(displayName).trim(),
-        passwordHash,
-        now,
-        mustChangePassword ? 1 : 0,
-        role,
-        bio,
-        pickBannerColor(normalizedUsername),
-        createdBy,
-        ownerStreamerId,
-        now,
-        now,
-      ],
-    );
-    const capabilityBadge = role === 'admin' ? 'admin' : role === 'youtuber' ? 'streamer' : null;
-    if (capabilityBadge) {
+  try {
+    await db.tx(async (tx) => {
       await tx.run(
-        `INSERT INTO user_badges (user_id, badge_id, granted_by, granted_at)
-         VALUES (?, ?, ?, ?)`,
-        [id, capabilityBadge, createdBy, now],
+        `INSERT INTO users (
+           id, email, phone, username, first_name, last_name, nickname,
+           display_name, password_hash, password_changed_at,
+           must_change_password, role, bio, banner_color, presence, is_active,
+           created_by, owner_streamer_id, created_at, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'offline', 1, ?, ?, ?, ?)`,
+        [
+          id,
+          normalizedEmail,
+          normalizedPhone,
+          normalizedUsername,
+          firstName ? String(firstName).trim() : null,
+          lastName ? String(lastName).trim() : null,
+          nickname ? String(nickname).trim() : null,
+          String(displayName).trim(),
+          passwordHash,
+          now,
+          mustChangePassword ? 1 : 0,
+          role,
+          bio,
+          pickBannerColor(normalizedUsername),
+          createdBy,
+          ownerStreamerId,
+          now,
+          now,
+        ],
       );
-    }
-  });
+      const capabilityBadge = role === 'admin' ? 'admin' : role === 'youtuber' ? 'streamer' : null;
+      if (capabilityBadge) {
+        await tx.run(
+          `INSERT INTO user_badges (user_id, badge_id, granted_by, granted_at)
+           VALUES (?, ?, ?, ?)`,
+          [id, capabilityBadge, createdBy, now],
+        );
+      }
+    });
 
-  await provisionE2eeIdentity(id);
+  } catch (error) {
+    // A concurrent administrator may claim a unique email/username after the
+    // friendly preflight checks. Roll back and return a conflict, never a 500.
+    if (error.code === '23505' || /UNIQUE constraint failed: users\./.test(error.message)) {
+      throw conflict('An account with that email, username or phone already exists.');
+    }
+    throw error;
+  }
 
   return findUserById(id);
 }
@@ -371,7 +378,11 @@ export async function updateUser(id, patch) {
 
   await db.run(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, params);
   await invalidateUser(id);
-  return findUserById(id);
+  const updated = await findUserById(id);
+  const { getIo } = await import('../realtime/index.js');
+  getIo()?.emit('user:updated', { user: toPublicUser(await withBadges(updated)) });
+  if ('presence' in patch) getIo()?.emit('presence:update', { userId: id, presence: updated.presence, at: Date.now() });
+  return updated;
 }
 
 export async function setPassword(id, password, { mustChange = false, skipPolicy = false } = {}) {

@@ -2,9 +2,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const hostedUrl = process.env.CAPACITOR_SERVER_URL?.trim();
 
+if (hostedUrl && new URL(hostedUrl).protocol !== 'https:') throw new Error('Dedicated clients require HTTPS.');
+
 const config: CapacitorConfig = {
-  appId: 'com.zdis.chat',
-  appName: 'ZDIS',
+  appId: process.env.ZDIS_APP_ID || 'com.zdis.chat',
+  appName: process.env.ZDIS_APP_NAME || 'ZDIS',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: hostedUrl ? {

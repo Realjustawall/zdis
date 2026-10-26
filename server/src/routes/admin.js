@@ -7,7 +7,6 @@ import {
   emailSchema,
   usernameSchema,
   displayNameSchema,
-  roleSchema,
 } from '../lib/validate.js';
 import { requireAuth, requireAdmin, clientIp } from '../middleware/auth.js';
 import { adminLimiter } from '../middleware/rateLimit.js';
@@ -19,6 +18,7 @@ import {
   listUsersForAdmin,
   findUserById,
   toAdminUser,
+  toPublicUser,
   countAdmins,
   countUsers,
   withBadges,
@@ -66,9 +66,15 @@ import { resetEnterpriseAuthClients } from '../services/enterpriseAuth.js';
 import { fishAudioStatus, listFishAudioModels } from '../services/fishAudio.js';
 
 export const adminRouter = express.Router();
-import {ACCESS_FEATURES,ACCESS_LIMITS,userAccess} from '../services/userAccess.js';
-
+// Retire alternate platform privilege assignment; group roles remain group-scoped.
 adminRouter.use(requireAuth, requireAdmin, adminLimiter);
+adminRouter.use((req, _res, next) => {
+  if (req.method !== 'GET' && (/^\/roles(?:\/|$)/.test(req.path) || /^\/users\/[^/]+\/roles/.test(req.path))) {
+    return next(badRequest('Use the admin or member account role.'));
+  }
+  return next();
+});
+import {ACCESS_FEATURES,ACCESS_LIMITS,userAccess} from '../services/userAccess.js';
 
 adminRouter.get('/users/:id/access',asyncRoute(async(req,res)=>{
  const id=parse(idSchema,req.params.id);if(!await findUserById(id))throw notFound('User not found.');
@@ -349,7 +355,7 @@ adminRouter.get(
     const query = parse(
       z.object({
         search: z.string().trim().max(64).optional().default(''),
-        role: roleSchema.optional(),
+        role: z.enum(['admin', 'member', 'youtuber']).transform(value => value === 'youtuber' ? 'member' : value).optional(),
         limit: z.coerce.number().int().min(1).max(500).default(200),
         offset: z.coerce.number().int().min(0).default(0),
       }),
@@ -475,7 +481,7 @@ const createUserSchema = z.object({
   username: usernameSchema,
   displayName: displayNameSchema,
   password: z.string().min(1).max(200),
-  role: roleSchema.default('member'),
+  role: z.enum(['admin', 'member', 'youtuber']).transform(value => value === 'youtuber' ? 'member' : value).default('member'),
   bio: z.string().trim().max(300).nullable().optional(),
   mustChangePassword: z.boolean().default(true),
 });
@@ -506,6 +512,7 @@ adminRouter.post(
       ip: clientIp(req),
     });
 
+    getIo()?.emit('directory:changed', {});
     return res.status(201).json({ user: toAdminUser(await withBadges(user)) });
   }),
 );
@@ -514,7 +521,7 @@ const updateUserSchema = z.object({
   email: emailSchema.optional(),
   username: usernameSchema.optional(),
   displayName: displayNameSchema.optional(),
-  role: roleSchema.optional(),
+  role: z.enum(['admin', 'member', 'youtuber']).transform(value => value === 'youtuber' ? 'member' : value).optional(),
   bio: z.string().trim().max(300).nullable().optional(),
   isActive: z.boolean().optional(),
 });
@@ -580,6 +587,7 @@ adminRouter.patch(
       ip: clientIp(req),
     });
 
+    getIo()?.emit('user:updated', { user: toPublicUser(await withBadges(user)) });
     return res.json({ user: toAdminUser(await withBadges(user)) });
   }),
 );
@@ -603,6 +611,12 @@ adminRouter.put(
     );
     const target = await findUserById(id);
     if (!target) throw notFound('User not found.');
+    if (badgeIds.some(badge => ['staff', 'developer', 'streamer'].includes(badge))) {
+      throw badRequest('Platform accounts support only admin and member roles.');
+    }
+    if (target.role === 'admin' && !badgeIds.includes('admin') && (await countAdmins()) <= 1) {
+      throw badRequest('This is the last administrator.');
+    }
     if (id === req.user.id && !badgeIds.includes('admin')) {
       throw badRequest('You cannot remove your own administrator badge.');
     }
@@ -619,7 +633,9 @@ adminRouter.put(
       meta: { badgeIds },
       ip: clientIp(req),
     });
-    return res.json({ badges, user: toAdminUser(await withBadges(await findUserById(id))) });
+    const updatedUser = await withBadges(await findUserById(id));
+    getIo()?.emit('user:updated', { user: toPublicUser(updatedUser) });
+    return res.json({ badges, user: toAdminUser(updatedUser) });
   }),
 );
 

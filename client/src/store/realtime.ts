@@ -1,6 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import { create } from 'zustand';
-import type { Presence, VoiceParticipant } from '../types';
+import type { Presence, PublicUser, VoiceParticipant } from '../types';
 
 type Listener = (payload: never) => void;
 
@@ -49,10 +49,19 @@ export const useRealtime = create<RealtimeState>((set, get) => ({
     });
 
     socket.on('connect', () => set({ connected: false }));
-    socket.on('disconnect', () => set({ connected: false }));
+    socket.on('disconnect', () => { lastTypingSentAt = 0; set({ connected: false, typing: {} }); });
+    socket.on('connect_error', () => set({ connected: false }));
 
-    socket.on('ready', (payload: { voice: Record<string, VoiceParticipant[]> }) => {
-      set({ connected: true, voice: payload.voice ?? {} });
+    socket.on('ready', (payload: { voice: Record<string, VoiceParticipant[]>; presence?: Record<string, Presence>; activities?: RealtimeState['activities'] }) => {
+      set({ connected: true, voice: payload.voice ?? {}, presence: payload.presence ?? {}, activities: payload.activities ?? {}, typing: {} });
+      void import('./voice').then(({ useVoice }) => useVoice.getState().recoverSignalling()).catch(() => undefined);
+      // Recover events missed while disconnected without a page refresh.
+      void import('./chat').then(async ({ useChat }) => {
+        const chat = useChat.getState();
+        await chat.loadInitial();
+        await Promise.all(Object.keys(chat.groupDetail).map(id => chat.loadGroup(id)));
+        if (chat.target) await chat.loadMessages(chat.target);
+      }).catch(() => undefined);
     });
     socket.on('voice:moved',async(payload:{fromChannelId:string;channelId:string})=>{
       const {useVoice}=await import('./voice');
@@ -60,6 +69,23 @@ export const useRealtime = create<RealtimeState>((set, get) => ({
       if(active&&active!==payload.fromChannelId)return;
       useVoice.getState().leave();
       await useVoice.getState().join(payload.channelId);
+    });
+
+    socket.on('user:updated', async ({ user }: { user: PublicUser }) => {
+      const { useChat } = await import('./chat');
+      const patch = <T extends PublicUser>(member: T): T => member.id === user.id ? { ...member, ...user } : member;
+      useChat.setState(state => ({
+        directory: state.directory.map(patch),
+        conversations: state.conversations.map(conversation => ({ ...conversation, members: conversation.members.map(patch) })),
+        groupDetail: Object.fromEntries(Object.entries(state.groupDetail).map(([id, detail]) => [id, { ...detail, members: detail.members.map(patch) }])),
+      }));
+      const { useSession } = await import('./session');
+      const me = useSession.getState().user;
+      if (me?.id === user.id) useSession.getState().setUser({ ...me, ...user });
+    });
+    socket.on('directory:changed', async () => {
+      const { useChat } = await import('./chat');
+      void useChat.getState().loadDirectory();
     });
 
     socket.on('presence:update', ({ userId, presence }: { userId: string; presence: Presence }) => {

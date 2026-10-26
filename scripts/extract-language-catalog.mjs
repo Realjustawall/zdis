@@ -1,88 +1,86 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const clientSourceRoot = path.join(root, 'client', 'src');
-const sourceRoots = [clientSourceRoot, path.join(root, 'server', 'src')];
-const outputRoot = path.join(clientSourceRoot, 'language');
-const rootOutputRoot = path.join(root, 'language');
-const files = [];
-
-function walk(directory) {
-  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    const full = path.join(directory, entry.name);
-    if (entry.isDirectory()) walk(full);
-    else if (/\.(tsx?|jsx?)$/.test(entry.name)) files.push(full);
-  }
-}
-
-function decode(value) {
-  return value
-    .replace(/\\(['"`\\])/g, '$1')
-    .replace(/\\n/g, ' ')
-    .replace(/\\t/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function visibleCandidate(value) {
-  const text = decode(value);
-  if (text.length < 2 || text.length > 240) return null;
-  if (/^(https?:\/\/|\/api\/|--|#[0-9a-f]{3,8}$)/i.test(text)) return null;
-  if (/[{};]|=>|\b(?:const|return|function|await|async|import|export|class|interface|SELECT|UPDATE|INSERT)\b/.test(text)) return null;
-  if (/^(?:[\W_]|\d|[\d\s:./?%#-])+$/.test(text)) return null;
-  if (/^(?:[.#/]|\(|\[|\{|')/.test(text)) return null;
-  if (/(?:var\(|rgba?\(|px\b|rem\b|vw\b|vh\b|\/api\/|window\.|event\.|current[A-Z]|api\.|set[A-Z]|\?\.)/.test(text)) return null;
-  if (/^[^\s]+\s+[^\s]+\s+[^\s]+$/.test(text) && /[.:/()[\]]/.test(text)) return null;
-  if (/^[\W_]+$/.test(text)) return null;
-  if (/^[A-Za-z0-9_./:@#?=&%+{}$()[\]-]+$/.test(text) && !/\s/.test(text)) {
-    const common = new Set([
-      'Add', 'Back', 'Ban', 'Cancel', 'Close', 'Copy', 'Create', 'Delete', 'Done',
-      'Edit', 'Loading', 'Manage', 'Next', 'Open', 'Remove', 'Reply', 'Report',
-      'Save', 'Search', 'Send', 'Settings', 'Share', 'Submit', 'Test', 'View',
-      'Yes', 'No', 'Owner', 'Admin', 'Moderator', 'Unknown', 'Expired', 'Never',
-    ]);
-    if (!common.has(text)) return null;
-  }
-  if (/^(fa|en|ltr|rtl|primary|secondary|small|large|true|false|null|undefined|user|channel|message|group|role|member|admin|open|closed|active|inactive)$/i.test(text)) return null;
-  return text;
-}
-
-for (const sourceRoot of sourceRoots) walk(sourceRoot);
+const outputDirectories = ['client/src/language', 'language'].map(dir => path.join(root, dir));
+const sourceRoots = ['client/src', 'server/src'].map(dir => path.join(root, dir));
 const strings = new Set();
-for (const file of files) {
-  let source = fs.readFileSync(file, 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '');
-  for (const match of source.matchAll(/>([^<>\n]{2,240})</g)) {
-    const value = visibleCandidate(match[1]);
-    if (value) strings.add(value);
+const pairs = new Map();
+const readable = value => {
+  const text = value.replace(/\s+/g, ' ').trim();
+  if (!text || text.length > 600 || !/[A-Za-z\u0600-\u06ff]/.test(text)) return null;
+  if (text.includes('class=') || text.includes('className=') || text.includes('getDb(') || /^[a-z]+(?:-[a-z]+){2,}$/.test(text)) return null;
+  if (/^(?:\/api\/|https?:\/\/|[.#][a-z-]+$|(?:AND|SELECT|UPDATE|INSERT|DELETE|JOIN|ORDER BY)\b)/.test(text)) return null;
+  if (/[{};]|=>/.test(text) && !/\{[A-Za-z]+\}/.test(text)) return null;
+  return text;
+};
+const add = value => { const text = readable(value); if (text) strings.add(text); };
+const uiAttributes = new Set(['title', 'placeholder', 'aria-label', 'alt', 'label', 'description']);
+const uiProperties = new Set(['title', 'label', 'description', 'placeholder', 'hint', 'help']);
+const excludedAttributes = new Set(['className','id','style','key','type','name','value','role','method','target','rel','src','href']);
+function scan(file) {
+  if (/\/(?:i18n|localize)\.tsx?$/.test(file)) return;
+  const source = ts.createSourceFile(file, fs.readFileSync(file,'utf8'), ts.ScriptTarget.Latest, true,
+    file.endsWith('.tsx') ? ts.ScriptKind.TSX : undefined);
+  const literal = node => node && ts.isStringLiteralLike(node);
+  const pair = (en, fa) => {
+    if (literal(en) && literal(fa) && /[A-Za-z]/.test(en.text) && /[\u0600-\u06ff]/.test(fa.text)) {
+      const key = readable(en.text); if (key) { strings.add(key); pairs.set(key, fa.text); }
+    }
+  };
+  function visit(node) {
+    if (ts.isJsxText(node)) add(node.text);
+    if (ts.isJsxAttribute(node) && uiAttributes.has(node.name.text) && literal(node.initializer)) add(node.initializer.text);
+    if (ts.isPropertyAssignment(node) && uiProperties.has(node.name.getText(source).replace(/['"]/g,'')) && literal(node.initializer)) add(node.initializer.text);
+    if (ts.isConditionalExpression(node)) {
+      let parent = node.parent, excluded = false;
+      while (parent && !ts.isSourceFile(parent)) {
+        if (ts.isJsxAttribute(parent)) { excluded = excludedAttributes.has(parent.name.text); break; }
+        if (ts.isCallExpression(parent) && parent.expression.getText(source) === 'classNames') { excluded = true; break; }
+        parent = parent.parent;
+      }
+      if (!excluded) {
+        pair(node.whenFalse, node.whenTrue);
+        // Only literal UI branches are collected; operator expressions and
+        // comparisons are never treated as translatable strings.
+        for (const branch of [node.whenTrue, node.whenFalse]) if (literal(branch) && /\s|[.!?…]/.test(branch.text)) add(branch.text);
+      }
+    }
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression.getText(source);
+      if (callee === 't' && node.arguments.length === 2) pair(node.arguments[0],node.arguments[1]);
+      if (/^(?:toast\.(?:info|error|success)|badRequest|forbidden|notFound|conflict|unauthorized|translateUiText|window\.(?:prompt|confirm|alert))$/.test(callee)) {
+        if (literal(node.arguments[0])) add(node.arguments[0].text);
+      }
+    }
+    ts.forEachChild(node,visit);
   }
-  for (const match of source.matchAll(/(['"`])((?:\\.|(?!\1)[^\n])*?)\1/g)) {
-    if (match[1] === '`' && match[2].includes('${')) continue;
-    const value = visibleCandidate(match[2]);
-    if (value) strings.add(value);
+  visit(source);
+}
+function walk(dir) {
+  for (const entry of fs.readdirSync(dir,{withFileTypes:true})) {
+    const file=path.join(dir,entry.name);
+    if(entry.isDirectory()) { if(entry.name!=='language') walk(file); }
+    else if(/\.(?:tsx?|jsx?)$/.test(file)) scan(file);
   }
 }
-
-const currentEn = JSON.parse(fs.readFileSync(path.join(outputRoot, 'en.json'), 'utf8'));
-const currentFa = JSON.parse(fs.readFileSync(path.join(outputRoot, 'fa.json'), 'utf8'));
-const existingEn = Object.fromEntries(Object.entries(currentEn).filter(([key]) => !key.startsWith('text.')));
-const existingFa = Object.fromEntries(Object.entries(currentFa).filter(([key]) => !key.startsWith('text.')));
-const catalog = Object.fromEntries([...strings].sort((a, b) => a.localeCompare(b)).map((value) => [`text.${value}`, value]));
-const preservedText = (current) => Object.fromEntries(
-  Object.keys(catalog)
-    .filter((key) => typeof current[key] === 'string')
-    .map((key) => [key, current[key]]),
-);
-const en = { ...catalog, ...preservedText(currentEn), ...existingEn };
-const fa = { ...catalog, ...preservedText(currentFa), ...existingFa };
-
-for (const directory of [outputRoot, rootOutputRoot]) {
-  fs.mkdirSync(directory, { recursive: true });
-  fs.writeFileSync(path.join(directory, 'en.json'), `${JSON.stringify(en, null, 2)}\n`);
-  fs.writeFileSync(path.join(directory, 'fa.json'), `${JSON.stringify(fa, null, 2)}\n`);
+sourceRoots.forEach(walk);
+const en = JSON.parse(fs.readFileSync(path.join(outputDirectories[0],'en.json'),'utf8'));
+const fa = JSON.parse(fs.readFileSync(path.join(outputDirectories[0],'fa.json'),'utf8'));
+// Preserve reviewed translations, including errors that originate on the server.
+const reviewed = Object.fromEntries(Object.entries(fa).filter(([key,value]) => key.startsWith('text.') && value !== en[key]));
+const keep = key => !key.startsWith('text.');
+const nextEn = Object.fromEntries(Object.entries(en).filter(([key])=>keep(key)));
+const nextFa = Object.fromEntries(Object.entries(fa).filter(([key])=>keep(key)));
+for(const key of new Set([...strings].map(value=>'text.'+value).concat(Object.keys(reviewed)))) {
+  nextEn[key] = en[key] ?? key.slice(5);
+  nextFa[key] = reviewed[key] ?? pairs.get(key.slice(5)) ?? nextEn[key];
 }
-
-console.log(`Extracted ${Object.keys(catalog).length} user-facing text candidates from ${files.length} client/server files.`);
+for (const dir of outputDirectories) {
+  fs.mkdirSync(dir,{recursive:true});
+  fs.writeFileSync(path.join(dir,'en.json'),JSON.stringify(nextEn,null,2)+'\n');
+  fs.writeFileSync(path.join(dir,'fa.json'),JSON.stringify(nextFa,null,2)+'\n');
+}
+console.log(`Extracted ${strings.size} UI/error strings with syntax-aware parsing; preserved ${Object.keys(reviewed).length} reviewed translations.`);

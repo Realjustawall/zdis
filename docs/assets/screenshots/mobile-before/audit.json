@@ -1,0 +1,657 @@
+[
+  {
+    "name": "login",
+    "file": "01-login.png",
+    "text": [
+      "ZDIS COMMUNITY",
+      "Welcome back",
+      "Sign in to continue to your community.",
+      "Use your email, phone number, or username."
+    ],
+    "attributes": []
+  },
+  {
+    "name": "home",
+    "file": "02-home.png",
+    "text": [],
+    "attributes": []
+  },
+  {
+    "name": "friends",
+    "file": "03-friends.png",
+    "text": [],
+    "attributes": []
+  },
+  {
+    "name": "directory",
+    "file": "04-directory.png",
+    "text": [
+      "admin",
+      "MB",
+      "Moderator Bot",
+      "BOT",
+      "zdis_moderator_bot",
+      "Official ZDIS automation",
+      "WB",
+      "Welcomer Bot",
+      "zdis_welcomer_bot"
+    ],
+    "attributes": [
+      "Moderator Bot",
+      "BOT",
+      "Verified bot",
+      "Welcomer Bot"
+    ]
+  },
+  {
+    "name": "network",
+    "file": "05-network.png",
+    "text": [
+      "Refresh",
+      "sqlite",
+      "Cache:",
+      "memory",
+      "Node:",
+      "min",
+      "Add friend",
+      "No friend activity yet.",
+      "New collab",
+      "No collaborations yet.",
+      "Request access",
+      "No roster access requests.",
+      "Accounts you provision are scoped to your groups.",
+      "0 created · unlimited for administrators",
+      "Provision account",
+      "Your roster is empty."
+    ],
+    "attributes": [
+      "https://… (optional)"
+    ]
+  },
+  {
+    "name": "notifications",
+    "file": "06-notifications.png",
+    "text": [
+      "New sign-in",
+      "A new browser or network signed in to your account. IP: 127.0.0.1"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "profile",
+    "file": "07-profile.png",
+    "text": [
+      "English",
+      "admin",
+      "office@intesho.com",
+      "Set activity",
+      "Clear"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "security",
+    "file": "08-security.png",
+    "text": [
+      "English",
+      "auth / new_login",
+      "Chrome در Android"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "audio",
+    "file": "09-audio.png",
+    "text": [
+      "English",
+      "Fish Audio روی این سرور تنظیم نشده است؛ دکمه بلندگو نمایش داده نمی‌شود."
+    ],
+    "attributes": []
+  },
+  {
+    "name": "notification-preferences",
+    "file": "10-notification-preferences.png",
+    "text": [
+      "English"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "sessions",
+    "file": "11-sessions.png",
+    "text": [
+      "English",
+      "Chrome در Android"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "appearance",
+    "file": "12-appearance.png",
+    "text": [
+      "English",
+      "admin",
+      "office@intesho.com",
+      "Set activity",
+      "Clear",
+      "discord",
+      "Discord midnight",
+      "The familiar blue and graphite workspace.",
+      "AMOLED black",
+      "Deep black surfaces for OLED screens.",
+      "Aurora violet",
+      "Violet accents with a soft midnight gradient.",
+      "Forest signal",
+      "A calm green interface for long sessions.",
+      "Sunset studio",
+      "Warm coral controls over a deep plum base.",
+      "Tokyo night",
+      "Electric blue and violet over an inky navy workspace.",
+      "Graphite mono",
+      "Near-black neutral surfaces with quiet silver controls.",
+      "Abyss blue",
+      "Deep ocean surfaces with crisp cyan highlights.",
+      "Crimson noir",
+      "Dark charcoal with restrained ruby-red accents.",
+      "Nord frost",
+      "Cool slate surfaces inspired by polar nights.",
+      "Espresso dark",
+      "Warm coffee-black panels with amber interaction cues."
+    ],
+    "attributes": []
+  },
+  {
+    "name": "channels",
+    "file": "13-channels.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "chat",
+    "file": "14-chat.png",
+    "text": [],
+    "attributes": [
+      "React 👍",
+      "React ❤️",
+      "React 😂",
+      "Message # گفتگوی-عمومی",
+      "ارسال (Enter)"
+    ]
+  },
+  {
+    "name": "emoji",
+    "file": "15-emoji.png",
+    "text": [],
+    "attributes": [
+      "React 👍",
+      "React ❤️",
+      "React 😂",
+      "Message # گفتگوی-عمومی",
+      "ارسال (Enter)"
+    ]
+  },
+  {
+    "name": "members",
+    "file": "16-members.png",
+    "text": [
+      "@admin",
+      "owner"
+    ],
+    "attributes": [
+      "React 👍",
+      "React ❤️",
+      "React 😂",
+      "Message # گفتگوی-عمومی",
+      "ارسال (Enter)",
+      "This is you"
+    ]
+  },
+  {
+    "name": "server-menu",
+    "file": "17-server-menu.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-overview",
+    "file": "18-server-overview.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "تصویر مربعی PNG، JPEG، GIF یا WebP تا حجم ۸ مگابایت"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-roles",
+    "file": "19-server-roles.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Roles —",
+      "Drag roles to set the hierarchy. Members inherit @everyone, and permissions from all assigned roles combine.",
+      "52 official Discord flags, hierarchy rules, implicit denies, and channel overwrites are available one by one.",
+      "official flags",
+      "platform ability",
+      "@everyone",
+      "Base permissions for every server member ·",
+      "Send Images · Send Videos · Send Audio · Share Screen · View Channels · Send Messages · Send Text-to-Speech Messages · Send Messages in Threads · Create Public Threads · Embed Links · Attach Files · Add Reactions · Read Message History · Use Application Commands · Send Voice Messages · Create Polls · Connect · Speak · Video · Use Voice Activity · Request to Speak · Use Activities · Use Soundboard",
+      "members"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge",
+      "Base role"
+    ]
+  },
+  {
+    "name": "server-onboarding",
+    "file": "20-server-onboarding.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-members",
+    "file": "21-server-members.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Members —",
+      "shown",
+      "admin"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-invites",
+    "file": "22-server-invites.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-channels",
+    "file": "23-server-channels.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Channels —",
+      "text",
+      "· synced",
+      "voice"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-expressions",
+    "file": "24-server-expressions.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Emojis, stickers & soundboard",
+      "Add asset"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge",
+      "party_parrot"
+    ]
+  },
+  {
+    "name": "server-apps",
+    "file": "25-server-apps.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Enable or disable each slash command for everyone, then override individual roles, members, or channels.",
+      "Save access"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-bots",
+    "file": "26-server-bots.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Welcome {mention} to **{server}**! You are member #{memberCount}.",
+      "{username}",
+      "{displayName}",
+      "{mention}",
+      "{userId}",
+      "{avatar}",
+      "{server}",
+      "{memberCount}",
+      "{joinedAt}",
+      "{createdAt}",
+      "Goodbye {displayName}. Thanks for being part of {server}."
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-community",
+    "file": "27-server-community.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Events, boosts & subscriptions",
+      "Server boost level",
+      "active boosts",
+      "Boost this server",
+      "active subscriptions ·",
+      "monthly revenue"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-safety",
+    "file": "28-server-safety.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Timeout member",
+      "Ban member",
+      "Create AutoMod rule"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-insights",
+    "file": "29-server-insights.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "members",
+      "channels",
+      "messages / 7d",
+      "active members / 7d"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge"
+    ]
+  },
+  {
+    "name": "server-undefined",
+    "file": "30-server-undefined.png",
+    "text": [
+      "announcements",
+      "Voice Lounge",
+      "owner",
+      "Delete گروه دوستان زی‌دیس?",
+      "Every channel, message and file in this group is permanently removed. This cannot be undone.",
+      "Delete group"
+    ],
+    "attributes": [
+      "Edit #گفتگوی-عمومی",
+      "Edit #announcements",
+      "Edit Voice Lounge",
+      "Delete گروه دوستان زی‌دیس?"
+    ]
+  },
+  {
+    "name": "admin-overview",
+    "file": "31-admin-overview.png",
+    "text": [
+      "سلامت Runtime",
+      "Heap جاوااسکریپت",
+      "۶۵٫۷ MB",
+      "حافظه RSS",
+      "۱۶۳٫۱ MB",
+      "sqlite",
+      "memory",
+      "نسخه Node"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "admin-users",
+    "file": "32-admin-users.png",
+    "text": [
+      "آخرین IP ورود",
+      "MB",
+      "Moderator Bot",
+      "zdis_moderator_bot",
+      "zdis_moderator_bot@bots.invalid",
+      "WB",
+      "Welcomer Bot",
+      "zdis_welcomer_bot",
+      "zdis_welcomer_bot@bots.invalid",
+      "admin",
+      "office@intesho.com"
+    ],
+    "attributes": [
+      "Moderator Bot",
+      "Welcomer Bot"
+    ]
+  },
+  {
+    "name": "admin-groups",
+    "file": "33-admin-groups.png",
+    "text": [
+      "group"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "admin-moderation",
+    "file": "34-admin-moderation.png",
+    "text": [
+      "بررسی شواهد و اعتراض‌ها، اجرای SLA و اعمال محدودیت حساب.",
+      "Reported users",
+      "No user reports in this status."
+    ],
+    "attributes": []
+  },
+  {
+    "name": "admin-integrations",
+    "file": "35-admin-integrations.png",
+    "text": [
+      "API، ربات و Webhook",
+      "کلیدهای محدودشده، ربات‌های سرویس و Webhookهای امضاشده را مدیریت کنید.",
+      "کلیدهای API",
+      "توکن‌های Hash‌شده با Scope محدود",
+      "برنامه‌های OAuth2",
+      "Authorization code پنج‌دقیقه‌ای و Access token محدود به Scope",
+      "برنامه OAuth ساخته نشده است.",
+      "Webhookهای ورودی",
+      "ارسال پیام به کانال از سرویس‌های خارجی با URL محرمانه",
+      "Webhook ورودی جدید",
+      "Webhook ورودی ساخته نشده است.",
+      "Webhookهای خروجی",
+      "تحویل HMAC، Retry نمایی و Circuit breaker",
+      "افزودن Webhook",
+      "Webhook فعالی وجود ندارد."
+    ],
+    "attributes": []
+  },
+  {
+    "name": "admin-operations",
+    "file": "36-admin-operations.png",
+    "text": [
+      "sqlite",
+      "0ms",
+      "کش Redis",
+      "memory",
+      "local",
+      "Push",
+      "LiveKit SFU",
+      "TURN",
+      "block"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "admin-platform",
+    "file": "37-admin-platform.png",
+    "text": [
+      "SSO، SMTP، Backup، Storage، Queue و Flag",
+      "اسرار SMTP و OIDC با AES-256-GCM ذخیره می‌شوند و هرگز به مرورگر بازگردانده نمی‌شوند.",
+      "ورود یکپارچه OIDC",
+      "پیکربندی زنده SSO؛ SAML و LDAP محیطی نیز پایش می‌شوند.",
+      "Issuer URL",
+      "Client ID",
+      "Client Secret",
+      "Scopeها",
+      "OIDC",
+      "SAML",
+      "LDAP",
+      "SMTP و تحویل ایمیل",
+      "اتصال Pool شده و تست سلامت بدون افشای رمز.",
+      "Host",
+      "Port",
+      "TLS مستقیم (معمولاً پورت ۴۶۵)",
+      "تست اتصال SMTP",
+      "صدا و تصویر LiveKit SFU",
+      "کنترل مستقل میکروفون، دوربین و اشتراک صفحه به سرور LiveKit نیاز دارد. بعد از تغییر اتصال، کاربران صفحه را تازه کنند. کلیدها رمز‌شده ذخیره می‌شوند.",
+      "LiveKit WebSocket URL",
+      "LiveKit API URL",
+      "LiveKit API Key",
+      "LiveKit API Secret",
+      "حداکثر افراد هر کانال صوتی SFU",
+      "تبدیل متن به گفتار Fish Audio",
+      "کلید API رمز‌شده ذخیره می‌شود. خالی گذاشتن کلید، مقدار فعلی را تغییر نمی‌دهد.",
+      "Fish Audio API Key",
+      "Voice Reference ID",
+      "متن پیام‌های معمولی برای ساخت صدا به Fish Audio ارسال می‌شود. متن پیام‌های E2EE هرگز به سرور یا Fish Audio فرستاده نمی‌شود و فقط روی دستگاه خوانده می‌شود.",
+      "Job ناموفق",
+      "Backup فوری",
+      "هنوز Backup ثبت نشده است.",
+      "وضعیت Jobها، Retry و خطای نهایی BullMQ",
+      "Redis/BullMQ فعال نیست؛ در Production صف توزیع‌شده را الزامی کنید.",
+      "Feature Flagهای محصول",
+      "فعال‌سازی تدریجی قابلیت‌ها بدون Deploy مجدد",
+      "E2EE در گفتگوهای خصوصی",
+      "E2EE اجباری پیام خصوصی",
+      "نسخه PWA",
+      "Webhook",
+      "API Key",
+      "WebRTC و زیرساخت SFU",
+      "Push Notification"
+    ],
+    "attributes": []
+  },
+  {
+    "name": "admin-settings",
+    "file": "38-admin-settings.png",
+    "text": [
+      "Login title",
+      "Login subtitle",
+      "Login footer text",
+      "Registration title",
+      "Registration subtitle",
+      "Registration collects phone, email, first name, last name, username, nickname, and password.",
+      "Turn this off and the attach button disappears for everyone; the upload endpoint refuses new files as well.",
+      "Per-file size limit",
+      "Control the maximum size of each uploaded file.",
+      "MB",
+      "Custom limit (1–100 MB)",
+      "سندها (PDF، ZIP و متن)",
+      "0 means messages can be edited at any time.",
+      "Matching is case-insensitive and runs before a message is stored.",
+      "Applies to everyone with the administrator role.",
+      "Require two-factor authentication for administrators",
+      "Turn this on only after you have enrolled — you will be prompted at next sign-in.",
+      "Save settings"
+    ],
+    "attributes": [
+      "https://…/logo.png (leave blank for text logo)"
+    ]
+  },
+  {
+    "name": "admin-audit",
+    "file": "39-admin-audit.png",
+    "text": [
+      "Audit تغییرناپذیر و خروجی",
+      "Verify integrity",
+      "Export CSV",
+      "Total visible events",
+      "This page",
+      "Signed entries",
+      "Page",
+      "e2ee.identity_published",
+      "→ user",
+      "group.create",
+      "→ group",
+      "auth.login",
+      "system.seed_admin",
+      "System",
+      "Rows per page",
+      "Previous",
+      "Next"
+    ],
+    "attributes": []
+  }
+]

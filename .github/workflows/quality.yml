@@ -16,6 +16,94 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dedicated-clients:
+    name: Build and verify signed dedicated APK and EXE
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Test builder and native source checks
+        run: python tests/native-clients.test.py -v
+      - name: Install Windows signature verifier
+        run: sudo apt-get update && sudo apt-get install -y osslsigncode
+      - name: Build both clients using the server installer builder
+        run: >-
+          python scripts/build-server-clients.py --url https://ci.zdis.invalid
+          --output "$RUNNER_TEMP/dedicated-clients"
+          --signing-dir "$RUNNER_TEMP/dedicated-signing"
+      - name: Verify hashes, embedded Android server and Windows signature
+        run: |
+          python scripts/verify-native-artifacts.py "$RUNNER_TEMP/dedicated-clients" --origin https://ci.zdis.invalid
+          cat /etc/ssl/certs/ca-certificates.crt "$RUNNER_TEMP/dedicated-clients/ZDis-Server-Certificate.crt" > "$RUNNER_TEMP/ci-signing-roots.pem"
+          osslsigncode verify -CAfile "$RUNNER_TEMP/ci-signing-roots.pem" \
+            -in "$RUNNER_TEMP/dedicated-clients/ZDis-Setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dedicated-client-candidates
+          path: ${{ runner.temp }}/dedicated-clients/*
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove disposable CI signing keys
+        if: always()
+        run: sudo rm -rf -- "$RUNNER_TEMP/dedicated-signing"
+
+  android-install:
+    name: Install and launch dedicated APK on Android emulator
+    needs: dedicated-clients
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/download-artifact@v4
+        with:
+          name: dedicated-client-candidates
+          path: native-candidates
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: python scripts/smoke-android-client.py native-candidates
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-install-diagnostics
+          path: native-candidates/android-*.txt
+
+  windows-install:
+    name: Verify, install and launch dedicated Windows client
+    needs: dedicated-clients
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: dedicated-client-candidates
+          path: native-candidates
+      - name: Install archive inspection dependencies
+        run: npm ci --prefix native/windows
+      - name: Verify signature and run installer smoke test
+        shell: pwsh
+        run: ./scripts/smoke-windows-client.ps1 -Candidates native-candidates
+
   native-runtime:
     name: Native SQLite runtime (${{ matrix.os }})
     strategy:
@@ -246,7 +334,10 @@ jobs:
   browser-e2e:
     name: Playwright browser E2E
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
+    env:
+      GALLERY_LAYOUT_AUDIT: '1'
+      GALLERY_PHASE: ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -301,7 +392,9 @@ jobs:
           exit 1
       - run: npm run build
       - name: Verify live SFU tracks and publication permissions
-        run: npx playwright test direct-voice-sfu.spec.ts voice-permissions-sfu.spec.ts voice-ui-sfu.spec.ts --workers=1 --retries=0
+        run: >-
+          node tests/run-browser.mjs --suite=direct-voice-sfu --suite=voice-permissions-sfu
+          --suite=voice-ui-sfu --suite=listener-voice --retries=0
       - name: Capture SFU diagnostics
         if: always()
         run: docker logs zdis-ci-livekit > livekit-ci.log 2>&1 || true

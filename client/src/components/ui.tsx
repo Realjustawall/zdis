@@ -1,9 +1,10 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { cloneElement, isValidElement, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { colorFor, initials } from '../lib/format';
 import type { Badge, GroupRole, PlatformRole, Presence } from '../types';
 import { useI18n } from '../lib/i18n';
 import { Icon } from './Icon';
+import { useRealtime } from '../store/realtime';
 
 interface AvatarProps {
   name: string;
@@ -15,10 +16,13 @@ interface AvatarProps {
 }
 
 export function Avatar({ name, id, src, color, size = 36, presence }: AvatarProps) {
+  const livePresence = useRealtime(state => id ? state.presence[id] : undefined);
+  presence = livePresence ?? presence;
   const dot = Math.max(9, Math.round(size * 0.3));
   return (
     <div
       className="avatar"
+      data-no-auto-translate
       style={{
         width: size,
         height: size,
@@ -77,25 +81,44 @@ interface ModalProps {
   title: string;
   description?: string;
   onClose: () => void;
+  onBack?: () => void;
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
   className?: string;
 }
 
-export function Modal({ title, description, onClose, children, footer, wide, className }: ModalProps) {
+export function Modal({ title, description, onClose, onBack, children, footer, wide, className }: ModalProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
 
   useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const isTopDialog = () => Array.from(document.querySelectorAll('[aria-modal="true"]')).at(-1) === ref.current;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (!isTopDialog()) return;
+      if (event.key === 'Escape') { event.stopImmediatePropagation(); onClose(); }
+      if (event.key === 'Tab') {
+        const elements = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]') ?? []).filter(el => el.getClientRects().length);
+        const first = elements[0], last = elements.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
     };
+    const onNativeBack = (event: Event) => {
+      if (!isTopDialog()) return;
+      event.preventDefault(); event.stopImmediatePropagation(); (onBack ?? onClose)();
+    };
+    window.addEventListener('native:back', onNativeBack, true);
     document.addEventListener('keydown', onKey);
     // Move focus into the dialog so keyboard users are not left behind it.
     ref.current?.querySelector<HTMLElement>('input, textarea, select, button')?.focus();
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('native:back', onNativeBack, true);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [onClose, onBack]);
 
   return createPortal(
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -105,8 +128,9 @@ export function Modal({ title, description, onClose, children, footer, wide, cla
             <h3>{title}</h3>
             {description ? <p>{description}</p> : null}
           </div>
-          <button className="close" onClick={onClose} aria-label={t('ui.close')}>
-            <Icon name="close" size={18} />
+          <button className="close" onClick={() => (window.matchMedia('(max-width: 780px)').matches ? onBack ?? onClose : onClose)()} aria-label={t('ui.close')}>
+            <Icon className="desktop-close-icon" name="close" size={18} />
+            <Icon className="mobile-close-arrow" name="arrowLeft" size={22} />
           </button>
         </div>
         <div className="modal-body">{children}</div>
@@ -123,6 +147,21 @@ export function Alert({ kind, children }: { kind: 'error' | 'success' | 'info'; 
       {children}
     </div>
   );
+}
+
+/** Desktop tools stay anchored; phone tools use the same side-page navigation
+ * and focus/native-back behavior as account and server settings. */
+export function ResponsivePopover({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const [mobile, setMobile] = useState(() => matchMedia('(max-width: 780px)').matches);
+  useEffect(() => {
+    const query = matchMedia('(max-width: 780px)');
+    const change = () => setMobile(query.matches);
+    query.addEventListener('change', change);
+    return () => query.removeEventListener('change', change);
+  }, []);
+  const content = mobile && isValidElement<{role?: string; 'aria-label'?: string}>(children) && children.props.role === 'dialog'
+    ? cloneElement(children, {role: undefined, 'aria-label': undefined}) : children;
+  return mobile ? <Modal title={title} onClose={onClose} className="mobile-popover-modal">{content}</Modal> : <>{children}</>;
 }
 
 export function ErrorList({ lines }: { lines: string[] }) {

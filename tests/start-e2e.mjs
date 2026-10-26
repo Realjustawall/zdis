@@ -1,8 +1,9 @@
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 
 const root = path.resolve(import.meta.dirname, '..');
-const dataDir = path.join(root, '.tmp', `e2e-${process.pid}`);
+const dataDir = path.join(root, '.tmp', `e2e-${process.pid}-${randomUUID()}`);
 const port = process.env.TEST_E2E_PORT || (process.platform === 'win32' ? '18081' : '4000');
 await fs.rm(dataDir, { recursive: true, force: true });
 

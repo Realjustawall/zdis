@@ -103,7 +103,6 @@ export async function provisionE2eeIdentities(userIds, options) {
 }
 
 export async function getE2eeBootstrap(userId) {
-  await provisionE2eeIdentity(userId);
   const row = await getDb().get(
     `SELECT i.public_key, i.key_version, e.encrypted_private_key
      FROM e2ee_identities i LEFT JOIN e2ee_key_escrows e ON e.user_id = i.user_id

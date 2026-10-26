@@ -284,8 +284,8 @@ function PersonRow({
     <div className="friend-row">
       <Avatar name={person.displayName} id={person.id} src={person.avatarUrl} color={person.bannerColor} size={42} presence={presence} />
       <div className="friend-who">
-        <strong>{person.displayName}</strong>
-        <span>@{person.username} · {presence === 'offline' ? 'Offline' : presence === 'dnd' ? 'Do Not Disturb' : presence[0].toUpperCase() + presence.slice(1)}</span>
+        <strong><span data-no-auto-translate>{person.displayName}</span></strong>
+        <span>@<span data-no-auto-translate>{person.username}</span> · {presence === 'offline' ? 'Offline' : presence === 'dnd' ? 'Do Not Disturb' : presence[0].toUpperCase() + presence.slice(1)}</span>
       </div>
       <div className="friend-actions">{children}</div>
     </div>

@@ -12,3 +12,16 @@ infra/secrets/*
 .tmp/
 test-results/
 playwright-report/
+
+data/
+*.jks
+*.p12
+*.key
+native/windows/server.json
+native/windows/dist/
+client/android/.gradle/
+client/android/app/build/
+client/android/build/
+
+*.tsbuildinfo
+__pycache__/

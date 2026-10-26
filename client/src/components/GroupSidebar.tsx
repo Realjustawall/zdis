@@ -1,5 +1,6 @@
+import { translateUiText } from '../lib/localize';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, Modal, Confirm, EmptyState, BadgeList } from './ui';
+import { Avatar, Modal, Confirm, EmptyState, BadgeList, ResponsivePopover } from './ui';
 import { useChat } from '../store/chat';
 import { useRealtime } from '../store/realtime';
 import { useSession } from '../store/session';
@@ -77,7 +78,7 @@ export function GroupSidebar({
   useEffect(() => {
     if (!quickMenuOpen) return;
     const closeOutside = (event: PointerEvent) => {
-      if (!quickMenuRef.current?.contains(event.target as Node)) setQuickMenuOpen(false);
+      if (!quickMenuRef.current?.contains(event.target as Node) && !(event.target as Element).closest?.('#group-quick-menu')) setQuickMenuOpen(false);
     };
     const closeEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setQuickMenuOpen(false);
@@ -152,7 +153,7 @@ export function GroupSidebar({
             onClick={() => onSelectChannel(channel)}
           >
             <span className="glyph"><Icon name={icon} size={17} /></span>
-            <span className="label">{channel.name}</span>
+            <span className="label" data-no-auto-translate>{channel.name}</span>
             {counts?.mentions ? <span className="count">{counts.mentions > 99 ? '99+' : counts.mentions}</span> : null}
             {voiceChannelId === channel.id ? <span className="badge moderator">{fa ? 'فعال' : 'live'}</span> : null}
           </button>
@@ -169,7 +170,7 @@ export function GroupSidebar({
               return (
                 <div className={`voice-member${participant.speaking ? ' speaking' : ''}`} key={participant.userId}>
                   <Avatar name={member?.displayName ?? (fa ? 'یک نفر' : 'Someone')} id={participant.userId} color={member?.bannerColor} size={20} />
-                  <span>{member?.displayName ?? (fa ? 'یک نفر' : 'Someone')}</span>
+                  <span><span data-no-auto-translate>{member?.displayName ?? (fa ? 'یک نفر' : 'Someone')}</span></span>
                   <span className="flags">
                     {participant.muted ? <Icon name="volumeOff" size={13} /> : null}
                     {participant.video ? <Icon name="video" size={13} /> : null}
@@ -192,12 +193,13 @@ export function GroupSidebar({
             {group.iconUrl ? <img src={group.iconUrl} alt="" /> : group.name.slice(0, 2).toUpperCase()}
           </span>
           <span className="group-header-copy">
-            <strong title={group.name}>{group.name}</strong>
+            <strong data-no-auto-translate title={group.name}>{group.name}</strong>
             <small>{members.length} {fa ? 'عضو' : members.length === 1 ? 'member' : 'members'}</small>
           </span>
           <Icon name={quickMenuOpen ? 'close' : 'menu'} size={18} />
         </button>
         {quickMenuOpen ? (
+          <ResponsivePopover title={fa ? 'منوی گروه' : 'Server menu'} onClose={() => setQuickMenuOpen(false)}>
           <div className="group-quick-menu" id="group-quick-menu" onClick={() => setQuickMenuOpen(false)}>
             {permissions.createChannels ? <button onClick={() => setMenu('channel')}><Icon name="add" size={17} />{fa ? 'ساخت کانال' : 'Create channel'}</button> : null}
             {permissions.createInvite ? <button onClick={() => setMenu('invite')}><Icon name="link" size={17} />{fa ? 'دعوت افراد' : 'Invite people'}</button> : null}
@@ -207,6 +209,7 @@ export function GroupSidebar({
             {permissions.manageChannels ? <button onClick={() => setMenu('category')}><Icon name="archive" size={17} />{fa ? 'ساخت دسته‌بندی' : 'Create category'}</button> : null}
             {group.ownerId !== user.id && user.role !== 'admin' ? <button onClick={() => setMenu('leave')}><Icon name="logout" size={17} />{fa ? 'خروج از گروه' : 'Leave server'}</button> : null}
           </div>
+          </ResponsivePopover>
         ) : null}
       </div>
       <div className="sidebar-body">
@@ -255,7 +258,7 @@ export function GroupSidebar({
                 <span className="glyph">
                   <Icon name={channel.type === 'announcement' ? 'announcement' : channel.isPrivate ? 'lock' : 'hash'} size={17} />
                 </span>
-                <span className="label">{channel.name}</span>
+                <span className="label" data-no-auto-translate>{channel.name}</span>
                 {counts?.mentions ? <span className="count">{counts.mentions > 99 ? '99+' : counts.mentions}</span> : null}
               </button>
               {permissions.manageChannels ? (
@@ -285,7 +288,7 @@ export function GroupSidebar({
               onClick={() => onSelectChannel(channel)}
             >
               <span className="glyph"><Icon name="forum" size={17} /></span>
-              <span className="label">{channel.name}</span>
+              <span className="label" data-no-auto-translate>{channel.name}</span>
               {counts?.mentions ? <span className="count">{counts.mentions > 99 ? '99+' : counts.mentions}</span> : null}
             </button>
             {permissions.manageChannels ? (
@@ -315,7 +318,7 @@ export function GroupSidebar({
                   onClick={() => onSelectChannel(channel)}
                 >
                   <span className="glyph"><Icon name={channel.type === 'stage' ? 'microphone' : 'speaker'} size={17} /></span>
-                  <span className="label">{channel.name}</span>
+                  <span className="label" data-no-auto-translate>{channel.name}</span>
                   {counts?.mentions ? <span className="count">{counts.mentions > 99 ? '99+' : counts.mentions}</span> : null}
                   {voiceChannelId === channel.id ? <span className="badge moderator">{fa ? 'فعال' : 'live'}</span> : null}
                 </button>
@@ -344,7 +347,7 @@ export function GroupSidebar({
                           color={member?.bannerColor}
                           size={20}
                         />
-                        <span>{member?.displayName ?? (fa ? 'یک نفر' : 'Someone')}</span>
+                        <span><span data-no-auto-translate>{member?.displayName ?? (fa ? 'یک نفر' : 'Someone')}</span></span>
                         <span className="flags">
                           {participant.muted ? <Icon name="volumeOff" size={13} /> : null}
                           {participant.video ? <Icon name="video" size={13} /> : null}
@@ -371,7 +374,7 @@ export function GroupSidebar({
               size={22}
               presence={member.presence}
             />
-            <span className="label">{member.nickname ?? member.displayName}</span>
+            <span className="label"><span data-no-auto-translate>{member.nickname ?? member.displayName}</span></span>
             <BadgeList badges={member.badges.filter(b=>['bot','verified_bot','official'].includes(b.id))} compact />
             {member.memberRole === 'owner' ? (
               <span className="badge owner" style={{ fontSize: 9 }}>owner</span>
@@ -457,8 +460,8 @@ export function GroupSidebar({
                 >
                   <Avatar name={person.displayName} id={person.id} color={person.bannerColor} size={32} />
                   <span className="info">
-                    <span className="name">{person.displayName}</span>
-                    <span className="sub">@{person.username}</span>
+                    <span className="name"><span data-no-auto-translate>{person.displayName}</span></span>
+                    <span className="sub">@<span data-no-auto-translate>{person.username}</span></span>
                   </span>
                   <span className="badge">add</span>
                 </button>
@@ -738,8 +741,8 @@ function NewChannelModal({
                   size={30}
                 />
                 <span className="info">
-                  <span className="name">{member.displayName}</span>
-                  <span className="sub">@{member.username}</span>
+                  <span className="name"><span data-no-auto-translate>{member.displayName}</span></span>
+                  <span className="sub">@<span data-no-auto-translate>{member.username}</span></span>
                 </span>
                 <input
                   type="checkbox"
@@ -794,6 +797,8 @@ function ChannelSettingsModal({
   onDone: () => void;
   onPermissions: () => void;
 }) {
+  const { locale } = useI18n();
+  const fa = locale === 'fa';
   const [name, setName] = useState(channel.name);
   const [topic, setTopic] = useState(channel.topic ?? '');
   const [categoryId, setCategoryId] = useState(channel.categoryId ?? '');
@@ -887,7 +892,7 @@ function ChannelSettingsModal({
   async function remove() {
     if (
       !window.confirm(
-        `Delete #${channel.name}? Its messages and files will be permanently removed.`,
+        translateUiText(`Delete #${channel.name}? Its messages and files will be permanently removed.`),
       )
     ) {
       return;
@@ -910,8 +915,8 @@ function ChannelSettingsModal({
 
   return (
     <Modal
-      title={`Edit channel — ${channel.name}`}
-      description={`${channel.type[0].toUpperCase()}${channel.type.slice(1)} channel · configure its overview, access, and permission overwrites.`}
+      title={fa ? `ویرایش کانال — ${channel.name}` : `Edit channel — ${channel.name}`}
+      description={fa ? 'نام، دسترسی و مجوزهای اختصاصی این کانال را تنظیم کنید.' : `${channel.type[0].toUpperCase()}${channel.type.slice(1)} channel · configure its overview, access, and permission overwrites.`}
       onClose={onClose}
       wide
       footer={
@@ -1039,8 +1044,8 @@ function ChannelSettingsModal({
                   size={30}
                 />
                 <span className="info">
-                  <span className="name">{member.displayName}</span>
-                  <span className="sub">@{member.username}</span>
+                  <span className="name"><span data-no-auto-translate>{member.displayName}</span></span>
+                  <span className="sub">@<span data-no-auto-translate>{member.username}</span></span>
                 </span>
                 <input
                   type="checkbox"
@@ -1872,7 +1877,7 @@ function ServerRoleEditor({
   }
 
   async function remove() {
-    if (!role || role.isDefault || !window.confirm(`Delete the role “${role.name}”? Members will lose it immediately.`)) return;
+    if (!role || role.isDefault || !window.confirm(translateUiText(`Delete the role “${role.name}”? Members will lose it immediately.`))) return;
     setBusy(true);
     try {
       await api.del(`/api/groups/${groupId}/roles/${role.id}`);
@@ -2352,9 +2357,9 @@ function AnnouncementFollowsSection({ groupId, channels }: { groupId: string; ch
         </div>
       ))}
       <button className="btn small" onClick={async () => {
-        const sourceChannelId = window.prompt('Announcement channel ID to follow:');
+        const sourceChannelId = window.prompt(translateUiText('Announcement channel ID to follow:'));
         const targets = channels.filter((channel) => channel.type === 'text');
-        const targetName = sourceChannelId ? window.prompt(`Target text channel: ${targets.map((channel) => channel.name).join(', ')}`) : null;
+        const targetName = sourceChannelId ? window.prompt(translateUiText(`Target text channel: ${targets.map((channel) => channel.name).join(', ')}`)) : null;
         const target = targets.find((channel) => channel.name === targetName);
         if (!sourceChannelId || !target) return;
         try {
@@ -2404,7 +2409,7 @@ function ServerModerationSection({
   }, [groupId]);
 
   const pickMember = () => {
-    const username = window.prompt('Member username:')?.trim().toLowerCase();
+    const username = window.prompt(translateUiText('Member username:'))?.trim().toLowerCase();
     return members.find((member) => member.username.toLowerCase() === username);
   };
 
@@ -2417,11 +2422,11 @@ function ServerModerationSection({
           onClick={async () => {
             const member = pickMember();
             if (!member) return;
-            const minutes = Number(window.prompt('Timeout minutes (0 removes timeout):', '10'));
+            const minutes = Number(window.prompt(translateUiText('Timeout minutes (0 removes timeout):'), '10'));
             try {
               await api.put(`/api/groups/${groupId}/members/${member.id}/timeout`, {
                 durationSeconds: Math.max(0, Math.round(minutes * 60)),
-                reason: window.prompt('Reason:', '') || null,
+                reason: window.prompt(translateUiText('Reason:'), '') || null,
               });
               await refresh();
             } catch (error) {
@@ -2435,10 +2440,10 @@ function ServerModerationSection({
           className="btn danger small"
           onClick={async () => {
             const member = pickMember();
-            if (!member || !window.confirm(`Ban @${member.username} from this server?`)) return;
+            if (!member || !window.confirm(translateUiText(`Ban @${member.username} from this server?`))) return;
             try {
               await api.put(`/api/groups/${groupId}/bans/${member.id}`, {
-                reason: window.prompt('Ban reason:', '') || null,
+                reason: window.prompt(translateUiText('Ban reason:'), '') || null,
               });
               await refresh();
             } catch (error) {
@@ -2471,14 +2476,14 @@ function ServerModerationSection({
         <button
           className="btn small"
           onClick={async () => {
-            const triggerValue = window.prompt('Blocked keyword or phrase:');
+            const triggerValue = window.prompt(translateUiText('Blocked keyword or phrase:'));
             if (!triggerValue) return;
             try {
               await api.post(`/api/groups/${groupId}/automod-rules`, {
                 name: `Block ${triggerValue.slice(0, 32)}`,
                 triggerType: 'keyword',
                 triggerValue,
-                action: window.confirm('Timeout matching members too?') ? 'timeout' : 'block',
+                action: window.confirm(translateUiText('Timeout matching members too?')) ? 'timeout' : 'block',
                 timeoutSeconds: 600,
               });
               await refresh();
@@ -2577,8 +2582,8 @@ function ServerCommunitySection({
   }, [groupId]);
 
   async function createEvent() {
-    const name = window.prompt('Event name:', 'Community meetup');
-    const date = name ? window.prompt('Start date and time (YYYY-MM-DD HH:mm):') : null;
+    const name = window.prompt(translateUiText('Event name:'), 'Community meetup');
+    const date = name ? window.prompt(translateUiText('Start date and time (YYYY-MM-DD HH:mm):')) : null;
     if (!name || !date) return;
     const startsAt = new Date(date.replace(' ', 'T')).getTime();
     if (!Number.isFinite(startsAt)) {
@@ -2588,7 +2593,7 @@ function ServerCommunitySection({
     try {
       await api.post(`/api/groups/${groupId}/events`, {
         name,
-        description: window.prompt('Event description:', '') || null,
+        description: window.prompt(translateUiText('Event description:'), '') || null,
         channelId: channels.find((channel) => channel.type === 'voice' || channel.type === 'stage')?.id ?? null,
         location: null,
         startsAt,
@@ -2600,13 +2605,13 @@ function ServerCommunitySection({
   }
 
   async function createTier() {
-    const name = window.prompt('Subscription tier name:', 'Supporter');
+    const name = window.prompt(translateUiText('Subscription tier name:'), 'Supporter');
     if (!name) return;
-    const price = Number(window.prompt('Monthly price in the smallest currency unit (0 for free):', '0'));
+    const price = Number(window.prompt(translateUiText('Monthly price in the smallest currency unit (0 for free):'), '0'));
     try {
       await api.post(`/api/groups/${groupId}/subscription-tiers`, {
         name,
-        description: window.prompt('Tier description:', 'Support this community') || null,
+        description: window.prompt(translateUiText('Tier description:'), 'Support this community') || null,
         priceMonthly: Number.isFinite(price) ? Math.max(0, Math.round(price)) : 0,
         benefits: ['Supporter badge', 'Community recognition'],
       });
@@ -3014,9 +3019,9 @@ function MemberManagementModal({
 
   async function remove(kind: 'kick' | 'ban') {
     const confirmed = window.confirm(
-      kind === 'ban'
+      translateUiText(kind === 'ban'
         ? `Ban @${member.username}? They will not be able to rejoin until unbanned.`
-        : `Kick @${member.username} from this server?`,
+        : `Kick @${member.username} from this server?`),
     );
     if (!confirmed) return;
     setBusy(true);
@@ -3061,8 +3066,8 @@ function MemberManagementModal({
           size={52}
         />
         <div>
-          <strong>{member.displayName}</strong>
-          <span>@{member.username}</span>
+          <strong><span data-no-auto-translate>{member.displayName}</span></strong>
+          <span>@<span data-no-auto-translate>{member.username}</span></span>
         </div>
         <span className={`presence-dot ${member.presence}`} title={member.presence} />
       </div>
@@ -3529,6 +3534,7 @@ function GroupSettingsModal({
   const [permissionCategory, setPermissionCategory] = useState<ChannelCategory | null>(null);
   const [memberSearch, setMemberSearch] = useState('');
   const [editingMember, setEditingMember] = useState<GroupMember | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [settingsPage, setSettingsPage] = useState<SettingsPage>('overview');
   const visibleMembers = useMemo(() => {
     const query = memberSearch.trim().toLowerCase();
@@ -3661,7 +3667,7 @@ function GroupSettingsModal({
   }
 
   return (
-    <Modal title={`${group.name} — ${fa ? 'تنظیمات گروه' : 'Server Settings'}`} onClose={onClose} wide className="server-settings-modal">
+    <Modal title={`${group.name} — ${fa ? 'تنظیمات گروه' : 'Server Settings'}`} onClose={onClose} onBack={() => detailOpen ? setDetailOpen(false) : onClose()} wide className={`server-settings-modal${detailOpen ? ' mobile-detail-open' : ''}`}>
       <div className="server-settings-shell">
         <aside className="server-settings-nav" aria-label={fa ? 'تنظیمات گروه' : 'Server settings'}>
           <div className="server-settings-server">
@@ -3677,7 +3683,7 @@ function GroupSettingsModal({
             ['invites', 'link', fa ? `دعوت‌ها · ${invites.length}` : `Invites · ${invites.length}`],
             ['channels', 'hash', fa ? `کانال‌ها · ${channels.length}` : `Channels · ${channels.length}`],
           ] as [SettingsPage, Parameters<typeof Icon>[0]['name'], string][]).map(([id, icon, label]) => (
-            <button key={id} aria-label={label} title={label} className={settingsPage === id ? 'active' : ''} onClick={() => setSettingsPage(id)}>
+            <button key={id} aria-label={label} title={label} className={settingsPage === id ? 'active' : ''} onClick={() => { setSettingsPage(id); setDetailOpen(true); }}>
               <Icon name={icon} size={17} /><span>{label}</span>
             </button>
           ))}
@@ -3690,7 +3696,7 @@ function GroupSettingsModal({
             ['safety', 'shield', fa ? 'ایمنی و مدیریت' : 'Safety & Moderation'],
             ['insights', 'chart', fa ? 'آمار گروه' : 'Server Insights'],
           ] as [SettingsPage, Parameters<typeof Icon>[0]['name'], string][]).map(([id, icon, label]) => (
-            <button key={id} aria-label={label} title={label} className={settingsPage === id ? 'active' : ''} onClick={() => setSettingsPage(id)}>
+            <button key={id} aria-label={label} title={label} className={settingsPage === id ? 'active' : ''} onClick={() => { setSettingsPage(id); setDetailOpen(true); }}>
               <Icon name={icon} size={17} /><span>{label}</span>
             </button>
           ))}
@@ -3701,7 +3707,8 @@ function GroupSettingsModal({
             </>
           ) : null}
         </aside>
-        <section className="server-settings-content">
+        <section className="server-settings-content" key={settingsPage}>
+          <button className="mobile-settings-back" onClick={() => setDetailOpen(false)}><Icon name="arrowLeft" size={20} />{fa ? 'تنظیمات گروه' : 'Server settings'}</button>
           <div className="settings-page-heading">
             <span className="eyebrow">{fa ? 'تنظیمات گروه' : 'Server settings'}</span>
             <h2>{({
@@ -4015,8 +4022,8 @@ function GroupSettingsModal({
                   <div className="identity">
                     <Avatar name={member.displayName} id={member.id} color={member.bannerColor} size={28} />
                     <div className="who">
-                      <div className="name">{member.displayName}</div>
-                      <div className="sub">@{member.username}</div>
+                      <div className="name"><span data-no-auto-translate>{member.displayName}</span></div>
+                      <div className="sub">@<span data-no-auto-translate>{member.username}</span></div>
                     </div>
                   </div>
                 </td>
@@ -4163,7 +4170,7 @@ function GroupSettingsModal({
                   </button>
                 ) : null}
                 <button className="btn small" onClick={async () => {
-                  const name = window.prompt('New channel name', channel.name)?.trim();
+                  const name = window.prompt(translateUiText('New channel name'), channel.name)?.trim();
                   if (!name || name === channel.name) return;
                   try {
                     await api.patch(`/api/groups/${group.id}/channels/${channel.id}`, { name });

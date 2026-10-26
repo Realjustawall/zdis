@@ -75,17 +75,33 @@ export async function touchSession(sessionId, ip) {
   ]);
 }
 
+async function disconnectRevokedSessions(sessionIds) {
+  if (!sessionIds.length) return;
+  const { getIo } = await import('../realtime/index.js');
+  const io = getIo();
+  if (!io) return;
+  const revoked = new Set(sessionIds);
+  for (const socket of await io.fetchSockets()) {
+    if (!revoked.has(socket.data.sessionId)) continue;
+    socket.emit('session:revoked', { reason: 'session_revoked' });
+    socket.disconnect(true);
+  }
+}
+
 export async function revokeSession(sessionId) {
   const row = await getDb().get('SELECT token_hash FROM sessions WHERE id = ?', [sessionId]);
   await getDb().run('UPDATE sessions SET revoked_at = ? WHERE id = ?', [Date.now(), sessionId]);
   if (row) await cache.del(sessionCacheKey(row.token_hash));
+  await disconnectRevokedSessions([sessionId]);
 }
 
 export async function revokeSessionByToken(token) {
   if (!token) return;
   const tokenHash = hash(token);
+  const row = await getDb().get('SELECT id FROM sessions WHERE token_hash = ?', [tokenHash]);
   await getDb().run('UPDATE sessions SET revoked_at = ? WHERE token_hash = ?', [Date.now(), tokenHash]);
   await cache.del(sessionCacheKey(tokenHash));
+  if (row) await disconnectRevokedSessions([row.id]);
 }
 
 /** Used on password change, account disable and admin "force logout". */
@@ -102,6 +118,7 @@ export async function revokeAllSessions(userId, { exceptSessionId = null } = {})
     await db.run('UPDATE sessions SET revoked_at = ? WHERE id = ?', [Date.now(), row.id]);
   }
   await cache.del(...targets.map((row) => sessionCacheKey(row.token_hash)));
+  await disconnectRevokedSessions(targets.map(row => row.id));
   return targets.length;
 }
 

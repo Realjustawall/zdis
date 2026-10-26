@@ -1,0 +1,25 @@
+{
+  "sourceBase": "a51a73557b28659b8793606a9975fa4f42dbd733",
+  "pushed": false,
+  "build": "TypeScript, Vite, service-worker generation and offline asset check passed",
+  "browser": "24 existing/revised chat, admin and offline scenarios passed; 3 focused mobile/presence/RTL checks passed (1 desktop-inapplicable skip); 1 two-device E2EE browser scenario passed",
+  "productionDependencyAdvisories": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  },
+  "nativeBuilds": "Not executed: Docker, Android SDK and Wine unavailable; builder orchestration tests only",
+  "securityCaveat": "Historical server escrow remains for compatibility; this is not a full security audit",
+  "server": {
+    "result": "npm test exited 0",
+    "apiScenarios": 68,
+    "realtimeScenarios": 26,
+    "networkScenarios": 13,
+    "platformE2eeScenarios": 10,
+    "otherSuites": "migrations, antivirus, backup/restore, TURN, E2EE migration, file crypto, bots, quotas, games, activities, SQLite transactions passed"
+  },
+  "additionalChecks": "Native builder tests: 2 passed; release package tests: 2 passed; shell and Node syntax checks passed; git diff --check passed"
+}

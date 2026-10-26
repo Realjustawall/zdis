@@ -39,13 +39,16 @@ interface VoiceState {
   cameraOn: boolean;
   screenSharing: boolean;
   stageAudience: boolean;
+  listenOnly: boolean;
+  microphoneBusy: boolean;
   speaking: Record<string, boolean>;
   joinedAt: number | null;
 
-  join: (channelId: string, options?: { withVideo?: boolean }) => Promise<void>;
+  join: (channelId: string, options?: { withVideo?: boolean; listenOnly?: boolean }) => Promise<void>;
   leave: () => void;
   changeInputDevice: () => Promise<void>;
-  toggleMute: () => void;
+  toggleMute: () => Promise<void>;
+  recoverSignalling: () => Promise<void>;
   toggleDeafen: () => void;
   toggleCamera: () => Promise<void>;
   toggleScreenShare: () => Promise<void>;
@@ -57,6 +60,15 @@ let sfuPermissions={speak:true,video:true,screenShare:true};
 let detachSignalling: (() => void) | null = null;
 let speakingMonitor: number | null = null;
 let audioContext: AudioContext | null = null;
+let mutedBeforeDeafen = false;
+
+function registerVoice(channelId: string, sfu = false, videoRequested = false) {
+  const { muted, deafened, cameraOn } = useVoice.getState();
+  return new Promise<{ok: boolean; error?: string; peers?: {userId: string}[]}>((resolve) => {
+    const timer = setTimeout(() => resolve({ok: false, error: 'The server did not respond.'}), 8000);
+    useRealtime.getState().emit('voice:join', {channelId, muted, deafened, video: cameraOn, requestedVideo: videoRequested || cameraOn, sfu}, (reply: {ok: boolean; error?: string; peers?: {userId: string}[]}) => { clearTimeout(timer); resolve(reply); });
+  });
+}
 
 function iceConfig(): RTCConfiguration {
   return {
@@ -70,6 +82,8 @@ function attachLocalTracks(connection: RTCPeerConnection) {
   if (localStream) {
     for (const track of localStream.getTracks()) connection.addTrack(track, localStream);
   }
+  if (!localStream?.getAudioTracks().length) connection.addTransceiver('audio', { direction: 'recvonly' });
+  if (!localStream?.getVideoTracks().length) connection.addTransceiver('video', { direction: 'recvonly' });
   if (screenStream) {
     for (const track of screenStream.getTracks()) connection.addTrack(track, screenStream);
   }
@@ -160,6 +174,7 @@ function teardown() {
 function startSpeakingDetection(stream: MediaStream, selfId: string) {
   if (speakingMonitor !== null) cancelAnimationFrame(speakingMonitor);
   void audioContext?.close().catch(() => {});
+  if (!stream.getAudioTracks().length) { audioContext = null; speakingMonitor = null; return; }
   try {
     audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
@@ -204,14 +219,17 @@ export const useVoice = create<VoiceState>((set, get) => ({
   cameraOn: false,
   screenSharing: false,
   stageAudience: false,
+  listenOnly: false,
+  microphoneBusy: false,
   speaking: {},
   joinedAt: null,
 
   async join(channelId, options = {}) {
-    if (get().channelId === channelId) return;
+    if (get().channelId === channelId || get().connecting) return;
     if (get().channelId) get().leave();
 
-    set({ connecting: true });
+    mutedBeforeDeafen = false;
+    set({ connecting: true, muted: true, deafened: false, cameraOn: false, listenOnly: Boolean(options.listenOnly) });
     const realtime = useRealtime.getState();
     const selfId = useSession.getState().user?.id ?? '';
 
@@ -245,10 +263,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
         if (!credentials.url || !credentials.token) {
           throw new Error('The SFU did not return valid connection credentials.');
         }
-        const ack = await new Promise<{ ok: boolean; error?: string }>((resolve) => {
-          realtime.emit('voice:join', { channelId, muted: false, video: Boolean(options.withVideo), sfu: true }, resolve);
-          setTimeout(() => resolve({ ok: false, error: 'The server did not respond.' }), 8000);
-        });
+        const ack = await registerVoice(channelId, true, Boolean(options.withVideo && !options.listenOnly));
         if (!ack.ok) throw new Error(ack.error ?? 'Could not join the voice channel.');
 
         // LiveKit is the largest client dependency. Load it only for SFU calls
@@ -295,6 +310,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
         room.on(RoomEvent.Disconnected, () => {
           if (sfuRoom !== room) return;
           sfuRoom = null;
+          teardown();
+          realtime.emit('voice:leave');
           releaseMicrophone(get().localStream);
           releaseMicrophone(pendingMicrophone);
           set({
@@ -306,6 +323,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
             cameraOn: false,
             screenSharing: false,
             stageAudience: false,
+            listenOnly: false,
+            microphoneBusy: false,
             speaking: {},
             joinedAt: null,
           });
@@ -320,7 +339,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
           const permission=participant.permissions;
           const allows=(source:number)=>Boolean(permission?.canPublish && (!permission.canPublishSources.length||permission.canPublishSources.includes(source)));
           sfuPermissions={speak:allows(2),video:allows(1),screenShare:allows(3)};
-          if(!sfuPermissions.speak)set({muted:true});
+          if (!sfuPermissions.speak) { releaseMicrophone(get().localStream); set({muted: true, listenOnly: true}); }
+          set({stageAudience: Boolean(credentials.stage && !permission?.canPublish)});
           if(!sfuPermissions.video)set({cameraOn:false});
           if(!sfuPermissions.screenShare)set({screenSharing:false,screenStream:null});
         });
@@ -329,25 +349,35 @@ export const useVoice = create<VoiceState>((set, get) => ({
         detachSignalling=()=>callOffs.forEach(off=>off());
         const canPublish = credentials.canPublish !== false;
         sfuPermissions={speak:credentials.canSpeak??canPublish,video:credentials.canUseVideo??canPublish,screenShare:credentials.canScreenShare??canPublish};
-        if (sfuPermissions.speak) {
-          pendingMicrophone = await captureMicrophone();
-          await room.localParticipant.publishTrack(pendingMicrophone.getAudioTracks()[0], { source: Track.Source.Microphone });
+        if (sfuPermissions.speak && !options.listenOnly) {
+          try {
+            pendingMicrophone = await captureMicrophone();
+            await room.localParticipant.publishTrack(pendingMicrophone.getAudioTracks()[0], { source: Track.Source.Microphone });
+          } catch {
+            releaseMicrophone(pendingMicrophone); pendingMicrophone = null;
+            toast.info('Microphone unavailable. You joined as a listener.');
+          }
         }
-        if (options.withVideo && sfuPermissions.video) await room.localParticipant.setCameraEnabled(true);
+        if (options.withVideo && !options.listenOnly && sfuPermissions.video) {
+          try { await room.localParticipant.setCameraEnabled(true); }
+          catch { toast.info('Camera unavailable. You can stay in the call without video.'); }
+        }
         const localTracks = [...room.localParticipant.trackPublications.values()]
           .map((publication) => publication.track?.mediaStreamTrack)
-          .filter((track): track is MediaStreamTrack => Boolean(track));
+          .filter((track): track is MediaStreamTrack => Boolean(track && track.readyState === 'live'));
         const localStream = new MediaStream(localTracks);
         set({
           channelId,
           connecting: false,
           localStream,
-          muted: !sfuPermissions.speak,
+          muted: !localStream.getAudioTracks().length,
+          listenOnly: !localStream.getAudioTracks().length,
           deafened: false,
-          cameraOn: Boolean(options.withVideo && sfuPermissions.video),
+          cameraOn: localStream.getVideoTracks().length > 0,
           stageAudience: Boolean(credentials.stage && !canPublish),
           joinedAt: Date.now(),
         });
+        realtime.emit('voice:update', { muted: get().muted, video: get().cameraOn });
         return;
       } catch (error) {
         releaseMicrophone(pendingMicrophone);
@@ -360,33 +390,14 @@ export const useVoice = create<VoiceState>((set, get) => ({
       }
     }
 
-    let localStream: MediaStream;
-    try {
-      localStream = await captureMicrophone(Boolean(options.withVideo));
-    } catch (error) {
-      set({ connecting: false });
-      const name = (error as DOMException)?.name;
-      toast.error(
-        name === 'NotAllowedError'
-          ? 'Microphone access was denied. Allow it in your browser to join voice.'
-          : 'No microphone was found.',
-      );
-      return;
+    let localStream = new MediaStream();
+    if (!options.listenOnly) {
+      try { localStream = await captureMicrophone(); }
+      catch { toast.info('Microphone unavailable. You joined as a listener.'); }
     }
-
-    set({
-      localStream,
-      cameraOn: Boolean(options.withVideo),
-      muted: false,
-      deafened: false,
-    });
-
-    const ack = await new Promise<{ ok: boolean; error?: string; peers?: { userId: string }[] }>(
-      (resolve) => {
-        realtime.emit('voice:join', { channelId, muted: false, video: Boolean(options.withVideo) }, resolve);
-        setTimeout(() => resolve({ ok: false, error: 'The server did not respond.' }), 8000);
-      },
-    );
+    set({ localStream, cameraOn: false, muted: !localStream.getAudioTracks().length,
+      listenOnly: !localStream.getAudioTracks().length, deafened: false });
+    const ack = await registerVoice(channelId, false, Boolean(options.withVideo && !options.listenOnly));
 
     if (!ack.ok) {
       releaseMicrophone(localStream);
@@ -470,6 +481,24 @@ export const useVoice = create<VoiceState>((set, get) => ({
     ];
 
     detachSignalling = () => offs.forEach((off) => off());
+    if (options.withVideo && !options.listenOnly) await get().toggleCamera();
+  },
+
+  async recoverSignalling() {
+    const { channelId, connecting } = get();
+    if (!channelId || connecting) return;
+    const ack = await registerVoice(channelId, Boolean(sfuRoom));
+    if (get().channelId !== channelId) return;
+    if (!ack.ok) {
+      if (useRealtime.getState().connected) { get().leave(); toast.error(ack.error ?? 'Could not restore the voice connection.'); }
+      return;
+    }
+    if (!sfuRoom) {
+      // Other clients discarded the old connection on peer-left. Reuse our
+      // local media without requesting capture again, and negotiate fresh peers.
+      for (const id of [...peers.keys()]) dropPeer(id);
+      for (const peer of ack.peers ?? []) createPeer(peer.userId, true);
+    }
   },
 
   leave() {
@@ -478,6 +507,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
 
     if (sfuRoom) {
       const room = sfuRoom;
+      teardown();
       releaseMicrophone(localStream);
       sfuRoom = null;
       room.disconnect();
@@ -492,6 +522,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
         cameraOn: false,
         screenSharing: false,
         stageAudience: false,
+        listenOnly: false,
+        microphoneBusy: false,
         speaking: {},
         joinedAt: null,
         connecting: false,
@@ -515,6 +547,8 @@ export const useVoice = create<VoiceState>((set, get) => ({
       cameraOn: false,
       screenSharing: false,
       stageAudience: false,
+      listenOnly: false,
+      microphoneBusy: false,
       speaking: {},
       joinedAt: null,
       connecting: false,
@@ -524,6 +558,7 @@ export const useVoice = create<VoiceState>((set, get) => ({
   async changeInputDevice() {
     const { localStream, channelId, muted, deafened, stageAudience } = get();
     if (!localStream || !channelId || stageAudience) return;
+    if (sfuRoom && !sfuPermissions.speak) throw new Error('Speaking is disabled by your permissions.');
     const replacement = await captureMicrophone();
     const track = replacement.getAudioTracks()[0];
     track.enabled = !muted && !deafened;
@@ -539,56 +574,56 @@ export const useVoice = create<VoiceState>((set, get) => ({
         catch (error) { if (oldTrack?.readyState === 'live') await room.localParticipant.publishTrack(oldTrack, { source: Track.Source.Microphone }); throw error; }
       } else {
         const senders = [...peers.values()].flatMap(peer => peer.connection.getSenders()).filter(sender => sender.track?.kind === 'audio');
-        try { await Promise.all(senders.map(sender => sender.replaceTrack(track))); }
+        try {
+          await Promise.all(senders.map(sender => sender.replaceTrack(track)));
+          for (const peer of peers.values()) { if (!peer.connection.getSenders().some(sender => sender.track?.kind === 'audio')) peer.connection.addTrack(track, replacement); }
+        }
         catch (error) { await Promise.allSettled(senders.map(sender => sender.replaceTrack(oldTrack))); throw error; }
       }
       if (get().channelId !== channelId) throw new Error('The call ended while changing microphone.');
       releaseMicrophone(localStream);
       const updated = new MediaStream([track, ...localStream.getVideoTracks()]);
-      set({ localStream: updated });
+      set({ localStream: updated, listenOnly: false });
       if (!sfuRoom) startSpeakingDetection(updated, useSession.getState().user?.id ?? '');
     } catch (error) { releaseMicrophone(replacement); throw error; }
   },
 
-  toggleMute() {
-    const { localStream, muted, deafened, stageAudience } = get();
-    if (stageAudience) {
-      toast.info('The stage host must invite you to speak first.');
-      return;
-    }
+  async toggleMute() {
+    const { channelId, muted, deafened, stageAudience, microphoneBusy } = get();
+    if (!channelId || microphoneBusy) return;
+    if (stageAudience) { toast.info('The stage host must invite you to speak first.'); return; }
     const next = !muted;
-    if (sfuRoom) {
-      if(!next&&!sfuPermissions.speak){toast.info('Speaking is disabled by your permissions.');return;}
-      void sfuRoom.localParticipant.setMicrophoneEnabled(!next).catch(()=>toast.error('Could not change microphone state.'));
-      set({ muted: next, deafened: next ? deafened : false });
-      useRealtime.getState().emit('voice:update', { muted: next });
-      return;
-    }
-    for (const track of localStream?.getAudioTracks() ?? []) track.enabled = !next;
-    // Un-muting while deafened would be confusing; lift both together.
-    const nextDeafened = next ? deafened : false;
-    set({ muted: next, deafened: nextDeafened });
-    useRealtime.getState().emit('voice:update', { muted: next, deafened: nextDeafened });
+    if (!next && sfuRoom && !sfuPermissions.speak) { toast.info('Speaking is disabled by your permissions.'); return; }
+    set({ microphoneBusy: true });
+    try {
+      if (!next && !get().localStream?.getAudioTracks().some(track => track.readyState === 'live')) await get().changeInputDevice();
+      if (get().channelId !== channelId) return;
+      if (sfuRoom) {
+        await sfuRoom.localParticipant.setMicrophoneEnabled(!next);
+        if (!next && deafened) for (const participant of sfuRoom.remoteParticipants.values()) for (const publication of participant.trackPublications.values()) publication.setEnabled(true);
+      }
+      for (const track of get().localStream?.getAudioTracks() ?? []) track.enabled = !next;
+      const nextDeafened = next ? deafened : false;
+      set({ muted: next, deafened: nextDeafened });
+      useRealtime.getState().emit('voice:update', {muted: next, deafened: nextDeafened});
+    } catch { toast.error('Could not enable the microphone. You are still a listener.'); }
+    finally { set({ microphoneBusy: false }); }
   },
 
   toggleDeafen() {
-    const { deafened, localStream } = get();
+    const { deafened, localStream, muted } = get();
     const next = !deafened;
+    if (next) mutedBeforeDeafen = muted;
+    const nextMuted = next || mutedBeforeDeafen || !localStream?.getAudioTracks().some(track => track.readyState === 'live');
     if (sfuRoom) {
-      for (const participant of sfuRoom.remoteParticipants.values()) {
-        for (const publication of participant.trackPublications.values()) {
-          publication.setEnabled(!next);
-        }
-      }
-      void sfuRoom.localParticipant.setMicrophoneEnabled(!next&&sfuPermissions.speak).catch(()=>toast.error('Could not change microphone state.'));
-      set({ deafened: next, muted: next ? true : get().muted });
-      useRealtime.getState().emit('voice:update', { deafened: next, muted: next ? true : get().muted });
-      return;
+      for (const participant of sfuRoom.remoteParticipants.values()) for (const publication of participant.trackPublications.values()) publication.setEnabled(!next);
+      // Deafen never opens a capture device, and undeafen never unmutes a
+      // microphone that was muted before the user stopped listening.
+      if (localStream?.getAudioTracks().length) void sfuRoom.localParticipant.setMicrophoneEnabled(!nextMuted).catch(() => {});
     }
-    // Deafening also mutes, matching what people expect from Discord.
-    for (const track of localStream?.getAudioTracks() ?? []) track.enabled = !next;
-    set({ deafened: next, muted: next ? true : get().muted });
-    useRealtime.getState().emit('voice:update', { deafened: next, muted: next ? true : get().muted });
+    for (const track of localStream?.getAudioTracks() ?? []) track.enabled = !nextMuted;
+    set({deafened: next, muted: nextMuted});
+    useRealtime.getState().emit('voice:update', {deafened: next, muted: nextMuted});
   },
 
   async toggleCamera() {

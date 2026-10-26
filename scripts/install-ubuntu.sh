@@ -73,7 +73,7 @@ log "Installing operating-system prerequisites"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y --no-install-recommends \
-  ca-certificates curl gnupg openssl rsync jq ufw unattended-upgrades
+  ca-certificates curl gnupg openssl rsync jq ufw unattended-upgrades python3 openjdk-21-jre-headless
 
 if ! command -v docker >/dev/null 2>&1; then
   log "Installing Docker Engine from the official repository"
@@ -351,6 +351,14 @@ Control command: zdisctl
 Credentials created: $(date -u +%FT%TZ)
 EOF
 chmod 600 /root/zdis-credentials.txt
+
+log "Building dedicated signed Android and Windows clients"
+if [[ "$PUBLIC_ORIGIN" == https://* ]]; then
+  python3 "$INSTALL_DIR/scripts/build-server-clients.py" --url "$PUBLIC_ORIGIN" \
+    --output "$INSTALL_DIR/data/clients" --signing-dir /var/lib/zdis-client-signing
+else
+  printf 'Native client builds require HTTPS. Configure TLS, then run scripts/build-server-clients.py --url https://YOUR-SERVER\n' >&2
+fi
 
 ok "ZDis is ready at $PUBLIC_ORIGIN"
 printf '\nAdministrator: %s\nPassword: %s\n' "$ADMIN_EMAIL" "$ADMIN_PASSWORD"

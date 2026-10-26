@@ -4,7 +4,7 @@ android {
     namespace = "com.zdis.chat"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.zdis.chat"
+        applicationId System.getenv("ZDIS_APP_ID") ?: "com.zdis.chat"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -16,8 +16,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (System.getenv("ZDIS_SIGNING_PASSWORD")) {
+                storeFile file('/signing/android.jks')
+                storePassword System.getenv("ZDIS_SIGNING_PASSWORD")
+                keyAlias 'zdis'
+                keyPassword System.getenv("ZDIS_SIGNING_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

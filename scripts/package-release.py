@@ -34,7 +34,7 @@ def package(root, platform, destination):
             if name.startswith('.env') and not name.endswith('.example'):
                 continue
             if name.endswith(('.log', '.db', '.sqlite', '.sqlite3', '.sqlite3-wal',
-                              '.sqlite3-shm', '.tsbuildinfo', '.zip', '.tar.gz', '.pyc')):
+                              '.sqlite3-shm', '.tsbuildinfo', '.zip', '.tar.gz', '.pyc', '.jks', '.p12', '.key')):
                 continue
             relative = source.relative_to(root).as_posix()
             content = source.read_bytes()

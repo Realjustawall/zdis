@@ -68,10 +68,11 @@ export function formatRelative(value: number | null): string {
 export function formatBytes(bytes: number): string {
   const value = (amount: number, digits: number) =>
     numberFormat({ minimumFractionDigits: digits, maximumFractionDigits: digits }).format(amount);
-  if (bytes < 1024) return `${numberFormat().format(bytes)} B`;
-  if (bytes < 1024 * 1024) return `${value(bytes / 1024, 1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${value(bytes / (1024 * 1024), 1)} MB`;
-  return `${value(bytes / (1024 * 1024 * 1024), 2)} GB`;
+  const units = activeLocale() === 'fa-IR' ? ['بایت', 'کیلوبایت', 'مگابایت', 'گیگابایت'] : ['B', 'KB', 'MB', 'GB'];
+  if (bytes < 1024) return `${numberFormat().format(bytes)} ${units[0]}`;
+  if (bytes < 1024 * 1024) return `${value(bytes / 1024, 1)} ${units[1]}`;
+  if (bytes < 1024 * 1024 * 1024) return `${value(bytes / (1024 * 1024), 1)} ${units[2]}`;
+  return `${value(bytes / (1024 * 1024 * 1024), 2)} ${units[3]}`;
 }
 
 export function formatDuration(seconds: number): string {

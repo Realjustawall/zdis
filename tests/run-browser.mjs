@@ -22,18 +22,32 @@ await fs.mkdir(reports, {recursive: true});
 // through one rate limiter across the entire browser run.
 for (const [index, file] of files.entries()) {
   const name = file.replace('.spec.ts', '');
+  const jsonReport = path.join(root, 'test-results', name, 'results.json');
+  await fs.rm(jsonReport, {force: true});
   console.log(`BROWSER SUITE ${name}`);
-  const code = await new Promise((resolve, reject) => {
+  let code = await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [cli, 'test', `tests/e2e/${file}`, ...forwarded,
-      '--workers=1', ...(!selected.length ? ['--pass-with-no-tests'] : []), '--reporter=list,html', `--output=test-results/${name}`], {
+      '--workers=1', ...(!selected.length ? ['--pass-with-no-tests'] : []), '--reporter=list,html,json', `--output=test-results/${name}`], {
       cwd: root, stdio: 'inherit', windowsHide: true,
       env: {...process.env, TEST_E2E_PORT: String(basePort + index), TEST_E2E_ISOLATED: '1',
-        PLAYWRIGHT_HTML_REPORT: path.join(reports, name), PLAYWRIGHT_HTML_OPEN: 'never'},
+        PLAYWRIGHT_HTML_REPORT: path.join(reports, name), PLAYWRIGHT_HTML_OPEN: 'never', PLAYWRIGHT_JSON_OUTPUT_NAME: jsonReport},
     });
     child.once('error', reject);
     child.once('exit', status => resolve(status ?? 1));
   });
-  results.push({suite: name, exitCode: code});
+  let stats;
+  if (!forwarded.includes('--list')) {
+    try {
+      const report = JSON.parse(await fs.readFile(jsonReport, 'utf8'));
+      stats = report.stats;
+      const count = ['expected','unexpected','flaky','skipped'].reduce((sum, key) => sum + Number(stats?.[key] || 0), 0);
+      if (report.errors?.length || (process.env.CI && !count)) throw new Error('Suite did not complete valid test results');
+    } catch (error) {
+      console.error(`Invalid or missing fresh test report for ${name}: ${error.message}`);
+      code = 1;
+    }
+  }
+  results.push({suite: name, exitCode: code, ...(stats ? {stats} : {})});
 }
 await fs.writeFile(path.join(reports, 'suites.json'), JSON.stringify(results, null, 2));
 await fs.writeFile(path.join(reports, 'index.html'), `<!doctype html><html lang="en"><meta charset="utf-8"><title>ZDis browser suites</title><h1>ZDis browser suites</h1><ul>${results.map(result => `<li><a href="${result.suite}/index.html">${result.suite}</a>: ${result.exitCode === 0 ? 'completed' : 'failed'}</li>`).join('')}</ul></html>`);

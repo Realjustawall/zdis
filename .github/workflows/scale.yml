@@ -2,7 +2,7 @@ name: Scale and failover
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
     paths:
       - 'infra/**'

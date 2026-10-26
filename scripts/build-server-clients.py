@@ -68,6 +68,10 @@ def build(origin, output, signing, root):
                     if not child.is_symlink(): os.chown(child, uid, gid)
         common = ['docker','run','--rm','--user',f'{uid}:{gid}',
                   '-e','HOME=/tmp/zdis-builder-home','-e','WINEPREFIX=/tmp/zdis-wine',
+                  '-e','NPM_CONFIG_CACHE=/tmp/zdis-builder-home/.npm',
+                  '-e','GRADLE_USER_HOME=/tmp/zdis-builder-home/.gradle',
+                  '-e','ELECTRON_CACHE=/tmp/zdis-builder-home/.cache/electron',
+                  '-e','ELECTRON_BUILDER_CACHE=/tmp/zdis-builder-home/.cache/electron-builder',
                   '-v',f'{work}:/build','-v',f'{session_keys}:/signing:ro','-v',f'{staged}:/output']
         android_env = {**env, 'CAPACITOR_SERVER_URL': origin, 'ZDIS_APP_ID': f'com.zdis.server.s{server_id}',
                        'ZDIS_APP_NAME': f'ZDis {server_id}'}

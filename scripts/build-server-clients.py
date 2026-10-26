@@ -14,6 +14,18 @@ def validate_origin(value):
 def run(args, **kw):
     subprocess.run([str(arg) for arg in args], check=True, **kw)
 
+def prepare_windows_signing(keys, server_id, env):
+    pfx = keys / 'windows.p12'
+    if not pfx.exists():
+        run(['openssl', 'req', '-x509', '-newkey', 'rsa:3072', '-sha256', '-days', '3650', '-nodes',
+             '-subj', f'/CN=ZDis Server {server_id}',
+             '-addext', 'basicConstraints=critical,CA:FALSE',
+             '-addext', 'keyUsage=critical,digitalSignature',
+             '-addext', 'extendedKeyUsage=codeSigning',
+             '-keyout', keys/'windows.key', '-out', keys/'windows.crt'])
+        run(['openssl', 'pkcs12', '-export', '-inkey', keys/'windows.key', '-in', keys/'windows.crt',
+             '-out', pfx, '-passout', 'env:ZDIS_SIGNING_PASSWORD'], env=env)
+
 def build(origin, output, signing, root):
     origin = validate_origin(origin)
     server_id = hashlib.sha256(origin.encode()).hexdigest()[:12]
@@ -29,13 +41,7 @@ def build(origin, output, signing, root):
         password_file.write_text(secrets.token_hex(32)); os.chmod(password_file, 0o600)
     password = password_file.read_text().strip()
     env = {**os.environ, 'ZDIS_SIGNING_PASSWORD': password, 'CSC_KEY_PASSWORD': password}
-    pfx = keys / 'windows.p12'
-    if not pfx.exists():
-        run(['openssl', 'req', '-x509', '-newkey', 'rsa:3072', '-sha256', '-days', '3650', '-nodes',
-             '-subj', f'/CN=ZDis Server {server_id}', '-addext', 'extendedKeyUsage=codeSigning',
-             '-keyout', keys/'windows.key', '-out', keys/'windows.crt'])
-        run(['openssl', 'pkcs12', '-export', '-inkey', keys/'windows.key', '-in', keys/'windows.crt',
-             '-out', pfx, '-passout', 'env:ZDIS_SIGNING_PASSWORD'], env=env)
+    prepare_windows_signing(keys, server_id, env)
     if not (keys/'android.jks').exists():
         run(['keytool', '-genkeypair', '-keystore', keys/'android.jks', '-storepass:env', 'ZDIS_SIGNING_PASSWORD',
              '-keypass:env', 'ZDIS_SIGNING_PASSWORD', '-alias', 'zdis', '-keyalg', 'RSA', '-keysize', '3072',

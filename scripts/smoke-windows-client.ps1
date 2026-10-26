@@ -17,7 +17,9 @@ $process = $null
 try {
     Write-Output 'PHASE: trust the disposable CI signing certificate'
     $trusted = Import-Certificate -FilePath (Join-Path $candidatePath 'ZDis-Server-Certificate.crt') -CertStoreLocation Cert:\LocalMachine\Root -Confirm:$false
-    if ((Get-AuthenticodeSignature $installer).Status -ne 'Valid') { throw 'Invalid installer signature' }
+    $verified = Get-AuthenticodeSignature $installer
+    Write-Output ($verified | Format-List Status,StatusMessage,SignerCertificate | Out-String)
+    if ($verified.Status -ne 'Valid') { throw "Invalid installer signature: $($verified.Status): $($verified.StatusMessage)" }
     Write-Output 'PHASE: silently install the signed client'
     $setup = Start-Process -FilePath $installer -ArgumentList '/S', "/D=$installDir" -PassThru
     if (!$setup.WaitForExit(120000)) {
@@ -27,7 +29,8 @@ try {
     if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
     $exe = Join-Path $installDir "ZDis $($manifest.serverId).exe"
     if (!(Test-Path $exe)) { throw "Installed executable missing: $exe" }
-    if ((Get-AuthenticodeSignature $exe).Status -ne 'Valid') { throw 'Installed executable signature is invalid' }
+    $verifiedExe = Get-AuthenticodeSignature $exe
+    if ($verifiedExe.Status -ne 'Valid') { throw "Installed executable signature is invalid: $($verifiedExe.Status): $($verifiedExe.StatusMessage)" }
     Write-Output 'PHASE: inspect the installed server configuration'
     $env:ZDIS_SMOKE_ASAR = Join-Path $installDir 'resources/app.asar'
     $env:ZDIS_SMOKE_ORIGIN = $manifest.serverUrl

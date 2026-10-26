@@ -118,6 +118,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Verify production code-signing certificate on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tests/windows-signing.ps1
       - run: npm ci
       - run: npm run build
       - run: npm test

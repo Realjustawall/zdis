@@ -17,6 +17,9 @@
       "server.json"
     ],
     "win": {
+      "signtoolOptions": {
+        "signingHashAlgorithms": ["sha256"]
+      },
       "target": [
         "nsis"
       ]

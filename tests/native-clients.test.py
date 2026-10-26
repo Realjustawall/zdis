@@ -70,13 +70,20 @@ class NativeClientTests(unittest.TestCase):
                     pathlib.Path(args[args.index(flag)+1]).write_text('signing-key')
                 elif args[:2] == ['docker','run']:
                     raise RuntimeError('simulated toolchain failure')
-            with patch.object(builder, 'run', fake_run):
+            # Docker and ownership changes are OS boundaries, not performed by
+            # this control-flow test (the isolated runner can lack UID maps).
+            with patch.object(builder, 'run', fake_run), patch.object(builder.os, 'chown'):
                 with self.assertRaisesRegex(RuntimeError, 'toolchain'):
                     builder.build('https://server.test',temp/'downloads',temp/'signing',root)
             self.assertFalse((temp/'downloads/manifest.json').exists())
             self.assertEqual(list((temp/'downloads').iterdir()), [])
             password = next((temp/'signing').glob('*/password')).read_text()
             self.assertTrue(all(password not in str(args) for args, _ in calls))
+            containers = [args for args, _ in calls if args[:2] == ['docker', 'run']]
+            self.assertTrue(containers)
+            for args in containers:
+                self.assertNotEqual(args[args.index('--user')+1].split(':')[0], '0')
+                self.assertFalse(any(str(temp/'signing') in arg for arg in args))
             self.assertTrue(all((p.stat().st_mode & 0o077) == 0 for p in (temp/'signing').glob('*/*')))
 
 if __name__ == '__main__': unittest.main()

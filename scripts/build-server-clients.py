@@ -54,18 +54,32 @@ def build(origin, output, signing, root):
             run(['docker','build','-t',f'zdis-{platform}-builder','-f',work/f'native/docker/{platform}.Dockerfile',work])
         staged = Path(temp)/'artifacts'
         staged.mkdir()
-        common = ['docker','run','--rm','-v',f'{work}:/build','-v',f'{keys}:/signing:ro','-v',f'{staged}:/output']
+        # Keep persistent signing keys private to the installer owner. Containers
+        # receive a disposable read-only copy and run as an unprivileged UID,
+        # including when the server installer itself is invoked as root.
+        session_keys = Path(temp)/'signing'
+        shutil.copytree(keys, session_keys)
+        uid = os.getuid() or 10001
+        gid = os.getgid() if os.getuid() else 10001
+        if os.getuid() == 0:
+            for folder in (work, staged, session_keys):
+                os.chown(folder, uid, gid)
+                for child in folder.rglob('*'):
+                    if not child.is_symlink(): os.chown(child, uid, gid)
+        common = ['docker','run','--rm','--user',f'{uid}:{gid}',
+                  '-e','HOME=/tmp/zdis-builder-home','-e','WINEPREFIX=/tmp/zdis-wine',
+                  '-v',f'{work}:/build','-v',f'{session_keys}:/signing:ro','-v',f'{staged}:/output']
         android_env = {**env, 'CAPACITOR_SERVER_URL': origin, 'ZDIS_APP_ID': f'com.zdis.server.s{server_id}',
                        'ZDIS_APP_NAME': f'ZDis {server_id}'}
         run(common + ['-e','ZDIS_SIGNING_PASSWORD','-e','CAPACITOR_SERVER_URL','-e','ZDIS_APP_ID','-e','ZDIS_APP_NAME',
             'zdis-android-builder','bash','-euc',
-            'npm ci; npm run build; cd client; npx cap sync android; cd android; '
+            'mkdir -p "$HOME"; npm ci; npm run build; cd client; npx cap sync android; cd android; '
             'bash gradlew --no-daemon assembleRelease; '
             'cp app/build/outputs/apk/release/app-release.apk /output/ZDis.apk; '
             '$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose /output/ZDis.apk'], env=android_env)
         run(common + ['-e','CSC_LINK=/signing/windows.p12','-e','CSC_KEY_PASSWORD',
             'zdis-windows-builder','bash','-euc',
-            'cd native/windows; npm ci; npx electron-builder --win nsis --x64 --publish never; '
+            'mkdir -p "$HOME"; cd native/windows; npm ci; npx electron-builder --win nsis --x64 --publish never; '
             'cp dist/ZDis-Setup.exe /output/ZDis-Setup.exe'], env=env)
         for name in ('ZDis.apk', 'ZDis-Setup.exe'):
             shutil.copyfile(staged/name, output/(name+'.tmp'))

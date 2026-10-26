@@ -1,6 +1,6 @@
 {
   "name": "zdis-server-client",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ZDis dedicated server desktop client",
   "author": "ZDis",
   "main": "main.cjs",

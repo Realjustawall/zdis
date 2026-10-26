@@ -1,6 +1,6 @@
 {
   "name": "zdis",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "ZDIS - secure chat platform for YouTubers",
   "type": "module",

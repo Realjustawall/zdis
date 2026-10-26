@@ -87,6 +87,9 @@ class NativeClientTests(unittest.TestCase):
                 images = [image for image, _ in calls if image[:2] == ['docker', 'build']]
                 self.assertTrue(all(f'ZDIS_BUILDER_UID={uid}' in image and f'ZDIS_BUILDER_GID={gid}' in image for image in images))
                 self.assertFalse(any(str(temp/'signing') in arg for arg in args))
+                home = next(arg.split('=', 1)[1] for arg in args if arg.startswith('HOME='))
+                wine = next(arg.split('=', 1)[1] for arg in args if arg.startswith('WINEPREFIX='))
+                self.assertTrue(wine.startswith(home+'/'), 'Wine prefix must be inside a directory owned by the builder')
             self.assertTrue(all((p.stat().st_mode & 0o077) == 0 for p in (temp/'signing').glob('*/*')))
 
 if __name__ == '__main__': unittest.main()

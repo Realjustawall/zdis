@@ -69,7 +69,8 @@ def build(origin, output, signing, root):
                 for child in folder.rglob('*'):
                     if not child.is_symlink(): os.chown(child, uid, gid)
         common = ['docker','run','--rm','--user',f'{uid}:{gid}',
-                  '-e','HOME=/tmp/zdis-builder-home','-e','WINEPREFIX=/tmp/zdis-wine',
+                  '-e','HOME=/tmp/zdis-builder-home','-e','WINEPREFIX=/tmp/zdis-builder-home/.wine',
+                  '-e','TMPDIR=/tmp/zdis-builder-home/tmp',
                   '-e','NPM_CONFIG_CACHE=/tmp/zdis-builder-home/.npm',
                   '-e','GRADLE_USER_HOME=/tmp/zdis-builder-home/.gradle',
                   '-e','ELECTRON_CACHE=/tmp/zdis-builder-home/.cache/electron',
@@ -79,13 +80,13 @@ def build(origin, output, signing, root):
                        'ZDIS_APP_NAME': f'ZDis {server_id}'}
         run(common + ['-e','ZDIS_SIGNING_PASSWORD','-e','CAPACITOR_SERVER_URL','-e','ZDIS_APP_ID','-e','ZDIS_APP_NAME',
             'zdis-android-builder','bash','-euc',
-            'mkdir -p "$HOME"; npm ci; npm run build; cd client; npx cap sync android; cd android; '
+            'mkdir -p "$HOME" "$TMPDIR"; npm ci; npm run build; cd client; npx cap sync android; cd android; '
             'bash gradlew --no-daemon assembleRelease; '
             'cp app/build/outputs/apk/release/app-release.apk /output/ZDis.apk; '
             '$ANDROID_HOME/build-tools/36.0.0/apksigner verify --verbose /output/ZDis.apk'], env=android_env)
         run(common + ['-e','CSC_LINK=/signing/windows.p12','-e','CSC_KEY_PASSWORD',
             'zdis-windows-builder','bash','-euc',
-            'mkdir -p "$HOME"; cd native/windows; npm ci; npx electron-builder --win nsis --x64 --publish never; '
+            'mkdir -p "$HOME" "$TMPDIR" "$WINEPREFIX"; cd native/windows; npm ci; npx electron-builder --win nsis --x64 --publish never; '
             'cp dist/ZDis-Setup.exe /output/ZDis-Setup.exe'], env=env)
         for name in ('ZDis.apk', 'ZDis-Setup.exe'):
             shutil.copyfile(staged/name, output/(name+'.tmp'))

@@ -37,18 +37,15 @@
 
 ## پیش‌نمایش
 
-ثبت‌شده از سرور محلی ZDIS و گروه آزمایشی.
+تصاویر از اجرای واقعی برنامه با دادهٔ آزمایشی ثبت شده‌اند. تصاویر گوشی فارسی‌اند؛ تصاویر دسکتاپ در دو زبان موجودند.
 
-![ZDIS — گفت‌وگوی گروهی](docs/assets/screenshots/fa/01-community.webp)
+![ZDIS — Community chat](docs/assets/screenshots/fa/01-community.webp)
 
-<details>
-<summary>تصاویر بیشتر</summary>
+![ZDIS — Appearance and themes](docs/assets/screenshots/fa/02-appearance.webp)
 
-![ZDIS — ظاهر و پوسته‌ها](docs/assets/screenshots/fa/02-appearance.webp)
+![ZDIS — Administration — users](docs/assets/screenshots/desktop-admin-users.png)
 
-</details>
-
-[مشاهدهٔ گالری کامل](docs/gallery.fa.md)
+[مشاهدهٔ 62 تصویر پیش‌نمایش](docs/gallery.fa.md) · [View all 62 previews](docs/gallery.en.md)
 
 <a id="quick-start"></a>
 

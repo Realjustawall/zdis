@@ -37,18 +37,15 @@
 
 ## Preview
 
-Captured from a local ZDIS server and a disposable community.
+Captured from the running app with disposable demo data. Phone captures show the Persian interface; desktop captures are available in both languages.
 
 ![ZDIS — Community chat](docs/assets/screenshots/en/01-community.webp)
 
-<details>
-<summary>More screens</summary>
-
 ![ZDIS — Appearance and themes](docs/assets/screenshots/en/02-appearance.webp)
 
-</details>
+![ZDIS — Administration — users](docs/assets/screenshots/desktop-admin-users.png)
 
-[Open the full gallery](docs/gallery.en.md)
+[مشاهدهٔ 62 تصویر پیش‌نمایش](docs/gallery.fa.md) · [View all 62 previews](docs/gallery.en.md)
 
 <a id="quick-start"></a>
 
